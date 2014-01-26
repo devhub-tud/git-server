@@ -32,7 +32,7 @@ public class GitServer {
 
 	public GitServer(int port) {
 		ContextHandlerCollection handlers = new ContextHandlerCollection();
-		handlers.addContext("/", "/").setHandler(new DevhubHandler());
+		handlers.addContext("/", "/").setHandler(new GitServerHandler());
 		
 		server = new Server(port);
 		server.setHandler(handlers);
@@ -60,9 +60,9 @@ public class GitServer {
 		server.stop();
 	}
 	
-	private static class DevhubHandler extends ServletContextHandler {
+	private static class GitServerHandler extends ServletContextHandler {
 		
-		public DevhubHandler() {
+		public GitServerHandler() {
 			addEventListener(new GuiceResteasyBootstrapServletContextListener() {
 				@Override
 				protected List<Module> getModules(ServletContext context) {
