@@ -14,6 +14,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
 import nl.minicom.gitolite.manager.models.Config;
@@ -21,6 +22,7 @@ import nl.minicom.gitolite.manager.models.ConfigManager;
 import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
+import nl.tudelft.ewi.git.inspector.Diff;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.web.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.web.models.RepositoryModel;
@@ -51,21 +53,21 @@ public class RepositoriesAPI {
 	}
 
 	@GET
-	public Collection<RepositoryModel> listAllRepositories() throws IOException, ServiceUnavailable {
+	public Collection<RepositoryModel> listAllRepositories() throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		return Collections2.transform(config.getRepositories(), Transformers.repositories());
 	}
 	
 	@GET
 	@Path("{repoId}")
-	public DetailedRepositoryModel showRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable {
+	public DetailedRepositoryModel showRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, repoId);
 		return Transformers.detailedRepositories(inspector).apply(repository);
 	}
 	
 	@POST
-	public DetailedRepositoryModel createRepository(RepositoryModel model) throws IOException, ServiceUnavailable, ModificationException {
+	public DetailedRepositoryModel createRepository(RepositoryModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Repository repository = config.createRepository(model.getName());
 		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
@@ -79,7 +81,7 @@ public class RepositoriesAPI {
 	
 	@DELETE
 	@Path("{repoId}")
-	public void deleteRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable, ModificationException {
+	public void deleteRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, repoId);
 		config.removeRepository(repository);

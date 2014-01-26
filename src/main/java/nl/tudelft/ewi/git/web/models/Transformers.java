@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import lombok.extern.slf4j.Slf4j;
+import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Group;
 import nl.minicom.gitolite.manager.models.Identifiable;
 import nl.minicom.gitolite.manager.models.Permission;
@@ -16,9 +17,6 @@ import nl.tudelft.ewi.git.inspector.Branch;
 import nl.tudelft.ewi.git.inspector.Commit;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.inspector.Tag;
-
-import org.eclipse.jgit.api.errors.JGitInternalException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
@@ -128,7 +126,7 @@ public class Transformers {
 				try {
 					model.setBranches(inspector.listBranches(input));
 				}
-				catch (IOException e) {
+				catch (IOException | GitException e) {
 					log.error(e.getMessage(), e);
 					model.setBranches(Collections.<Branch>emptyList());
 				}
@@ -136,7 +134,7 @@ public class Transformers {
 				try {
 					model.setTags(inspector.listTags(input));
 				}
-				catch (IOException e) {
+				catch (IOException | GitException e) {
 					log.error(e.getMessage(), e);
 					model.setTags(Collections.<Tag>emptyList());
 				}
@@ -144,7 +142,7 @@ public class Transformers {
 				try {
 					model.setCommits(inspector.listCommits(input));
 				}
-				catch (IOException | NoHeadException | JGitInternalException e) {
+				catch (IOException | GitException e) {
 					log.error(e.getMessage(), e);
 					model.setCommits(Collections.<Commit>emptyList());
 				}
