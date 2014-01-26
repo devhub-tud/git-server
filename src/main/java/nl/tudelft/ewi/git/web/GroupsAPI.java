@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
 import nl.minicom.gitolite.manager.models.Config;
@@ -49,21 +50,21 @@ public class GroupsAPI {
 	}
 
 	@GET
-	public Collection<IdentifiableModel> listAllGroups() throws IOException, ServiceUnavailable {
+	public Collection<IdentifiableModel> listAllGroups() throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		return Collections2.transform(config.getGroups(), Transformers.identifiables());
 	}
 	
 	@GET
 	@Path("{groupId}")
-	public GroupModel getGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable {
+	public GroupModel getGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		Group group = fetchGroup(config, groupId);
 		return Transformers.groups().apply(group);
 	}
 	
 	@POST
-	public GroupModel createNewGroup(@Valid GroupModel model) throws IOException, ServiceUnavailable, ModificationException {
+	public GroupModel createNewGroup(@Valid GroupModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Group group = config.createGroup(model.getName());
 		if (model.getMembers() != null) {
@@ -83,7 +84,7 @@ public class GroupsAPI {
 	
 	@DELETE
 	@Path("{groupId}")
-	public void deleteGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable, ModificationException {
+	public void deleteGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Group group = fetchGroup(config, groupId);
 		config.removeGroup(group);
@@ -92,7 +93,7 @@ public class GroupsAPI {
 	
 	@GET
 	@Path("{groupId}/members")
-	public Collection<?> listMembers(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable {
+	public Collection<?> listMembers(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		Group group = fetchGroup(config, groupId);
 		return Collections2.transform(group.getAllMembers(), Transformers.detailedIdentifiables());
@@ -100,7 +101,7 @@ public class GroupsAPI {
 	
 	@POST
 	@Path("{groupId}/members")
-	public Collection<IdentifiableModel> addNewMember(@PathParam("groupId") String groupId, @Valid IdentifiableModel model) throws IOException, ServiceUnavailable, ModificationException {
+	public Collection<IdentifiableModel> addNewMember(@PathParam("groupId") String groupId, @Valid IdentifiableModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Group group = fetchGroup(config, groupId);
 		
@@ -117,7 +118,7 @@ public class GroupsAPI {
 
 	@DELETE
 	@Path("{groupId}/members/{identifiableId}")
-	public void removeMember(@PathParam("groupId") String groupId, @PathParam("identifiableId") String identifiableId) throws IOException, ServiceUnavailable, ModificationException {
+	public void removeMember(@PathParam("groupId") String groupId, @PathParam("identifiableId") String identifiableId) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		Group group = fetchGroup(config, groupId);
 		if (identifiableId.startsWith("@")) {

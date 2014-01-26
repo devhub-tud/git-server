@@ -15,6 +15,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
 import nl.minicom.gitolite.manager.models.Config;
@@ -50,21 +51,21 @@ public class UsersAPI {
 	}
 
 	@GET
-	public Collection<IdentifiableModel> listAllUsers() throws IOException, ServiceUnavailable {
+	public Collection<IdentifiableModel> listAllUsers() throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		return Collections2.transform(config.getUsers(), Transformers.identifiables());
 	}
 	
 	@GET
 	@Path("{userId}")
-	public UserModel getUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable {
+	public UserModel getUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		return Transformers.users().apply(user);
 	}
 	
 	@POST
-	public UserModel createNewUser(@Valid UserModel model) throws IOException, ServiceUnavailable, ModificationException {
+	public UserModel createNewUser(@Valid UserModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		User user = config.createUser(model.getName());
 		if (model.getKeys() != null) {
@@ -78,7 +79,7 @@ public class UsersAPI {
 	
 	@DELETE
 	@Path("{userId}")
-	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, ModificationException {
+	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		config.removeUser(user);
@@ -87,7 +88,7 @@ public class UsersAPI {
 	
 	@GET
 	@Path("{userId}/keys")
-	public Collection<SshKeyModel> listSshKeys(@PathParam("userId") String userId) throws IOException, ServiceUnavailable {
+	public Collection<SshKeyModel> listSshKeys(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		return Collections2.transform(user.getKeys().entrySet(), Transformers.sshKeys(user));
@@ -95,7 +96,7 @@ public class UsersAPI {
 	
 	@GET
 	@Path("{userId}/keys/{keyId}")
-	public SshKeyModel retrieveSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable {
+	public SshKeyModel retrieveSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		if (!keyId.endsWith(user.getName() + ".pub")) {
@@ -114,7 +115,7 @@ public class UsersAPI {
 	
 	@POST
 	@Path("{userId}/keys")
-	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel sshKey) throws IOException, ServiceUnavailable, ModificationException {
+	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel sshKey) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		if (!sshKey.getName().endsWith(user.getName() + ".pub")) {
@@ -133,7 +134,7 @@ public class UsersAPI {
 	
 	@DELETE
 	@Path("{userId}/keys/{keyId}")
-	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable, ModificationException {
+	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		if (!keyId.endsWith(user.getName() + ".pub")) {
