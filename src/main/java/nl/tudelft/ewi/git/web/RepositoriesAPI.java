@@ -87,6 +87,14 @@ public class RepositoriesAPI {
 		config.removeRepository(repository);
 		manager.apply(config);
 	}
+	
+	@GET
+	@Path("{repoId}/diff/{oldId}/{newId}")
+	public Collection<Diff> calculateDiff(@PathParam("repoId") String repoId, @PathParam("oldId") String oldId, @PathParam("newId") String newId) throws IOException, ServiceUnavailable, GitException {
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, repoId);
+		return inspector.calculateDiff(repository, oldId, newId);
+	}
 
 	private User fetchUser(Config config, String userId) {
 		User user = config.getUser(userId);

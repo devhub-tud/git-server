@@ -125,4 +125,68 @@ public class Inspector {
 		}
 	}
 	
+	public Collection<Diff> calculateDiff(Repository repository, String leftCommitId, String rightCommitId) throws IOException, GitException {
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		repo.getConfig().setString("diff", null, "algorithm", "histogram");
+		
+		try {
+			AbstractTreeIterator oldTreeIter = createTreeParser(git, leftCommitId);
+			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
+			
+			List<DiffEntry> diffs = git.diff()
+			        .setNewTree(newTreeIter)
+			        .setOldTree(oldTreeIter)
+			        .call();
+			
+			return Collections2.transform(diffs, new Function<DiffEntry, Diff>() {
+				public Diff apply(DiffEntry input) {
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					DiffFormatter formatter = new DiffFormatter(out);
+					formatter.setRepository(repo);
+					
+					String contents = null;
+					try {
+						formatter.format(input);
+						contents = out.toString("UTF-8");
+					}
+					catch (IOException e) {
+						log.error(e.getMessage(), e);
+					}
+					
+					Diff diff = new Diff();
+					diff.setChangeType(input.getChangeType());
+					diff.setOldPath(input.getOldPath());
+					diff.setNewPath(input.getNewPath());
+					diff.setRaw(contents);
+					return diff;
+				}
+			});
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+	
+	private static AbstractTreeIterator createTreeParser(Git git, String ref) throws IOException, GitAPIException {
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		
+		RevWalk walk = new RevWalk(repo);
+		RevCommit commit = walk.parseCommit(repo.resolve(ref));
+		RevTree tree = walk.parseTree(commit.getTree().getId());
+		
+		CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+		ObjectReader oldReader = repo.newObjectReader();
+		try {
+			oldTreeParser.reset(oldReader, tree.getId());
+		} 
+		finally {
+			oldReader.release();
+		}
+		
+		return oldTreeParser;
+	}
+	
 }
