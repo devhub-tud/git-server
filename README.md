@@ -21,5 +21,6 @@ vagrant up --provision
 
 Now you should have a VM running Gitolite. Next you can import the project into your favorite IDE, and run the `nl.tudelft.ewi.git.GitServer` class to start the server. Please ensure you import the project into your IDE as a Maven project to ensure that all dependencies are automatically downloaded and registered on your build path.
 
-**Limitations**
+### Limitations ###
+
 In order for the `diff` operation to work, you need to create a `/repositories` folder in the root folder of the project and clone the git repositories you wish to `diff` on to this folder. Currently it's not yet possible to share or synchronize this folder with the Gitolite VM to automate this process.
