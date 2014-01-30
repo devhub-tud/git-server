@@ -52,5 +52,5 @@ bin/*
 /.vagrant
 
 bin/
-repositories/
+mirrors/
 

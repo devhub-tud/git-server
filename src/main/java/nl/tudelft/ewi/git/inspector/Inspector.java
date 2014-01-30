@@ -3,7 +3,10 @@ package nl.tudelft.ewi.git.inspector;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +17,8 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
@@ -22,8 +27,11 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
 import com.google.common.base.Function;
+import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
@@ -137,9 +145,9 @@ public class Inspector {
 			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
 			
 			List<DiffEntry> diffs = git.diff()
-			        .setNewTree(newTreeIter)
-			        .setOldTree(oldTreeIter)
-			        .call();
+					.setNewTree(newTreeIter)
+					.setOldTree(oldTreeIter)
+					.call();
 			
 			return Collections2.transform(diffs, new Function<DiffEntry, Diff>() {
 				public Diff apply(DiffEntry input) {
@@ -160,7 +168,7 @@ public class Inspector {
 					diff.setChangeType(input.getChangeType());
 					diff.setOldPath(input.getOldPath());
 					diff.setNewPath(input.getNewPath());
-					diff.setRaw(contents);
+					diff.setRaw(contents.split("\\r?\\n"));
 					return diff;
 				}
 			});
@@ -170,13 +178,101 @@ public class Inspector {
 		}
 	}
 	
-	private static AbstractTreeIterator createTreeParser(Git git, String ref) throws IOException, GitAPIException {
+	public Collection<String> showTree(Repository repository, String commitId, String path) throws IOException, GitException {
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		return showTree(git.getRepository(), commitId, path);
+	}
+
+	public InputStream showFile(Repository repository, String commitId, String path) throws IOException, GitException {
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		return showFile(git.getRepository(), commitId, path);
+	}
+
+	private Collection<String> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path) throws GitException, IOException {
+		RevWalk walk = new RevWalk(repo);
+		ObjectId resolvedObjectId = repo.resolve(commitId);
+		RevCommit commit = walk.parseCommit(resolvedObjectId);
+		
+		TreeWalk walker = new TreeWalk(repo);
+		walker.setFilter(TreeFilter.ALL);
+		walker.addTree(commit.getTree());
+		walker.setRecursive(true);
+		
+		if (!path.endsWith("/") && !Strings.isNullOrEmpty(path)) {
+			path += "/";
+		}
+		
+		List<String> handles = Lists.newArrayList();
+		while (walker.next()) {
+			String entryPath = walker.getPathString();
+			if (!entryPath.startsWith(path)) {
+				continue;
+			}
+			
+			String entry = entryPath.substring(path.length());
+			if (entry.contains("/")) {
+				entry = entry.substring(0, entry.indexOf('/') + 1);
+			}
+			
+			handles.add(entry);
+		}
+		
+		if (handles.isEmpty()) {
+			return null;
+		}
+		
+		Collections.sort(handles, new Comparator<String>() {
+			@Override
+			public int compare(String o1, String o2) {
+				if (o1.endsWith("/") && o2.endsWith("/")) {
+					return o1.compareTo(o2);
+				}
+				else if (!o1.endsWith("/") && !o2.endsWith("/")) {
+					return o1.compareTo(o2);
+				}
+				else if (o1.endsWith("/")) {
+					return -1;
+				}
+				return 1;
+			}
+		});
+		
+		return handles;
+	}
+	
+	private InputStream showFile(org.eclipse.jgit.lib.Repository repo, String commitId, String path) throws GitException, IOException {
+		RevWalk walk = new RevWalk(repo);
+		ObjectId resolvedObjectId = repo.resolve(commitId);
+		RevCommit commit = walk.parseCommit(resolvedObjectId);
+		
+		TreeWalk walker = new TreeWalk(repo);
+		walker.setFilter(TreeFilter.ALL);
+		walker.addTree(commit.getTree());
+		walker.setRecursive(true);
+		
+		while (walker.next()) {
+			String entryPath = walker.getPathString();
+			if (!entryPath.startsWith(path)) {
+				continue;
+			}
+
+			ObjectId objectId = walker.getObjectId(0);
+			ObjectLoader loader = repo.open(objectId);
+			return loader.openStream();
+		}
+		
+		return null;
+	}
+	
+	private AbstractTreeIterator createTreeParser(Git git, String ref) throws IOException, GitAPIException {
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 		
 		RevWalk walk = new RevWalk(repo);
 		RevCommit commit = walk.parseCommit(repo.resolve(ref));
 		RevTree tree = walk.parseTree(commit.getTree().getId());
-		
+
 		CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
 		ObjectReader oldReader = repo.newObjectReader();
 		try {

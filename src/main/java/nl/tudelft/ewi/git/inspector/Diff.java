@@ -21,7 +21,7 @@ public class Diff extends LinkedHashMap<String, Object> {
 		put("newPath", newPath);
 	}
 
-	public void setRaw(String raw) {
+	public void setRaw(String... raw) {
 		put("raw", raw);
 	}
 	

@@ -1,6 +1,7 @@
 package nl.tudelft.ewi.git.web;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 
 import javax.inject.Inject;
@@ -22,6 +23,7 @@ import nl.minicom.gitolite.manager.models.ConfigManager;
 import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
+import nl.tudelft.ewi.git.inspector.Commit;
 import nl.tudelft.ewi.git.inspector.Diff;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.web.models.DetailedRepositoryModel;
@@ -89,11 +91,50 @@ public class RepositoriesAPI {
 	}
 	
 	@GET
+	@Path("{repoId}/commits")
+	public Collection<Commit> listCommits(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable, GitException {
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, repoId);
+		return inspector.listCommits(repository);
+	}
+	
+	@GET
 	@Path("{repoId}/diff/{oldId}/{newId}")
 	public Collection<Diff> calculateDiff(@PathParam("repoId") String repoId, @PathParam("oldId") String oldId, @PathParam("newId") String newId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, repoId);
 		return inspector.calculateDiff(repository, oldId, newId);
+	}
+	
+	@GET
+	@Path("{repoId}/tree/{commitId}")
+	public Collection<String> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId) throws IOException, ServiceUnavailable, GitException {
+		return showTree(repoId, commitId, "");
+	}
+
+	@GET
+	@Path("{repoId}/tree/{commitId}/{path:.*}")
+	public Collection<String> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId, @PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, repoId);
+		Collection<String> entries = inspector.showTree(repository, commitId, path);
+		if (entries == null) {
+			throw new NotFoundException();
+		}
+		return entries; 
+	}
+
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	@Path("{repoId}/file/{commitId}/{path:.*}")
+	public InputStream showFile(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId, @PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, repoId);
+		InputStream stream = inspector.showFile(repository, commitId, path);
+		if (stream == null) {
+			throw new NotFoundException();
+		}
+		return stream;
 	}
 
 	private User fetchUser(Config config, String userId) {
