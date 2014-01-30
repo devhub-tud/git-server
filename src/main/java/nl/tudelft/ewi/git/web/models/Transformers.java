@@ -140,11 +140,11 @@ public class Transformers {
 				}
 				
 				try {
-					model.setCommits(inspector.listCommits(input));
+					model.setRecentCommits(inspector.listCommits(input, 10));
 				}
 				catch (IOException | GitException e) {
 					log.error(e.getMessage(), e);
-					model.setCommits(Collections.<Commit>emptyList());
+					model.setRecentCommits(Collections.<Commit>emptyList());
 				}
 				
 				return model;

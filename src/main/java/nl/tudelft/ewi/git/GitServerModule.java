@@ -30,7 +30,7 @@ public class GitServerModule extends AbstractModule {
 		findResourcesWith(Provider.class);
 		
 		bind(ConfigManager.class).toInstance(ConfigManager.create("ssh://git@localhost:2222/gitolite-admin.git"));
-		bind(Inspector.class).toInstance(new Inspector(new File("repositories")));
+		bind(Inspector.class).toInstance(new Inspector(new File("mirrors")));
 	}
 
 	private void findResourcesWith(Class<? extends Annotation> ann) {
