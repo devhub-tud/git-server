@@ -11,9 +11,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		vb.customize ["modifyvm", :id, "--memory", 512, "--cpus", 1]
 	end
 
-	config.vm.synced_folder "~/.ssh", "/shared"
+	config.vm.synced_folder "~/.ssh", "/keys"
+	config.vm.synced_folder "puppet/files", "/vagrant/files"
+	
 	config.vm.provision "puppet" do |puppet|
 		puppet.options = "--verbose --debug"
+		puppet.manifests_path = "puppet/manifests"
 	end
 	
 end
