@@ -23,4 +23,4 @@ Now you should have a VM running Gitolite. Next you can import the project into 
 
 ### Limitations ###
 
-In order for the `diff` operation to work, you need to create a `/repositories` folder in the root folder of the project and clone the git repositories you wish to `diff` on to this folder. Currently it's not yet possible to share or synchronize this folder with the Gitolite VM to automate this process.
+In order for the `diff`, `tree` and `file` resources to work, you need to create a `/mirrors` folder in the root folder of the project and clone the git repositories you wish to view diffs, trees and files of into this folder. Currently it's not yet possible to automatically share or synchronize this folder with the Gitolite VM to automate this process.
