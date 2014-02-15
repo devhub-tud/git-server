@@ -7,6 +7,11 @@ import lombok.EqualsAndHashCode;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
+/**
+ * This model represents a simplified view of a group or user in the Gitolite config.
+ *
+ * @author michael
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class IdentifiableModel extends BaseModel {
