@@ -7,6 +7,11 @@ import lombok.EqualsAndHashCode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * This model represents a view of a user in the Gitolite config.
+ *
+ * @author michael
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)

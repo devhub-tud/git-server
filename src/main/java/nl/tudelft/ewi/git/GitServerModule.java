@@ -18,19 +18,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 
 @Slf4j
-public class GitServerModule extends AbstractModule {
-	
+class GitServerModule extends AbstractModule {
+
+	private final ConfigManager configManager;
+	private final File mirrorsDirectory;
+
+	/**
+	 * Constructs a new {@link GitServerModule} object which specifies how to configure the {@link GitServer}.
+	 * 
+	 * @param configManager
+	 *        The {@link ConfigManager} to use when interacting with the Gitolite-admin repository.
+	 * @param mirrorsDirectory
+	 *        The location of the mirrors directory which is used to run diff, tree and file inspection commands.
+	 */
+	public GitServerModule(ConfigManager configManager, File mirrorsDirectory) {
+		this.configManager = configManager;
+		this.mirrorsDirectory = mirrorsDirectory;
+	}
+
 	@Override
 	protected void configure() {
 		install(new RequestScopeModule());
 		install(new JaxrsModule());
 		requireBinding(ObjectMapper.class);
-		
+
 		findResourcesWith(Path.class);
 		findResourcesWith(Provider.class);
-		
-		bind(ConfigManager.class).toInstance(ConfigManager.create("ssh://git@localhost:2222/gitolite-admin.git"));
-		bind(Inspector.class).toInstance(new Inspector(new File("mirrors")));
+
+		bind(ConfigManager.class).toInstance(configManager);
+		bind(Inspector.class).toInstance(new Inspector(mirrorsDirectory));
 	}
 
 	private void findResourcesWith(Class<? extends Annotation> ann) {

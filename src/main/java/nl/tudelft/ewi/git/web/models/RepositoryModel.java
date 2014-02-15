@@ -7,6 +7,11 @@ import lombok.EqualsAndHashCode;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
+/**
+ * This model represents a view of a repository in the Gitolite config.
+ *
+ * @author michael
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class RepositoryModel extends BaseModel {

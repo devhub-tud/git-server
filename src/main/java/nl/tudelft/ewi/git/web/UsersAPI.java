@@ -34,15 +34,20 @@ import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve, list, create, and
+ * remove users in the Gitolite configuration.
+ * 
+ * @author michael
+ */
 @Path("api/users")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-
 @RequestScoped
 @ValidateRequest
 @RequireAuthentication
 public class UsersAPI {
-	
+
 	private final ConfigManager manager;
 
 	@Inject
@@ -50,12 +55,37 @@ public class UsersAPI {
 		this.manager = manager;
 	}
 
+	/**
+	 * This will list all users currently in the Gitolite configuration.
+	 * 
+	 * @return A {@link Collection} of {@link IdentifiableModel}s, each representing a user in the Gitolite
+	 *         configuration.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@GET
 	public Collection<IdentifiableModel> listAllUsers() throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
 		return Collections2.transform(config.getUsers(), Transformers.identifiables());
 	}
-	
+
+	/**
+	 * This will retrieve a representation of a specific user in the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to retrieve.
+	 * @return A {@link UserModel} representation of the specified user.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@GET
 	@Path("{userId}")
 	public UserModel getUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, GitException {
@@ -63,9 +93,26 @@ public class UsersAPI {
 		User user = fetchUser(config, userId);
 		return Transformers.users().apply(user);
 	}
-	
+
+	/**
+	 * This creates a new user in the Gitolite configuration and returns a representation of it.
+	 * 
+	 * @param model
+	 *        A {@link UserModel} describing the properties of the user.
+	 * @return A {@link UserModel} representing the final properties of the created user.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws ModificationException
+	 *         If the modification conflicted with another request.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@POST
-	public UserModel createNewUser(@Valid UserModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
+	public UserModel createNewUser(@Valid UserModel model) throws IOException, ServiceUnavailable,
+			ModificationException, GitException {
+
 		Config config = manager.get();
 		User user = config.createUser(model.getName());
 		if (model.getKeys() != null) {
@@ -76,76 +123,160 @@ public class UsersAPI {
 		manager.apply(config);
 		return Transformers.users().apply(user);
 	}
-	
+
+	/**
+	 * This removes an existing user from the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to remove.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws ModificationException
+	 *         If the modification conflicted with another request.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@DELETE
 	@Path("{userId}")
-	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, ModificationException, GitException {
+	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable,
+			ModificationException, GitException {
+
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		config.removeUser(user);
 		manager.apply(config);
 	}
-	
+
+	/**
+	 * This lists all the SSH keys of a specific user in the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to list all SSH keys of.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@GET
 	@Path("{userId}/keys")
-	public Collection<SshKeyModel> listSshKeys(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, GitException {
+	public Collection<SshKeyModel> listSshKeys(@PathParam("userId") String userId) throws IOException,
+			ServiceUnavailable, GitException {
+
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		return Collections2.transform(user.getKeys().entrySet(), Transformers.sshKeys(user));
 	}
-	
+
+	/**
+	 * This returns a representation of the specified SSH key of a specific user in the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to return the SSH key of.
+	 * @param keyId
+	 *        The <code>name</code> of the SSH key.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@GET
 	@Path("{userId}/keys/{keyId}")
-	public SshKeyModel retrieveSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable, GitException {
+	public SshKeyModel retrieveSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId)
+			throws IOException, ServiceUnavailable, GitException {
+
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		if (!keyId.endsWith(user.getName() + ".pub")) {
 			throw new IllegalArgumentException("The user: " + user.getName() + " is not the owner of the key: " + keyId);
 		}
-		
+
 		ImmutableMap<String, String> keys = user.getKeys();
 		String keyName = stripUsername(keyId);
 		String key = keys.get(keyName);
 		if (key == null) {
 			throw new NotFoundException("Could not find SSH key: " + keyId);
 		}
-		
+
 		return Transformers.sshKeys(user).apply(ImmutablePair.of(keyName, key));
 	}
-	
+
+	/**
+	 * This adds a new SSH key to a user in the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to add a SSH key to.
+	 * @param model
+	 *        The {@link SshKeyModel} describing the SSH key to add.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws ModificationException
+	 *         If the modification conflicted with another request.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@POST
 	@Path("{userId}/keys")
-	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel sshKey) throws IOException, ServiceUnavailable, ModificationException, GitException {
+	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel model) throws IOException,
+			ServiceUnavailable, ModificationException, GitException {
+
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
-		if (!sshKey.getName().endsWith(user.getName() + ".pub")) {
-			throw new IllegalArgumentException("The name of the key must be either of the form: <key_name>@" + user.getName() + ".pub or " + user.getName() + ".pub");
+		if (!model.getName().endsWith(user.getName() + ".pub")) {
+			throw new IllegalArgumentException("The name of the key must be either of the form: <key_name>@"
+					+ user.getName() + ".pub or " + user.getName() + ".pub");
 		}
-		
-		String keyName = stripUsername(sshKey.getName());
+
+		String keyName = stripUsername(model.getName());
 		if (user.getKeys().containsKey(keyName)) {
-			throw new IllegalArgumentException("A key with name: \"" + sshKey.getName() + "\" already exists!");
+			throw new IllegalArgumentException("A key with name: \"" + model.getName() + "\" already exists!");
 		}
-		user.setKey(keyName, sshKey.getContents());
+		user.setKey(keyName, model.getContents());
 		manager.apply(config);
-		
-		return Transformers.sshKeys(user).apply(ImmutablePair.of(keyName, sshKey.getContents())); 
+
+		return Transformers.sshKeys(user).apply(ImmutablePair.of(keyName, model.getContents()));
 	}
-	
+
+	/**
+	 * This removes a specific SSH key from a user in the Gitolite configuration.
+	 * 
+	 * @param userId
+	 *        The <code>name</code> of the user to remove a SSH key from.
+	 * @param keyId
+	 *        The <code>name</code> of the SSH key to remove.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws ModificationException
+	 *         If the modification conflicted with another request.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
 	@DELETE
 	@Path("{userId}/keys/{keyId}")
-	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException, ServiceUnavailable, ModificationException, GitException {
+	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException,
+			ServiceUnavailable, ModificationException, GitException {
+
 		Config config = manager.get();
 		User user = fetchUser(config, userId);
 		if (!keyId.endsWith(user.getName() + ".pub")) {
 			throw new IllegalArgumentException("The user: " + user.getName() + " is not the owner of the key: " + keyId);
 		}
-				
+
 		String keyName = stripUsername(keyId);
 		if (!user.getKeys().containsKey(keyName)) {
-			throw new IllegalArgumentException("User: \"" + userId + "\" doesn't own any keys named: \"" + keyId + "\"!");
+			throw new IllegalArgumentException("User: \"" + userId + "\" doesn't own any keys named: \"" + keyId
+					+ "\"!");
 		}
-		
+
 		user.removeKey(keyName);
 		manager.apply(config);
 	}
@@ -157,7 +288,6 @@ public class UsersAPI {
 		}
 		return user;
 	}
-	
 
 	private String stripUsername(String fullKeyName) {
 		if (fullKeyName.contains("@")) {
@@ -165,5 +295,5 @@ public class UsersAPI {
 		}
 		return "";
 	}
-	
+
 }
