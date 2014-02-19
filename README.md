@@ -14,7 +14,7 @@ Great! In order to setup a development environment you'll need to have installed
 When you have succesfully installed the forementioned software you can run the following commands. These will clone this repository, and boot up a VirtualBox machine and provision it with a Gitolite installation:
 
 ```bash
-git clone git@github.com:michaeldejong/git-server.git
+git clone git@github.com:devhub-tud/git-server.git
 cd git-server/
 vagrant up --provision
 ```
@@ -23,4 +23,4 @@ Now you should have a VM running Gitolite. Next you can import the project into 
 
 ### Limitations ###
 
-In order for the `diff`, `tree` and `file` resources to work, you need to create a `/mirrors` folder in the root folder of the project and clone the git repositories you wish to view diffs, trees and files of into this folder. Currently it's not yet possible to automatically share or synchronize this folder with the Gitolite VM to automate this process.
+In order for the `diff`, `tree` and `file` resources to work, you need to create a `/mirrors` folder in the root folder of the project and clone the git repositories you wish to view diffs, trees and files of into this folder. Currently it's not yet possible to automatically share or synchronize this folder with the Gitolite VM to automate this process. In production (where the Git-Server project runs on the same machine as the Gitolite installation) you do not have this problem.
