@@ -141,9 +141,6 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
-			<resource>
-				<directory>target/metamodel</directory>
-			</resource>
 		</resources>
 		<plugins>
 			<plugin>
@@ -155,22 +152,6 @@
 						<annotationProcessor>lombok.core.AnnotationProcessor</annotationProcessor>
 					</annotationProcessors>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>com.mysema.maven</groupId>
-				<artifactId>maven-apt-plugin</artifactId>
-				<version>1.0.4</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>process</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>target/metamodel</outputDirectory>
-							<processor>com.mysema.query.apt.jpa.JPAAnnotationProcessor</processor>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
