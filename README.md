@@ -14,22 +14,22 @@ We're expecting that you've already installed the following prequisites:
 
 ### Installing `git-server`
 
-1. Create a new folder `/etc/git-server`:
+* Create a new folder `/etc/git-server`:
 ```bash
 mkdir /etc/git-server
 ```
 
-2. Create another folder `/etc/git-server/mirrors`.
+* Create another folder `/etc/git-server/mirrors`.
 ```bash
 mkdir /etc/git-server/mirrors
 ```
 	
-3. Ensure that this folder is owned by the `git` user (same user as used in the Gitolite installation):
+* Ensure that this folder is owned by the `git` user (same user as used in the Gitolite installation):
 ```bash
 chown -R git:git /etc/git-server
 ```
 
-4. Create a start-stop script in `/etc/init.d/git-server`
+* Create a start-stop script in `/etc/init.d/git-server`
 ```bash
 #!/bin/bash
 
@@ -125,12 +125,12 @@ esac
 exit 0
 ```
 
-5. Ensure that this file executable:
+* Ensure that this file executable:
 ```bash
 chmod +x /etc/init.d/git-server
 ```
 
-6. Deploying git-server:
+* Deploying git-server:
 ```bash
 /etc/init.d/git-server deploy
 ```
@@ -139,16 +139,37 @@ chmod +x /etc/init.d/git-server
 
 `Git-server` allows you to query the contents of Git repositories hosted on Gitolite through the REST API. In order to do this it needs to have up-to-date checkouts of all Git repositories. These will be stored in the previously create `/etc/git-server/mirrors` folder. You can set up this synchronization using a Git hook. 
 
-1. Create the following file `/home/git/.gitolite/hooks/common/post-receive` with the following contents:
+* Create the following file `/home/git/.gitolite/hooks/common/post-receive` with the following contents:
 ```bash
+#!/bin/bash
+
+WORK_DIR="/home/git/mirrors"
+REPO_URL="$PWD"
+
+if [ $(git rev-parse --is-bare-repository) = true ]
+then
+	REPO_NAME=$(basename "$PWD")
+	REPO_NAME=${REPO_NAME%.git}
+else
+	REPO_NAME=$(basename $(readlink -nf "$PWD"/..))
+fi
+
+if [ -d "$WORK_DIR/$REPO_NAME" ]; then
+	cd "$WORK_DIR/$REPO_NAME"
+	unset GIT_DIR
+	git pull -q
+else
+	cd "$WORK_DIR"
+	git clone -q "$REPO_URL" "$REPO_NAME"
+fi
 ```
 
-2. Ensure that the file is executable
+* Ensure that the file is executable
 ```bash
 chmod +x /home/git/.gitolite/hooks/common/post-receive
 ```
 
-3. Tell Gitolite to use the new hook
+* Tell Gitolite to use the new hook
 ```bash
 /home/git/bin/gitolite setup --hooks-only
 ```
