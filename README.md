@@ -128,6 +128,7 @@ exit 0
 5. Ensure that this file executable:
 ```bash
 chmod +x /etc/init.d/git-server
+```
 
 6. Deploying git-server:
 ```bash
