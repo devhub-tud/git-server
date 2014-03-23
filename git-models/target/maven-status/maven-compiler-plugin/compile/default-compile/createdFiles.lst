@@ -1,0 +1,12 @@
+nl/tudelft/ewi/git/models/SshKeyModel.class
+nl/tudelft/ewi/git/models/DetailedRepositoryModel.class
+nl/tudelft/ewi/git/models/RepositoryModel.class
+nl/tudelft/ewi/git/models/BranchModel.class
+nl/tudelft/ewi/git/models/IdentifiableModel.class
+nl/tudelft/ewi/git/models/TagModel.class
+nl/tudelft/ewi/git/models/DiffModel.class
+nl/tudelft/ewi/git/models/UserModel.class
+nl/tudelft/ewi/git/models/BaseModel.class
+nl/tudelft/ewi/git/models/CommitModel.class
+nl/tudelft/ewi/git/models/GroupModel.class
+nl/tudelft/ewi/git/models/DiffModel$Type.class
