@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.web;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.Map.Entry;
 
@@ -16,6 +17,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import lombok.SneakyThrows;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
@@ -98,7 +100,7 @@ public class RepositoriesAPI {
 			ServiceUnavailable, GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
+		Repository repository = fetchRepository(config, decode(repoId));
 		return Transformers.detailedRepositories(inspector).apply(repository);
 	}
 
@@ -163,7 +165,7 @@ public class RepositoriesAPI {
 			ModificationException, GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
+		Repository repository = fetchRepository(config, decode(repoId));
 		config.removeRepository(repository);
 		manager.apply(config);
 	}
@@ -186,7 +188,7 @@ public class RepositoriesAPI {
 			GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
+		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.listCommits(repository);
 	}
 
@@ -212,8 +214,8 @@ public class RepositoriesAPI {
 			@PathParam("newId") String newId) throws IOException, ServiceUnavailable, GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
-		return inspector.calculateDiff(repository, oldId, newId);
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.calculateDiff(repository, decode(oldId), decode(newId));
 	}
 
 	/**
@@ -255,13 +257,13 @@ public class RepositoriesAPI {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@GET
-	@Path("{repoId}/tree/{commitId}/{path:.*}")
+	@Path("{repoId}/tree/{commitId}/{path}")
 	public Collection<String> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
 			@PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
-		Collection<String> entries = inspector.showTree(repository, commitId, path);
+		Repository repository = fetchRepository(config, decode(repoId));
+		Collection<String> entries = inspector.showTree(repository, decode(commitId), decode(path));
 		if (entries == null) {
 			throw new NotFoundException();
 		}
@@ -287,13 +289,13 @@ public class RepositoriesAPI {
 	 */
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
-	@Path("{repoId}/file/{commitId}/{path:.*}")
+	@Path("{repoId}/file/{commitId}/{path}")
 	public InputStream showFile(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
 			@PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
 		
 		Config config = manager.get();
-		Repository repository = fetchRepository(config, repoId);
-		InputStream stream = inspector.showFile(repository, commitId, path);
+		Repository repository = fetchRepository(config, decode(repoId));
+		InputStream stream = inspector.showFile(repository, decode(commitId), decode(path));
 		if (stream == null) {
 			throw new NotFoundException();
 		}
@@ -322,5 +324,10 @@ public class RepositoriesAPI {
 			throw new NotFoundException("Could not find repository: " + repoId);
 		}
 		return repository;
+	}
+	
+	@SneakyThrows
+	private String decode(String value) {
+		return URLDecoder.decode(value, "UTF-8");
 	}
 }
