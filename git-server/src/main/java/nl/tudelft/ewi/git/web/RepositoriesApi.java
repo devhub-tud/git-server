@@ -2,7 +2,6 @@ package nl.tudelft.ewi.git.web;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.Map.Entry;
 
@@ -12,12 +11,12 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import lombok.SneakyThrows;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
@@ -52,13 +51,13 @@ import com.google.common.collect.Collections2;
 @RequireAuthentication
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class RepositoriesAPI {
+public class RepositoriesApi extends BaseApi {
 
 	private final ConfigManager manager;
 	private final Inspector inspector;
 
 	@Inject
-	public RepositoriesAPI(ConfigManager manager, Inspector inspector) {
+	public RepositoriesApi(ConfigManager manager, Inspector inspector) {
 		this.manager = manager;
 		this.inspector = inspector;
 	}
@@ -125,6 +124,48 @@ public class RepositoriesAPI {
 		
 		Config config = manager.get();
 		Repository repository = config.createRepository(model.getName());
+
+		for (Entry<String, String> permission : model.getPermissions().entrySet()) {
+			String identifiable = permission.getKey();
+			Permission level = Permission.getByLevel(permission.getValue());
+			if (identifiable.startsWith("@")) {
+				Group group = fetchGroup(config, identifiable);
+				repository.setPermission(group, level);
+			}
+			else {
+				User user = fetchUser(config, identifiable);
+				repository.setPermission(user, level);
+			}
+		}
+		
+		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
+
+		manager.apply(config);
+		return Transformers.detailedRepositories(inspector).apply(repository);
+	}
+
+	/**
+	 * This updates an existing repository in the Gitolite configuration and returns a representation of it.
+	 * 
+	 * @param model
+	 *        A {@link RepositoryModel} describing the properties of the repository.
+	 * @return A {@link DetailedRepositoryModel} representing the final properties of the updated repository.
+	 * @throws IOException
+	 *         If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *         If the service could not be reached.
+	 * @throws ModificationException
+	 *         If the modification conflicted with another request.
+	 * @throws GitException
+	 *         If an exception occurred while using the Git API.
+	 */
+	@PUT
+	@Path("{repoId}")
+	public DetailedRepositoryModel updateRepository(@PathParam("repoId") String repoId, RepositoryModel model) throws IOException, ServiceUnavailable,
+			ModificationException, GitException {
+		
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
 
 		for (Entry<String, String> permission : model.getPermissions().entrySet()) {
 			String identifiable = permission.getKey();
@@ -301,33 +342,5 @@ public class RepositoriesAPI {
 		}
 		return stream;
 	}
-
-	private User fetchUser(Config config, String userId) {
-		User user = config.getUser(userId);
-		if (user == null) {
-			throw new NotFoundException("Could not find user: " + userId);
-		}
-		return user;
-	}
 	
-	private Group fetchGroup(Config config, String groupId) {
-		Group group = config.getGroup(groupId);
-		if (group == null) {
-			throw new NotFoundException("Could not find group: " + groupId);
-		}
-		return group;
-	}
-
-	private Repository fetchRepository(Config config, String repoId) {
-		Repository repository = config.getRepository(repoId);
-		if (repository == null) {
-			throw new NotFoundException("Could not find repository: " + repoId);
-		}
-		return repository;
-	}
-	
-	@SneakyThrows
-	private String decode(String value) {
-		return URLDecoder.decode(value, "UTF-8");
-	}
 }

@@ -45,12 +45,12 @@ import com.google.common.collect.Collections2;
 @RequireAuthentication
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class GroupsAPI {
+public class GroupsApi extends BaseApi {
 
 	private final ConfigManager manager;
 
 	@Inject
-	public GroupsAPI(ConfigManager manager) {
+	public GroupsApi(ConfigManager manager) {
 		this.manager = manager;
 	}
 
@@ -91,7 +91,7 @@ public class GroupsAPI {
 			GitException {
 		
 		Config config = manager.get();
-		Group group = fetchGroup(config, groupId);
+		Group group = fetchGroup(config, decode(groupId));
 		return Transformers.groups().apply(group);
 	}
 
@@ -151,7 +151,7 @@ public class GroupsAPI {
 			ModificationException, GitException {
 		
 		Config config = manager.get();
-		Group group = fetchGroup(config, groupId);
+		Group group = fetchGroup(config, decode(groupId));
 		config.removeGroup(group);
 		manager.apply(config);
 	}
@@ -174,7 +174,7 @@ public class GroupsAPI {
 			GitException {
 		
 		Config config = manager.get();
-		Group group = fetchGroup(config, groupId);
+		Group group = fetchGroup(config, decode(groupId));
 		return Collections2.transform(group.getAllMembers(), Transformers.detailedIdentifiables());
 	}
 
@@ -200,7 +200,7 @@ public class GroupsAPI {
 			@Valid IdentifiableModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 		
 		Config config = manager.get();
-		Group group = fetchGroup(config, groupId);
+		Group group = fetchGroup(config, decode(groupId));
 
 		if (model instanceof UserModel) {
 			group.add(fetchUser(config, model.getName()));
@@ -235,7 +235,9 @@ public class GroupsAPI {
 			throws IOException, ServiceUnavailable, ModificationException, GitException {
 		
 		Config config = manager.get();
-		Group group = fetchGroup(config, groupId);
+		Group group = fetchGroup(config, decode(groupId));
+		identifiableId = decode(identifiableId);
+		
 		if (identifiableId.startsWith("@")) {
 			Group subGroup = fetchGroup(config, identifiableId);
 			if (!group.containsGroup(subGroup)) {
@@ -252,22 +254,6 @@ public class GroupsAPI {
 			group.remove(member);
 		}
 		manager.apply(config);
-	}
-
-	private Group fetchGroup(Config config, String groupId) {
-		Group group = config.getGroup(groupId);
-		if (group == null) {
-			throw new NotFoundException("Could not find group: " + groupId);
-		}
-		return group;
-	}
-
-	private User fetchUser(Config config, String name) {
-		User user = config.getUser(name);
-		if (user == null) {
-			throw new NotFoundException("Could not find user: " + name);
-		}
-		return user;
 	}
 
 }
