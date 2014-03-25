@@ -55,7 +55,7 @@ public class Transformers {
 				GroupModel model = new GroupModel();
 				model.setName(input.getName());
 				model.setMembers(members);
-				model.setPath("/api/groups/" + input.getName());
+				model.setPath("/api/groups/" + encode(input.getName()));
 				return model;
 			}
 		};
@@ -73,10 +73,10 @@ public class Transformers {
 				model.setName(input.getName());
 
 				if (input instanceof Group) {
-					model.setPath("/api/groups/" + input.getName());
+					model.setPath("/api/groups/" + encode(input.getName()));
 				}
 				else {
-					model.setPath("/api/users/" + input.getName());
+					model.setPath("/api/users/" + encode(input.getName()));
 				}
 
 				return model;
@@ -189,7 +189,7 @@ public class Transformers {
 				SshKeyModel model = new SshKeyModel();
 				model.setContents(input.getValue());
 				model.setName(keyId);
-				model.setPath("/api/users/" + owner.getName() + "/keys/" + keyId);
+				model.setPath("/api/users/" + encode(owner.getName()) + "/keys/" + encode(keyId));
 				return model;
 			}
 		};
@@ -205,7 +205,7 @@ public class Transformers {
 				UserModel model = new UserModel();
 				model.setName(input.getName());
 				model.setKeys(Collections2.transform(input.getKeys().entrySet(), sshKeys(input)));
-				model.setPath("/api/users/" + input.getName());
+				model.setPath("/api/users/" + encode(input.getName()));
 				return model;
 			}
 		};

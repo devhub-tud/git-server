@@ -46,12 +46,12 @@ import com.google.common.collect.ImmutableMap;
 @RequestScoped
 @ValidateRequest
 @RequireAuthentication
-public class UsersAPI {
+public class UsersApi extends BaseApi {
 
 	private final ConfigManager manager;
 
 	@Inject
-	public UsersAPI(ConfigManager manager) {
+	public UsersApi(ConfigManager manager) {
 		this.manager = manager;
 	}
 
@@ -90,7 +90,7 @@ public class UsersAPI {
 	@Path("{userId}")
 	public UserModel getUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
-		User user = fetchUser(config, userId);
+		User user = fetchUser(config, decode(userId));
 		return Transformers.users().apply(user);
 	}
 
@@ -144,7 +144,7 @@ public class UsersAPI {
 			ModificationException, GitException {
 
 		Config config = manager.get();
-		User user = fetchUser(config, userId);
+		User user = fetchUser(config, decode(userId));
 		config.removeUser(user);
 		manager.apply(config);
 	}
@@ -167,7 +167,7 @@ public class UsersAPI {
 			ServiceUnavailable, GitException {
 
 		Config config = manager.get();
-		User user = fetchUser(config, userId);
+		User user = fetchUser(config, decode(userId));
 		return Collections2.transform(user.getKeys().entrySet(), Transformers.sshKeys(user));
 	}
 
@@ -190,12 +190,13 @@ public class UsersAPI {
 	public SshKeyModel retrieveSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId)
 			throws IOException, ServiceUnavailable, GitException {
 
+		keyId = decode(keyId);
 		if (keyId.equals("default")) {
 			keyId = "";
 		}
 		
 		Config config = manager.get();
-		User user = fetchUser(config, userId);
+		User user = fetchUser(config, decode(userId));
 		ImmutableMap<String, String> keys = user.getKeys();
 		if (!keys.containsKey(keyId)) {
 			throw new IllegalArgumentException("The user: " + user.getName() + " doesn't own any keys named: \"" + keyId + "\"!");
@@ -231,7 +232,7 @@ public class UsersAPI {
 			ServiceUnavailable, ModificationException, GitException {
 
 		Config config = manager.get();
-		User user = fetchUser(config, userId);
+		User user = fetchUser(config, decode(userId));
 		String keyId = model.getName();
 		if (keyId.equals("default")) {
 			keyId = "";
@@ -268,6 +269,8 @@ public class UsersAPI {
 	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException,
 			ServiceUnavailable, ModificationException, GitException {
 
+		keyId = decode(keyId);
+		userId = decode(userId);
 		if (keyId.equals("default")) {
 			keyId = "";
 		}
@@ -280,14 +283,6 @@ public class UsersAPI {
 
 		user.removeKey(keyId);
 		manager.apply(config);
-	}
-
-	private User fetchUser(Config config, String userId) {
-		User user = config.getUser(userId);
-		if (user == null) {
-			throw new NotFoundException("Could not find user: " + userId);
-		}
-		return user;
 	}
 
 }
