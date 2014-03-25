@@ -20,6 +20,7 @@ import nl.tudelft.ewi.git.models.TagModel;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.diff.DiffFormatter;
@@ -197,6 +198,9 @@ public class Inspector {
 					return commit;
 				}
 			});
+		}
+		catch (NoHeadException e) {
+			return Collections.emptyList();
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);

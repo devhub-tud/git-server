@@ -54,3 +54,6 @@ bin/*
 bin/
 mirrors/
 
+git-client/target/
+git-models/target/
+git-server/target/

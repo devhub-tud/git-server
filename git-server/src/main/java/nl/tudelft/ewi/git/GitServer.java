@@ -112,6 +112,7 @@ public class GitServer {
 			addEventListener(new GuiceResteasyBootstrapServletContextListener() {
 				@Override
 				protected List<Module> getModules(ServletContext context) {
+					// TODO: Fix this...
 					SshSessionFactory.setInstance(new JschConfigSessionFactory() {
 						@Override
 						protected void configure(Host hc, Session session) {

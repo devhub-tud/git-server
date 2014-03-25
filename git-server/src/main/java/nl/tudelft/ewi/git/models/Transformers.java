@@ -1,11 +1,13 @@
 package nl.tudelft.ewi.git.models;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.ConfigManager;
@@ -118,8 +120,8 @@ public class Transformers {
 				RepositoryModel model = new RepositoryModel();
 				model.setName(input.getName());
 				model.setPermissions(permissions);
-				model.setPath("/api/repositories/" + input.getName());
-				model.setUrl("ssh://git@localhost:2222/" + input.getName() + ".git");
+				model.setPath("/api/repositories/" + encode(input.getName()));
+				model.setUrl("ssh://git@devhub.ewi.tudelft.nl/" + input.getName() + ".git");
 				return model;
 			}
 		};
@@ -140,8 +142,8 @@ public class Transformers {
 				DetailedRepositoryModel model = new DetailedRepositoryModel();
 				model.setName(input.getName());
 				model.setPermissions(permissions);
-				model.setPath("/api/repositories/" + input.getName());
-				model.setUrl("ssh://git@localhost:2222/" + input.getName() + ".git");
+				model.setPath("/api/repositories/" + encode(input.getName()));
+				model.setUrl("ssh://git@devhub.ewi.tudelft.nl/" + input.getName() + ".git");
 
 				try {
 					model.setBranches(inspector.listBranches(input));
@@ -207,6 +209,11 @@ public class Transformers {
 				return model;
 			}
 		};
+	}
+
+	@SneakyThrows
+	private static String encode(String value) {
+		return URLEncoder.encode(value, "UTF-8");
 	}
 
 }
