@@ -143,24 +143,25 @@ chmod +x /etc/init.d/git-server
 ```bash
 #!/bin/bash
 
-WORK_DIR="/home/git/mirrors"
+WORK_DIR="/etc/git-server/mirrors"
+REPO_DIR="/home/git/repositories/"
 REPO_URL="$PWD"
 
 if [ $(git rev-parse --is-bare-repository) = true ]
 then
-	REPO_NAME=$(basename "$PWD")
-	REPO_NAME=${REPO_NAME%.git}
+    REPO_NAME=${REPO_URL#$REPO_DIR}
+    REPO_NAME=${REPO_NAME%.git}
 else
-	REPO_NAME=$(basename $(readlink -nf "$PWD"/..))
+    REPO_NAME=$(basename $(readlink -nf "$PWD"/..))
 fi
 
 if [ -d "$WORK_DIR/$REPO_NAME" ]; then
-	cd "$WORK_DIR/$REPO_NAME"
-	unset GIT_DIR
-	git pull -q
+    cd "$WORK_DIR/$REPO_NAME"
+    unset GIT_DIR
+    git pull -q
 else
-	cd "$WORK_DIR"
-	git clone -q "$REPO_URL" "$REPO_NAME"
+    cd "$WORK_DIR"
+    git clone -q "$REPO_URL" "$REPO_NAME"
 fi
 ```
 
