@@ -1,8 +1,12 @@
 package nl.tudelft.ewi.git.client;
 
+import java.net.URLEncoder;
+
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+
+import lombok.SneakyThrows;
 
 class Backend {
 
@@ -18,6 +22,11 @@ class Backend {
 	
 	String getHost() {
 		return host;
+	}
+	
+	@SneakyThrows
+	String encode(String value) {
+		return URLEncoder.encode(value, "UTF-8");
 	}
 	
 	String createUrl(String path) {

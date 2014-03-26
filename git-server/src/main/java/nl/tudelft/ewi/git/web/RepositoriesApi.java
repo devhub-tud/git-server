@@ -3,6 +3,7 @@ package nl.tudelft.ewi.git.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.inject.Inject;
@@ -201,6 +202,8 @@ public class RepositoriesApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
+	@Consumes(MediaType.WILDCARD)
+	@Produces(MediaType.WILDCARD)
 	@Path("{repoId}")
 	public void deleteRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
@@ -225,7 +228,7 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/commits")
-	public Collection<CommitModel> listCommits(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable,
+	public List<CommitModel> listCommits(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable,
 			GitException {
 		
 		Config config = manager.get();
