@@ -151,7 +151,7 @@ public class Inspector {
 	 * @throws GitException
 	 *         In case the Git repository could not be interacted with.
 	 */
-	public Collection<CommitModel> listCommits(Repository repository) throws IOException, GitException {
+	public List<CommitModel> listCommits(Repository repository) throws IOException, GitException {
 		return listCommits(repository, Integer.MAX_VALUE);
 	}
 
@@ -170,37 +170,34 @@ public class Inspector {
 	 * @throws GitException
 	 *         In case the Git repository could not be interacted with.
 	 */
-	public Collection<CommitModel> listCommits(Repository repository, int limit) throws IOException, GitException {
+	public List<CommitModel> listCommits(Repository repository, int limit) throws IOException, GitException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			Iterable<RevCommit> results = git.log().setMaxCount(limit).call();
-
-			List<RevCommit> commits = Lists.newArrayList(results);
-			return Collections2.transform(commits, new Function<RevCommit, CommitModel>() {
-				@Override
-				public CommitModel apply(RevCommit input) {
-					RevCommit[] parents = input.getParents();
-					String[] parentIds = new String[parents.length];
-					for (int i = 0; i < parents.length; i++) {
-						parentIds[i] = parents[i].getId().getName();
-					}
-
-					PersonIdent committerIdent = input.getCommitterIdent();
-
-					CommitModel commit = new CommitModel();
-					commit.setCommit(input.getId().getName());
-					commit.setParents(parentIds);
-					commit.setTime(input.getCommitTime());
-					commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
-					commit.setMessage(input.getShortMessage());
-					return commit;
+			Iterable<RevCommit> revCommits = git.log().setMaxCount(limit).call();
+			List<CommitModel> commits = Lists.newArrayList();
+			for (RevCommit revCommit : revCommits) {
+				RevCommit[] parents = revCommit.getParents();
+				String[] parentIds = new String[parents.length];
+				for (int i = 0; i < parents.length; i++) {
+					parentIds[i] = parents[i].getId().getName();
 				}
-			});
+				
+				PersonIdent committerIdent = revCommit.getCommitterIdent();
+				
+				CommitModel commit = new CommitModel();
+				commit.setCommit(revCommit.getId().getName());
+				commit.setParents(parentIds);
+				commit.setTime(revCommit.getCommitTime());
+				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
+				commit.setMessage(revCommit.getShortMessage());
+				commits.add(commit);
+			}
+			return commits;
 		}
 		catch (NoHeadException e) {
-			return Collections.emptyList();
+			return Lists.newArrayList();
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);

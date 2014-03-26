@@ -139,6 +139,8 @@ public class UsersApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
+	@Consumes(MediaType.WILDCARD)
+	@Produces(MediaType.WILDCARD)
 	@Path("{userId}")
 	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
@@ -265,6 +267,8 @@ public class UsersApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
+	@Consumes(MediaType.WILDCARD)
+	@Produces(MediaType.WILDCARD)
 	@Path("{userId}/keys/{keyId}")
 	public void deleteSshKey(@PathParam("userId") String userId, @PathParam("keyId") String keyId) throws IOException,
 			ServiceUnavailable, ModificationException, GitException {

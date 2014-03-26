@@ -146,6 +146,8 @@ public class GroupsApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
+	@Consumes(MediaType.WILDCARD)
+	@Produces(MediaType.WILDCARD)
 	@Path("{groupId}")
 	public void deleteGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
@@ -170,8 +172,8 @@ public class GroupsApi extends BaseApi {
 	 */
 	@GET
 	@Path("{groupId}/members")
-	public Collection<?> listMembers(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable,
-			GitException {
+	public Collection<IdentifiableModel> listMembers(@PathParam("groupId") String groupId) throws IOException, 
+			ServiceUnavailable, GitException {
 		
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
@@ -230,6 +232,8 @@ public class GroupsApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
+	@Consumes(MediaType.WILDCARD)
+	@Produces(MediaType.WILDCARD)
 	@Path("{groupId}/members/{identifiableId}")
 	public void removeMember(@PathParam("groupId") String groupId, @PathParam("identifiableId") String identifiableId)
 			throws IOException, ServiceUnavailable, ModificationException, GitException {
