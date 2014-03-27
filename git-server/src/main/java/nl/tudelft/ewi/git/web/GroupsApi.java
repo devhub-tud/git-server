@@ -34,10 +34,8 @@ import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 import com.google.common.collect.Collections2;
 
 /**
- * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve, list, create, and
- * remove groups in the Gitolite configuration.
- * 
- * @author michael
+ * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve,
+ * list, create, and remove groups in the Gitolite configuration.
  */
 @Path("api/groups")
 @RequestScoped
@@ -50,21 +48,21 @@ public class GroupsApi extends BaseApi {
 	private final ConfigManager manager;
 
 	@Inject
-	public GroupsApi(ConfigManager manager) {
+	GroupsApi(ConfigManager manager) {
 		this.manager = manager;
 	}
 
 	/**
 	 * This will list all groups currently in the Gitolite configuration.
 	 * 
-	 * @return A {@link Collection} of {@link IdentifiableModel}s, each representing a group in the Gitolite
-	 *         configuration.
+	 * @return A {@link Collection} of {@link IdentifiableModel}s, each representing a group in the
+	 *         Gitolite configuration.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@GET
 	public Collection<IdentifiableModel> listAllGroups() throws IOException, ServiceUnavailable, GitException {
@@ -76,20 +74,20 @@ public class GroupsApi extends BaseApi {
 	 * This will retrieve a representation of a specific group in the Gitolite configuration.
 	 * 
 	 * @param groupId
-	 *        The <code>@name</code> of the group to retrieve.
+	 *            The <code>@name</code> of the group to retrieve.
 	 * @return A {@link GroupModel} representation of the specified group.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@GET
 	@Path("{groupId}")
 	public GroupModel getGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable,
 			GitException {
-		
+
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
 		return Transformers.groups().apply(group);
@@ -99,21 +97,21 @@ public class GroupsApi extends BaseApi {
 	 * This creates a new group in the Gitolite configuration and returns a representation of it.
 	 * 
 	 * @param model
-	 *        A {@link GroupModel} describing the properties of the group.
+	 *            A {@link GroupModel} describing the properties of the group.
 	 * @return A {@link GroupModel} representing the final properties of the created group.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws ModificationException
-	 *         If the modification conflicted with another request.
+	 *             If the modification conflicted with another request.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@POST
 	public GroupModel createNewGroup(@Valid GroupModel model) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
-		
+
 		Config config = manager.get();
 		Group group = config.createGroup(model.getName());
 		if (model.getMembers() != null) {
@@ -135,15 +133,15 @@ public class GroupsApi extends BaseApi {
 	 * This removes an existing group from the Gitolite configuration.
 	 * 
 	 * @param groupId
-	 *        The <code>@name</code> of the group to remove.
+	 *            The <code>@name</code> of the group to remove.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws ModificationException
-	 *         If the modification conflicted with another request.
+	 *             If the modification conflicted with another request.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@DELETE
 	@Consumes(MediaType.WILDCARD)
@@ -151,7 +149,7 @@ public class GroupsApi extends BaseApi {
 	@Path("{groupId}")
 	public void deleteGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
-		
+
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
 		config.removeGroup(group);
@@ -162,19 +160,19 @@ public class GroupsApi extends BaseApi {
 	 * This lists all the members of a specific group in the Gitolite configuration.
 	 * 
 	 * @param groupId
-	 *        The <code>@name</code> of the group to list all members of.
+	 *            The <code>@name</code> of the group to list all members of.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@GET
 	@Path("{groupId}/members")
-	public Collection<IdentifiableModel> listMembers(@PathParam("groupId") String groupId) throws IOException, 
+	public Collection<IdentifiableModel> listMembers(@PathParam("groupId") String groupId) throws IOException,
 			ServiceUnavailable, GitException {
-		
+
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
 		return Collections2.transform(group.getAllMembers(), Transformers.detailedIdentifiables());
@@ -184,23 +182,23 @@ public class GroupsApi extends BaseApi {
 	 * This adds either a group or user to another group as a member in the Gitolite configuration.
 	 * 
 	 * @param groupId
-	 *        The <code>@name</code> of the group to add a member to.
+	 *            The <code>@name</code> of the group to add a member to.
 	 * @param model
-	 *        The {@link IdentifiableModel} describing the user or group to add as a member.
+	 *            The {@link IdentifiableModel} describing the user or group to add as a member.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws ModificationException
-	 *         If the modification conflicted with another request.
+	 *             If the modification conflicted with another request.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@POST
 	@Path("{groupId}/members")
 	public Collection<IdentifiableModel> addNewMember(@PathParam("groupId") String groupId,
 			@Valid IdentifiableModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
-		
+
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
 
@@ -219,17 +217,17 @@ public class GroupsApi extends BaseApi {
 	 * This removes either a group or user from another group in the Gitolite configuration.
 	 * 
 	 * @param groupId
-	 *        The <code>@name</code> of the group to remove a member from.
+	 *            The <code>@name</code> of the group to remove a member from.
 	 * @param identifiableId
-	 *        The name describing the user or group to remove from the group.
+	 *            The name describing the user or group to remove from the group.
 	 * @throws IOException
-	 *         If one or more files in the repository could not be read.
+	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
-	 *         If the service could not be reached.
+	 *             If the service could not be reached.
 	 * @throws ModificationException
-	 *         If the modification conflicted with another request.
+	 *             If the modification conflicted with another request.
 	 * @throws GitException
-	 *         If an exception occurred while using the Git API.
+	 *             If an exception occurred while using the Git API.
 	 */
 	@DELETE
 	@Consumes(MediaType.WILDCARD)
@@ -237,11 +235,11 @@ public class GroupsApi extends BaseApi {
 	@Path("{groupId}/members/{identifiableId}")
 	public void removeMember(@PathParam("groupId") String groupId, @PathParam("identifiableId") String identifiableId)
 			throws IOException, ServiceUnavailable, ModificationException, GitException {
-		
+
 		Config config = manager.get();
 		Group group = fetchGroup(config, decode(groupId));
 		identifiableId = decode(identifiableId);
-		
+
 		if (identifiableId.startsWith("@")) {
 			Group subGroup = fetchGroup(config, identifiableId);
 			if (!group.containsGroup(subGroup)) {
