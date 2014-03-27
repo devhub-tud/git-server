@@ -33,12 +33,14 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.RepositoryModel;
+import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 
 /**
@@ -130,9 +132,9 @@ public class RepositoriesApi extends BaseApi {
 		Config config = manager.get();
 		Repository repository = config.createRepository(model.getName());
 
-		for (Entry<String, String> permission : model.getPermissions().entrySet()) {
+		for (Entry<String, Level> permission : model.getPermissions().entrySet()) {
 			String identifiable = permission.getKey();
-			Permission level = Permission.getByLevel(permission.getValue());
+			Permission level = transformLevel(permission.getValue());
 			if (identifiable.startsWith("@")) {
 				Group group = fetchGroup(config, identifiable);
 				repository.setPermission(group, level);
@@ -175,9 +177,9 @@ public class RepositoriesApi extends BaseApi {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
 
-		for (Entry<String, String> permission : model.getPermissions().entrySet()) {
+		for (Entry<String, Level> permission : model.getPermissions().entrySet()) {
 			String identifiable = permission.getKey();
-			Permission level = Permission.getByLevel(permission.getValue());
+			Permission level = transformLevel(permission.getValue());
 			if (identifiable.startsWith("@")) {
 				Group group = fetchGroup(config, identifiable);
 				repository.setPermission(group, level);
@@ -352,6 +354,21 @@ public class RepositoriesApi extends BaseApi {
 			throw new NotFoundException();
 		}
 		return stream;
+	}
+	
+	private Permission transformLevel(Level level) {
+		Preconditions.checkNotNull(level);
+		
+		switch (level) {
+			case ADMIN:
+				return Permission.ALL;
+			case READ_ONLY:
+				return Permission.READ_ONLY;
+			case READ_WRITE:
+				return Permission.READ_WRITE;
+			default:
+				throw new IllegalArgumentException("Level: " + level + " is not supported!");
+		}
 	}
 
 }

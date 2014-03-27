@@ -17,6 +17,7 @@ import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.inspector.Inspector;
+import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
@@ -112,9 +113,9 @@ public class Transformers {
 		return new Function<Repository, RepositoryModel>() {
 			@Override
 			public RepositoryModel apply(Repository input) {
-				Map<String, String> permissions = Maps.newHashMap();
+				Map<String, Level> permissions = Maps.newHashMap();
 				for (Entry<Permission, Identifiable> entry : input.getPermissions().entries()) {
-					permissions.put(entry.getValue().getName(), entry.getKey().getLevel());
+					permissions.put(entry.getValue().getName(), Level.getLevel(entry.getKey().getLevel()));
 				}
 
 				RepositoryModel model = new RepositoryModel();
@@ -134,9 +135,9 @@ public class Transformers {
 		return new Function<Repository, DetailedRepositoryModel>() {
 			@Override
 			public DetailedRepositoryModel apply(Repository input) {
-				Map<String, String> permissions = Maps.newHashMap();
+				Map<String, Level> permissions = Maps.newHashMap();
 				for (Entry<Permission, Identifiable> entry : input.getPermissions().entries()) {
-					permissions.put(entry.getValue().getName(), entry.getKey().getLevel());
+					permissions.put(entry.getValue().getName(), Level.getLevel(entry.getKey().getLevel()));
 				}
 
 				DetailedRepositoryModel model = new DetailedRepositoryModel();
