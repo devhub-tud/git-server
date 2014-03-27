@@ -51,7 +51,7 @@ public class UsersApi extends BaseApi {
 	private final ConfigManager manager;
 
 	@Inject
-	public UsersApi(ConfigManager manager) {
+	UsersApi(ConfigManager manager) {
 		this.manager = manager;
 	}
 

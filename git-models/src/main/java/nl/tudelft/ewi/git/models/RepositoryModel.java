@@ -24,6 +24,7 @@ public class RepositoryModel extends BaseModel {
 	@Setter(AccessLevel.PACKAGE)
 	private String url;
 	
+	@NotEmpty
 	private Map<String, String> permissions;
 	
 }
