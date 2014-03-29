@@ -33,4 +33,8 @@ public class Config {
 		return properties.getProperty("gitolite.repo-url", "git@localhost:gitolite-admin");
 	}
 
+	public String getPassphrase() {
+		return properties.getProperty("gitolite.passphrase", null);
+	}
+
 }
