@@ -9,11 +9,13 @@ import javax.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
+import nl.minicom.gitolite.manager.git.PassphraseCredentialsProvider;
 import nl.minicom.gitolite.manager.models.ConfigManager;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshSessionFactory;
@@ -120,7 +122,15 @@ public class GitServer {
 						}
 					});
 					
-					ConfigManager configManager = ConfigManager.create(config.getGitoliteRepoUrl());
+					ConfigManager configManager;
+					if (config.getPassphrase() == null) {
+						configManager = ConfigManager.create(config.getGitoliteRepoUrl());
+					}
+					else {
+						CredentialsProvider credentials = new PassphraseCredentialsProvider(config.getPassphrase());
+						configManager = ConfigManager.create(config.getGitoliteRepoUrl(), credentials);
+					}
+					
 					try {
 						configManager.get();
 					}
