@@ -19,6 +19,7 @@ import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.TagModel;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -52,8 +53,6 @@ import com.google.common.collect.Lists;
 @Slf4j
 public class Inspector {
 
-	private static final String BRANCH_PREFIX = "refs/heads/";
-
 	private final File repositoriesDirectory;
 
 	/**
@@ -83,7 +82,7 @@ public class Inspector {
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			List<Ref> results = git.branchList().call();
+			List<Ref> results = git.branchList().setListMode(ListMode.REMOTE).call();
 			return Collections2.transform(results, new Function<Ref, BranchModel>() {
 				@Override
 				public BranchModel apply(Ref input) {
@@ -91,13 +90,7 @@ public class Inspector {
 
 					BranchModel branch = new BranchModel();
 					branch.setCommit(input.getObjectId().getName());
-					if (name.startsWith(BRANCH_PREFIX)) {
-						branch.setName(name.substring(BRANCH_PREFIX.length()));
-					}
-					else {
-						branch.setName(name);
-					}
-
+					branch.setName(name);
 					return branch;
 				}
 			});
@@ -175,7 +168,7 @@ public class Inspector {
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			Iterable<RevCommit> revCommits = git.log().setMaxCount(limit).call();
+			Iterable<RevCommit> revCommits = git.log().all().setMaxCount(limit).call();
 			List<CommitModel> commits = Lists.newArrayList();
 			for (RevCommit revCommit : revCommits) {
 				RevCommit[] parents = revCommit.getParents();

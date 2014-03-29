@@ -95,6 +95,19 @@ public class Users extends Backend {
 	/**
 	 * This method ensures that a specific {@link UserModel} exists on the git-server.
 	 * 
+	 * @param name
+	 *            The name of the user to ensure exists on the git-server.
+	 * @return The created or retrieved {@link UserModel}.
+	 */
+	public UserModel ensureExists(String name) {
+		UserModel model = new UserModel();
+		model.setName(name);
+		return ensureExists(model);
+	}
+
+	/**
+	 * This method ensures that a specific {@link UserModel} exists on the git-server.
+	 * 
 	 * @param model
 	 *            The {@link UserModel} to ensure that it exists.
 	 * @return The created or fetched {@link UserModel} on the git-server.
