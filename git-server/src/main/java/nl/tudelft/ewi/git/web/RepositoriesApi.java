@@ -158,7 +158,8 @@ public class RepositoriesApi extends BaseApi {
 		manager.apply(config);
 		
 		if (!Strings.isNullOrEmpty(model.getTemplateRepository())) {
-			pullCommitsFromRemoteRepository(model);
+			DetailedRepositoryModel provisionedRepository = showRepository(model.getName());
+			pullCommitsFromRemoteRepository(model.getTemplateRepository(), provisionedRepository.getUrl());
 		}
 		
 		return Transformers.detailedRepositories(inspector).apply(repository);
@@ -369,19 +370,19 @@ public class RepositoriesApi extends BaseApi {
 		return stream;
 	}
 	
-	private void pullCommitsFromRemoteRepository(CreateRepositoryModel model) throws GitException {
+	private void pullCommitsFromRemoteRepository(String templateUrl, String repoUrl) throws GitException {
 		File dir = Files.createTempDir();
 		
 		try {
 			Git repo = Git.cloneRepository()
 					.setDirectory(dir)
-					.setURI(model.getTemplateRepository())
+					.setURI(templateUrl)
 					.setCloneAllBranches(true)
 					.setCloneSubmodules(true)
 					.call();
 			
 			repo.push()
-					.setRemote(model.getUrl())
+					.setRemote(repoUrl)
 					.setPushAll()
 					.setPushTags()
 					.call();
