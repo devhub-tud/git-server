@@ -9,6 +9,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import nl.tudelft.ewi.git.models.CommitModel;
+import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.RepositoryModel;
@@ -82,7 +83,7 @@ public class Repositories extends Backend {
 	 *            The new {@link RepositoryModel} to provision on the git-server.
 	 * @return The created {@link RepositoryModel} on the git-server.
 	 */
-	public DetailedRepositoryModel create(final RepositoryModel newRepository) {
+	public DetailedRepositoryModel create(final CreateRepositoryModel newRepository) {
 		return perform(new Request<DetailedRepositoryModel>() {
 			@Override
 			public DetailedRepositoryModel perform(Client client) {
