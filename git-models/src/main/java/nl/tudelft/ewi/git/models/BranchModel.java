@@ -1,5 +1,7 @@
 package nl.tudelft.ewi.git.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 /**
@@ -15,6 +17,7 @@ public class BranchModel {
 	private String name;
 	private String commit;
 	
+	@JsonIgnore
 	public String getSimpleName() {
 		if (name.startsWith(REFS_REMOTES_ORIGIN)) {
 			return name.substring(REFS_REMOTES_ORIGIN.length());
