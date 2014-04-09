@@ -10,7 +10,16 @@ import lombok.Data;
 @Data
 public class BranchModel {
 
+	private static final String REFS_REMOTES_ORIGIN = "refs/remotes/origin/";
+	
 	private String name;
 	private String commit;
+	
+	public String getSimpleName() {
+		if (name.startsWith(REFS_REMOTES_ORIGIN)) {
+			return name.substring(REFS_REMOTES_ORIGIN.length());
+		}
+		return name;
+	}
 
 }
