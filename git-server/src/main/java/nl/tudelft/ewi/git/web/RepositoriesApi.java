@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.web;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -19,6 +20,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
@@ -30,6 +32,7 @@ import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.CommitModel;
+import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.RepositoryModel;
@@ -37,11 +40,15 @@ import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
+import com.google.common.io.Files;
 
 /**
  * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve,
@@ -55,6 +62,7 @@ import com.google.common.collect.Collections2;
 @RequireAuthentication
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
+@Slf4j
 public class RepositoriesApi extends BaseApi {
 
 	private final ConfigManager manager;
@@ -112,7 +120,7 @@ public class RepositoriesApi extends BaseApi {
 	 * it.
 	 * 
 	 * @param model
-	 *            A {@link RepositoryModel} describing the properties of the repository.
+	 *            A {@link CreateRepositoryModel} describing the properties of the repository.
 	 * @return A {@link DetailedRepositoryModel} representing the final properties of the created
 	 *         repository.
 	 * @throws IOException
@@ -125,7 +133,7 @@ public class RepositoriesApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@POST
-	public DetailedRepositoryModel createRepository(@Valid RepositoryModel model) throws IOException,
+	public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel model) throws IOException,
 			ServiceUnavailable,
 			ModificationException, GitException {
 
@@ -148,6 +156,11 @@ public class RepositoriesApi extends BaseApi {
 		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
 
 		manager.apply(config);
+		
+		if (!Strings.isNullOrEmpty(model.getTemplateRepository())) {
+			pullCommitsFromRemoteRepository(model);
+		}
+		
 		return Transformers.detailedRepositories(inspector).apply(repository);
 	}
 
@@ -354,6 +367,32 @@ public class RepositoriesApi extends BaseApi {
 			throw new NotFoundException();
 		}
 		return stream;
+	}
+	
+	private void pullCommitsFromRemoteRepository(CreateRepositoryModel model) throws GitException {
+		File dir = Files.createTempDir();
+		
+		try {
+			Git repo = Git.cloneRepository()
+					.setDirectory(dir)
+					.setURI(model.getTemplateRepository())
+					.setCloneAllBranches(true)
+					.setCloneSubmodules(true)
+					.call();
+			
+			repo.push()
+					.setRemote(model.getUrl())
+					.setPushAll()
+					.setPushTags()
+					.call();
+		}
+		catch (GitAPIException e) {
+			log.warn(e.getMessage(), e);
+			throw new GitException(e);
+		}
+		finally {
+			dir.delete();
+		}
 	}
 	
 	private Permission transformLevel(Level level) {
