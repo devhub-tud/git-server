@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,8 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.revwalk.DepthWalk.Commit;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -44,9 +47,10 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 
 /**
- * This class allows its users to inspect the contents of Git repositories. You can use this class to list commits,
- * branches and tags. In addition it can create diffs between commits, list files and folders for a certain commit and
- * inspect the contents of a specified file at a specific commit ID.
+ * This class allows its users to inspect the contents of Git repositories. You can use this class
+ * to list commits, branches and tags. In addition it can create diffs between commits, list files
+ * and folders for a certain commit and inspect the contents of a specified file at a specific
+ * commit ID.
  * 
  * @author michael
  */
@@ -59,7 +63,7 @@ public class Inspector {
 	 * Creates a new {@link Inspector} object.
 	 * 
 	 * @param repositoriesDirectory
-	 *        The directory where all Git repositories are mirrored to (non-bare repositories).
+	 *            The directory where all Git repositories are mirrored to (non-bare repositories).
 	 */
 	public Inspector(File repositoriesDirectory) {
 		this.repositoriesDirectory = repositoriesDirectory;
@@ -69,27 +73,31 @@ public class Inspector {
 	 * This method lists all the current branches of a specific {@link Repository} object.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current branches of.
-	 * @return A {@link Collections} of {@link BranchModel} objects, each representing one branch in the specified Git
-	 *         repository.
+	 *            The {@link Repository} to list all the current branches of.
+	 * @return A {@link Collections} of {@link BranchModel} objects, each representing one branch in
+	 *         the specified Git repository.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public Collection<BranchModel> listBranches(Repository repository) throws IOException, GitException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			List<Ref> results = git.branchList().setListMode(ListMode.REMOTE).call();
+			List<Ref> results = git.branchList()
+				.setListMode(ListMode.REMOTE)
+				.call();
+
 			return Collections2.transform(results, new Function<Ref, BranchModel>() {
 				@Override
 				public BranchModel apply(Ref input) {
 					String name = input.getName();
+					ObjectId objectId = input.getObjectId();
 
 					BranchModel branch = new BranchModel();
-					branch.setCommit(input.getObjectId().getName());
+					branch.setCommit(objectId.getName());
 					branch.setName(name);
 					return branch;
 				}
@@ -104,25 +112,30 @@ public class Inspector {
 	 * This method lists all the current tags of a specific {@link Repository} object.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current tags of.
-	 * @return A {@link Collections} of {@link TagModel} objects, each representing one tag in the specified Git repository.
+	 *            The {@link Repository} to list all the current tags of.
+	 * @return A {@link Collections} of {@link TagModel} objects, each representing one tag in the
+	 *         specified Git repository.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public Collection<TagModel> listTags(Repository repository) throws IOException, GitException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			List<Ref> results = git.tagList().call();
+			List<Ref> results = git.tagList()
+				.call();
+
 			return Collections2.transform(results, new Function<Ref, TagModel>() {
 				@Override
 				public TagModel apply(Ref input) {
 					TagModel tag = new TagModel();
+					ObjectId objectId = input.getObjectId();
+
 					tag.setName(input.getName());
-					tag.setCommit(input.getObjectId().getName());
+					tag.setCommit(objectId.getName());
 					return tag;
 				}
 			});
@@ -136,13 +149,14 @@ public class Inspector {
 	 * This method lists all commits of a specific {@link Repository} object.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current commits of.
-	 * @return A {@link Collections} of {@link CommitModel} objects, each representing one commit in the specified Git
-	 *         repository. The {@link CommitModel} objects are ordered from newest to oldest.
+	 *            The {@link Repository} to list all the current commits of.
+	 * @return A {@link Collections} of {@link CommitModel} objects, each representing one commit in
+	 *         the specified Git repository. The {@link CommitModel} objects are ordered from newest
+	 *         to oldest.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public List<CommitModel> listCommits(Repository repository) throws IOException, GitException {
 		return listCommits(repository, Integer.MAX_VALUE);
@@ -152,35 +166,41 @@ public class Inspector {
 	 * This method lists a limited amount of commits of a specific {@link Repository} object.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list a limited amount of commits of.
+	 *            The {@link Repository} to list a limited amount of commits of.
 	 * @param limit
-	 *        The maximum amount of {@link CommitModel} objects to return.
-	 * @return A {@link Collections} of {@link CommitModel} objects, each representing one commit in the specified Git
-	 *         repository. The {@link CommitModel} objects are ordered from newest to oldest. At most "limit" number of
-	 *         {@link CommitModel} objects will be returned.
+	 *            The maximum amount of {@link CommitModel} objects to return.
+	 * @return A {@link Collections} of {@link CommitModel} objects, each representing one commit in
+	 *         the specified Git repository. The {@link CommitModel} objects are ordered from newest
+	 *         to oldest. At most "limit" number of {@link CommitModel} objects will be returned.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public List<CommitModel> listCommits(Repository repository, int limit) throws IOException, GitException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			Iterable<RevCommit> revCommits = git.log().all().setMaxCount(limit).call();
+			Iterable<RevCommit> revCommits = git.log()
+				.all()
+				.setMaxCount(limit)
+				.call();
+
 			List<CommitModel> commits = Lists.newArrayList();
 			for (RevCommit revCommit : revCommits) {
 				RevCommit[] parents = revCommit.getParents();
 				String[] parentIds = new String[parents.length];
 				for (int i = 0; i < parents.length; i++) {
-					parentIds[i] = parents[i].getId().getName();
+					ObjectId parentId = parents[i].getId();
+					parentIds[i] = parentId.getName();
 				}
-				
+
 				PersonIdent committerIdent = revCommit.getCommitterIdent();
-				
+				ObjectId commitId = revCommit.getId();
+
 				CommitModel commit = new CommitModel();
-				commit.setCommit(revCommit.getId().getName());
+				commit.setCommit(commitId.getName());
 				commit.setParents(parentIds);
 				commit.setTime(revCommit.getCommitTime());
 				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
@@ -197,22 +217,58 @@ public class Inspector {
 		}
 	}
 
+	public CommitModel retrieveCommits(Repository repository, String commitId) throws GitException, IOException {
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		try {
+			Iterable<RevCommit> revCommits = git.log()
+				.add(Commit.fromString(commitId))
+				.setMaxCount(1)
+				.call();
+
+			Iterator<RevCommit> iterator = revCommits.iterator();
+			RevCommit revCommit = iterator.next();
+			RevCommit[] parents = revCommit.getParents();
+			String[] parentIds = new String[parents.length];
+			for (int i = 0; i < parents.length; i++) {
+				ObjectId parentId = parents[i].getId();
+				parentIds[i] = parentId.getName();
+			}
+
+			PersonIdent committerIdent = revCommit.getCommitterIdent();
+			ObjectId revCommitId = revCommit.getId();
+
+			CommitModel commit = new CommitModel();
+			commit.setCommit(revCommitId.getName());
+			commit.setParents(parentIds);
+			commit.setTime(revCommit.getCommitTime());
+			commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
+			commit.setMessage(revCommit.getShortMessage());
+
+			return commit;
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+
 	/**
-	 * This method lists a set of diffs of files of a specific {@link Repository} object between two specific commit
-	 * IDs.
+	 * This method lists a set of diffs of files of a specific {@link Repository} object between two
+	 * specific commit IDs.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current commits of.
+	 *            The {@link Repository} to list all the current commits of.
 	 * @param leftCommitId
-	 *        The first commit ID to base the diff on.
+	 *            The first commit ID to base the diff on.
 	 * @param rightCommitId
-	 *        The second commit ID to base the diff on.
-	 * @return A {@link Collections} of {@link DiffModel} objects, each representing the changes in one file in the specified
-	 *         Git repository.
+	 *            The second commit ID to base the diff on.
+	 * @return A {@link Collections} of {@link DiffModel} objects, each representing the changes in
+	 *         one file in the specified Git repository.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public Collection<DiffModel> calculateDiff(Repository repository, String leftCommitId, String rightCommitId)
 			throws IOException, GitException {
@@ -221,13 +277,17 @@ public class Inspector {
 		Git git = Git.open(repositoryDirectory);
 
 		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
-		repo.getConfig().setString("diff", null, "algorithm", "histogram");
+		StoredConfig config = repo.getConfig();
+		config.setString("diff", null, "algorithm", "histogram");
 
 		try {
 			AbstractTreeIterator oldTreeIter = createTreeParser(git, leftCommitId);
 			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
 
-			List<DiffEntry> diffs = git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call();
+			List<DiffEntry> diffs = git.diff()
+				.setNewTree(newTreeIter)
+				.setOldTree(oldTreeIter)
+				.call();
 
 			return Collections2.transform(diffs, new Function<DiffEntry, DiffModel>() {
 				public DiffModel apply(DiffEntry input) {
@@ -254,11 +314,16 @@ public class Inspector {
 
 				private Type convertChangeType(ChangeType changeType) {
 					switch (changeType) {
-						case ADD: 		return Type.ADD;
-						case COPY: 		return Type.COPY;
-						case DELETE:	return Type.DELETE;
-						case MODIFY:	return Type.MODIFY;
-						case RENAME:	return Type.RENAME;
+						case ADD:
+							return Type.ADD;
+						case COPY:
+							return Type.COPY;
+						case DELETE:
+							return Type.DELETE;
+						case MODIFY:
+							return Type.MODIFY;
+						case RENAME:
+							return Type.RENAME;
 						default:
 							throw new IllegalArgumentException("Cannot convert change type: " + changeType);
 					}
@@ -271,41 +336,45 @@ public class Inspector {
 	}
 
 	/**
-	 * This method lists files and folders in a specified path at a specific commit of the repository.
+	 * This method lists files and folders in a specified path at a specific commit of the
+	 * repository.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current commits of.
+	 *            The {@link Repository} to list all the current commits of.
 	 * @param commitId
-	 *        The commit ID of the state of the repository.
+	 *            The commit ID of the state of the repository.
 	 * @param path
-	 *        The path to inspect at the specified commit ID.
+	 *            The path to inspect at the specified commit ID.
 	 * @return A {@link Collections} of {@link String} representations.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public Collection<String> showTree(Repository repository, String commitId, String path) throws IOException,
 			GitException {
+
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 		return showTree(git.getRepository(), commitId, path);
 	}
 
 	/**
-	 * This method returns an {@link InputStream} which will output the contents of the specified file.
+	 * This method returns an {@link InputStream} which will output the contents of the specified
+	 * file.
 	 * 
 	 * @param repository
-	 *        The {@link Repository} to list all the current commits of.
+	 *            The {@link Repository} to list all the current commits of.
 	 * @param commitId
-	 *        The commit ID of the state of the repository.
+	 *            The commit ID of the state of the repository.
 	 * @param path
-	 *        The path of the file to inspect at the specified commit ID.
-	 * @return An {@link InputStream} which outputs the contents of the file. Or NULL if no file is present.
+	 *            The path of the file to inspect at the specified commit ID.
+	 * @return An {@link InputStream} which outputs the contents of the file. Or NULL if no file is
+	 *         present.
 	 * @throws IOException
-	 *         In case the Git repository could not be accessed.
+	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
-	 *         In case the Git repository could not be interacted with.
+	 *             In case the Git repository could not be interacted with.
 	 */
 	public InputStream showFile(Repository repository, String commitId, String path) throws IOException, GitException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
@@ -315,6 +384,7 @@ public class Inspector {
 
 	private Collection<String> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
 			throws GitException, IOException {
+
 		RevWalk walk = new RevWalk(repo);
 		ObjectId resolvedObjectId = repo.resolve(commitId);
 		RevCommit commit = walk.parseCommit(resolvedObjectId);
@@ -368,6 +438,7 @@ public class Inspector {
 
 	private InputStream showFile(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
 			throws GitException, IOException {
+
 		RevWalk walk = new RevWalk(repo);
 		ObjectId resolvedObjectId = repo.resolve(commitId);
 		RevCommit commit = walk.parseCommit(resolvedObjectId);
@@ -396,7 +467,8 @@ public class Inspector {
 
 		RevWalk walk = new RevWalk(repo);
 		RevCommit commit = walk.parseCommit(repo.resolve(ref));
-		RevTree tree = walk.parseTree(commit.getTree().getId());
+		RevTree commitTree = commit.getTree();
+		RevTree tree = walk.parseTree(commitTree.getId());
 
 		CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
 		ObjectReader oldReader = repo.newObjectReader();

@@ -112,7 +112,8 @@ public class RepositoriesApi extends BaseApi {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		return Transformers.detailedRepositories(inspector).apply(repository);
+		return Transformers.detailedRepositories(inspector)
+			.apply(repository);
 	}
 
 	/**
@@ -134,13 +135,13 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@POST
 	public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel model) throws IOException,
-			ServiceUnavailable,
-			ModificationException, GitException {
+			ServiceUnavailable, ModificationException, GitException {
 
 		Config config = manager.get();
 		Repository repository = config.createRepository(model.getName());
 
-		for (Entry<String, Level> permission : model.getPermissions().entrySet()) {
+		for (Entry<String, Level> permission : model.getPermissions()
+			.entrySet()) {
 			String identifiable = permission.getKey();
 			Permission level = transformLevel(permission.getValue());
 			if (identifiable.startsWith("@")) {
@@ -156,13 +157,14 @@ public class RepositoriesApi extends BaseApi {
 		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
 
 		manager.apply(config);
-		
+
 		if (!Strings.isNullOrEmpty(model.getTemplateRepository())) {
 			DetailedRepositoryModel provisionedRepository = showRepository(model.getName());
 			pullCommitsFromRemoteRepository(model.getTemplateRepository(), provisionedRepository.getUrl());
 		}
-		
-		return Transformers.detailedRepositories(inspector).apply(repository);
+
+		return Transformers.detailedRepositories(inspector)
+			.apply(repository);
 	}
 
 	/**
@@ -185,13 +187,13 @@ public class RepositoriesApi extends BaseApi {
 	@PUT
 	@Path("{repoId}")
 	public DetailedRepositoryModel updateRepository(@PathParam("repoId") String repoId, @Valid RepositoryModel model)
-			throws IOException, ServiceUnavailable,
-			ModificationException, GitException {
+			throws IOException, ServiceUnavailable, ModificationException, GitException {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
 
-		for (Entry<String, Level> permission : model.getPermissions().entrySet()) {
+		for (Entry<String, Level> permission : model.getPermissions()
+			.entrySet()) {
 			String identifiable = permission.getKey();
 			Permission level = transformLevel(permission.getValue());
 			if (identifiable.startsWith("@")) {
@@ -207,7 +209,8 @@ public class RepositoriesApi extends BaseApi {
 		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
 
 		manager.apply(config);
-		return Transformers.detailedRepositories(inspector).apply(repository);
+		return Transformers.detailedRepositories(inspector)
+			.apply(repository);
 	}
 
 	/**
@@ -257,6 +260,30 @@ public class RepositoriesApi extends BaseApi {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.listCommits(repository);
+	}
+
+	/**
+	 * This retrieves a specific commit of a specific repository in the Gitolite configuration.
+	 * 
+	 * @param repoId
+	 *            The <code>name</code> of the repository to retrieve the commit from.
+	 * @param commitId
+	 *            The <code>commit</code> to retrieve.
+	 * @throws IOException
+	 *             If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *             If the service could not be reached.
+	 * @throws GitException
+	 *             If an exception occurred while using the Git API.
+	 */
+	@GET
+	@Path("{repoId}/commits/{commitId}")
+	public CommitModel retrieveCommit(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.retrieveCommits(repository, commitId);
 	}
 
 	/**
@@ -369,23 +396,23 @@ public class RepositoriesApi extends BaseApi {
 		}
 		return stream;
 	}
-	
+
 	private void pullCommitsFromRemoteRepository(String templateUrl, String repoUrl) throws GitException {
 		File dir = Files.createTempDir();
-		
+
 		try {
 			Git repo = Git.cloneRepository()
-					.setDirectory(dir)
-					.setURI(templateUrl)
-					.setCloneAllBranches(true)
-					.setCloneSubmodules(true)
-					.call();
-			
+				.setDirectory(dir)
+				.setURI(templateUrl)
+				.setCloneAllBranches(true)
+				.setCloneSubmodules(true)
+				.call();
+
 			repo.push()
-					.setRemote(repoUrl)
-					.setPushAll()
-					.setPushTags()
-					.call();
+				.setRemote(repoUrl)
+				.setPushAll()
+				.setPushTags()
+				.call();
 		}
 		catch (GitAPIException e) {
 			log.warn(e.getMessage(), e);
@@ -395,10 +422,10 @@ public class RepositoriesApi extends BaseApi {
 			dir.delete();
 		}
 	}
-	
+
 	private Permission transformLevel(Level level) {
 		Preconditions.checkNotNull(level);
-		
+
 		switch (level) {
 			case ADMIN:
 				return Permission.ALL;

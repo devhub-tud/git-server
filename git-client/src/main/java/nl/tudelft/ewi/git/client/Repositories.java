@@ -33,9 +33,9 @@ public class Repositories extends Backend {
 			@Override
 			public List<RepositoryModel> perform(Client client) {
 				return client.target(createUrl(BASE_PATH))
-						.request(MediaType.APPLICATION_JSON)
-						.get(new GenericType<List<RepositoryModel>>() {
-						});
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<List<RepositoryModel>>() {
+					});
 			}
 		});
 	}
@@ -52,8 +52,8 @@ public class Repositories extends Backend {
 			@Override
 			public DetailedRepositoryModel perform(Client client) {
 				return client.target(createUrl(model.getPath()))
-						.request(MediaType.APPLICATION_JSON)
-						.get(DetailedRepositoryModel.class);
+					.request(MediaType.APPLICATION_JSON)
+					.get(DetailedRepositoryModel.class);
 			}
 		});
 	}
@@ -70,8 +70,8 @@ public class Repositories extends Backend {
 			@Override
 			public DetailedRepositoryModel perform(Client client) {
 				return client.target(createUrl(BASE_PATH + "/" + encode(name)))
-						.request(MediaType.APPLICATION_JSON)
-						.get(DetailedRepositoryModel.class);
+					.request(MediaType.APPLICATION_JSON)
+					.get(DetailedRepositoryModel.class);
 			}
 		});
 	}
@@ -88,8 +88,8 @@ public class Repositories extends Backend {
 			@Override
 			public DetailedRepositoryModel perform(Client client) {
 				return client.target(createUrl(BASE_PATH))
-						.request(MediaType.APPLICATION_JSON)
-						.post(Entity.json(newRepository), DetailedRepositoryModel.class);
+					.request(MediaType.APPLICATION_JSON)
+					.post(Entity.json(newRepository), DetailedRepositoryModel.class);
 			}
 		});
 	}
@@ -105,8 +105,8 @@ public class Repositories extends Backend {
 			@Override
 			public Response perform(Client client) {
 				return client.target(createUrl(repository.getPath()))
-						.request()
-						.delete(Response.class);
+					.request()
+					.delete(Response.class);
 			}
 		});
 	}
@@ -123,9 +123,29 @@ public class Repositories extends Backend {
 			@Override
 			public List<CommitModel> perform(Client client) {
 				return client.target(createUrl(repository.getPath() + "/commits"))
-						.request(MediaType.APPLICATION_JSON)
-						.get(new GenericType<List<CommitModel>>() {
-						});
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<List<CommitModel>>() {
+					});
+			}
+		});
+	}
+
+	/**
+	 * This method retrieves a specific commit in the {@link RepositoryModel} on the git-server.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to list all commits for.
+	 * @param commitId
+	 *            The commit to retrieve.
+	 * @return A {@link CommitModel} object from the specified repository.
+	 */
+	public CommitModel retrieveCommit(final RepositoryModel repository, final String commitId) {
+		return perform(new Request<CommitModel>() {
+			@Override
+			public CommitModel perform(Client client) {
+				return client.target(createUrl(repository.getPath() + "/commits/" + commitId))
+					.request(MediaType.APPLICATION_JSON)
+					.get(CommitModel.class);
 			}
 		});
 	}
@@ -149,9 +169,9 @@ public class Repositories extends Backend {
 			public List<DiffModel> perform(Client client) {
 				String path = repository.getPath() + "/diff/" + encode(oldCommitId) + "/" + encode(newCommitId);
 				return client.target(createUrl(path))
-						.request(MediaType.APPLICATION_JSON)
-						.get(new GenericType<List<DiffModel>>() {
-						});
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<List<DiffModel>>() {
+					});
 			}
 		});
 	}
@@ -172,11 +192,10 @@ public class Repositories extends Backend {
 		return perform(new Request<List<String>>() {
 			@Override
 			public List<String> perform(Client client) {
-				return client
-						.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
-						.request(MediaType.APPLICATION_JSON)
-						.get(new GenericType<List<String>>() {
-						});
+				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<List<String>>() {
+					});
 			}
 		});
 	}
@@ -196,11 +215,10 @@ public class Repositories extends Backend {
 		return perform(new Request<String>() {
 			@Override
 			public String perform(Client client) {
-				return client
-						.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
-						.request(MediaType.APPLICATION_JSON)
-						.get(new GenericType<String>() {
-						});
+				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<String>() {
+					});
 			}
 		});
 	}
