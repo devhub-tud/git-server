@@ -1,6 +1,7 @@
 package nl.tudelft.ewi.git.web;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
@@ -67,9 +69,11 @@ public class RepositoriesApi extends BaseApi {
 
 	private final ConfigManager manager;
 	private final Inspector inspector;
+	private final nl.tudelft.ewi.git.Config configuration;
 
 	@Inject
-	RepositoriesApi(ConfigManager manager, Inspector inspector) {
+	RepositoriesApi(nl.tudelft.ewi.git.Config configuration, ConfigManager manager, Inspector inspector) {
+		this.configuration = configuration;
 		this.manager = manager;
 		this.inspector = inspector;
 	}
@@ -159,8 +163,17 @@ public class RepositoriesApi extends BaseApi {
 		manager.apply(config);
 
 		if (!Strings.isNullOrEmpty(model.getTemplateRepository())) {
-			DetailedRepositoryModel provisionedRepository = showRepository(model.getName());
-			pullCommitsFromRemoteRepository(model.getTemplateRepository(), provisionedRepository.getUrl());
+			try {
+				DetailedRepositoryModel provisionedRepository = showRepository(model.getName());
+				pullCommitsFromRemoteRepository(model.getTemplateRepository(), provisionedRepository.getUrl());
+			}
+			catch (GitException e) {
+				log.error(e.getMessage(), e);
+				
+				config = manager.get();
+				config.removeRepository(config.getRepository(model.getName()));
+				manager.apply(config);
+			}
 		}
 
 		return Transformers.detailedRepositories(inspector)
@@ -238,6 +251,16 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		config.removeRepository(repository);
 		manager.apply(config);
+		
+		if (!Strings.isNullOrEmpty(configuration.getRepositoriesDirectory())) {
+			File topDirectory = new File(configuration.getRepositoriesDirectory());
+			delete(topDirectory, new File(topDirectory, decode(repoId)));
+		}
+		
+		if (!Strings.isNullOrEmpty(configuration.getMirrorsDirectory())) {
+			File topDirectory = new File(configuration.getMirrorsDirectory());
+			delete(topDirectory, new File(topDirectory, decode(repoId)));
+		}
 	}
 
 	/**
@@ -435,6 +458,32 @@ public class RepositoriesApi extends BaseApi {
 				return Permission.READ_WRITE;
 			default:
 				throw new IllegalArgumentException("Level: " + level + " is not supported!");
+		}
+	}
+
+	private void delete(File topDirectory, File handle) {
+		try {
+			FileUtils.deleteDirectory(handle);
+			
+			File parentFile = handle;
+			while (!((parentFile = parentFile.getParentFile()).equals(topDirectory))) {
+				File[] listFiles = parentFile.listFiles(new FileFilter() {
+					@Override
+					public boolean accept(File pathname) {
+						return true;
+					}
+				});
+				
+				if (listFiles.length == 0) {
+					FileUtils.deleteDirectory(parentFile);
+				}
+				else {
+					break;
+				}
+			}
+		}
+		catch (Throwable e) {
+			log.warn(e.getMessage(), e);
 		}
 	}
 

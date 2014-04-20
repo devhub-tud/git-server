@@ -37,4 +37,12 @@ public class Config {
 		return properties.getProperty("gitolite.passphrase", null);
 	}
 
+	public String getRepositoriesDirectory() {
+		return properties.getProperty("gitolite.repositories");
+	}
+
+	public String getMirrorsDirectory() {
+		return properties.getProperty("gitolite.mirrors");
+	}
+	
 }
