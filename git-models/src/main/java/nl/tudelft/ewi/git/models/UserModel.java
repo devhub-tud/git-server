@@ -10,8 +10,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.ToString;
 
-import org.hibernate.validator.constraints.NotEmpty;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
 
@@ -26,7 +24,6 @@ import com.google.common.collect.Sets;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserModel extends IdentifiableModel {
 
-	@NotEmpty
 	@Pattern(regexp = "^[a-zA-Z0-9]+$")
 	private String name;
 
