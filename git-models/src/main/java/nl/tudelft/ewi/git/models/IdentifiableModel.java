@@ -17,7 +17,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class IdentifiableModel extends BaseModel {
 
 	@NotEmpty
-	@Pattern(regexp = "^\\@[a-zA-Z0-9]+$")
+	@Pattern(regexp = "^\\@?[a-zA-Z0-9]+$")
 	private String name;
 
 }
