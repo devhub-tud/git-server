@@ -9,7 +9,7 @@ import nl.tudelft.ewi.git.models.UserModel;
  * This class allows you to query and manipulate users on the git-server.
  */
 public interface Users {
-
+	
 	/**
 	 * @return All {@link UserModel} objects currently registered on the git-server.
 	 */
@@ -29,6 +29,7 @@ public interface Users {
 	 * 
 	 * @param model
 	 *            The {@link UserModel} to retrieve from the git-server.
+	 * @throws NotFoundException When the {@link UserModel} could not be found
 	 * @return The retrieved {@link UserModel} object.
 	 */
 	UserModel retrieve(UserModel model);

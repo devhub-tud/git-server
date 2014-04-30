@@ -22,10 +22,8 @@ public class UsersImpl extends Backend implements Users {
 	UsersImpl(String host) {
 		super(host);
 	}
-
-	/**
-	 * @return All {@link UserModel} objects currently registered on the git-server.
-	 */
+	
+	@Override
 	public List<IdentifiableModel> retrieveAll() {
 		return perform(new Request<List<IdentifiableModel>>() {
 			@Override
@@ -37,14 +35,8 @@ public class UsersImpl extends Backend implements Users {
 			}
 		});
 	}
-
-	/**
-	 * This method retrieves a specific {@link UserModel} from the git-server.
-	 * 
-	 * @param userName
-	 *            The name of the {@link UserModel} to retrieve.
-	 * @return The retrieved {@link UserModel} object.
-	 */
+	
+	@Override
 	public UserModel retrieve(final String userName) {
 		return perform(new Request<UserModel>() {
 			@Override
@@ -56,13 +48,7 @@ public class UsersImpl extends Backend implements Users {
 		});
 	}
 
-	/**
-	 * This method retrieves a specific {@link UserModel} from the git-server.
-	 * 
-	 * @param model
-	 *            The {@link UserModel} to retrieve from the git-server.
-	 * @return The retrieved {@link UserModel} object.
-	 */
+	@Override
 	public UserModel retrieve(final UserModel model) {
 		return perform(new Request<UserModel>() {
 			@Override
@@ -73,14 +59,8 @@ public class UsersImpl extends Backend implements Users {
 			}
 		});
 	}
-
-	/**
-	 * This method creates a new {@link UserModel} object on the git-server.
-	 * 
-	 * @param newUser
-	 *            The {@link UserModel} object to create on the git-server.
-	 * @return The created {@link UserModel} object.
-	 */
+	
+	@Override
 	public UserModel create(final UserModel newUser) {
 		return perform(new Request<UserModel>() {
 			@Override
@@ -92,26 +72,14 @@ public class UsersImpl extends Backend implements Users {
 		});
 	}
 
-	/**
-	 * This method ensures that a specific {@link UserModel} exists on the git-server.
-	 * 
-	 * @param name
-	 *            The name of the user to ensure exists on the git-server.
-	 * @return The created or retrieved {@link UserModel}.
-	 */
+	@Override
 	public UserModel ensureExists(String name) {
 		UserModel model = new UserModel();
 		model.setName(name);
 		return ensureExists(model);
 	}
 
-	/**
-	 * This method ensures that a specific {@link UserModel} exists on the git-server.
-	 * 
-	 * @param model
-	 *            The {@link UserModel} to ensure that it exists.
-	 * @return The created or fetched {@link UserModel} on the git-server.
-	 */
+	@Override
 	public UserModel ensureExists(final UserModel model) {
 		try {
 			return retrieve(model.getName());
@@ -121,12 +89,7 @@ public class UsersImpl extends Backend implements Users {
 		}
 	}
 
-	/**
-	 * This method deletes an existing {@link UserModel} from the git-server.
-	 * 
-	 * @param user
-	 *            The {@link UserModel} to delete.
-	 */
+	@Override
 	public void delete(final IdentifiableModel user) {
 		perform(new Request<Response>() {
 			@Override
@@ -138,14 +101,7 @@ public class UsersImpl extends Backend implements Users {
 		});
 	}
 
-	/**
-	 * Creates a new returns a {@link SshKeys} object allowing you to query and manipulate the SSH
-	 * keys of the specified {@link UserModel} object.
-	 * 
-	 * @param user
-	 *            The {@link UserModel} to query or manipulate the SSH keys of.
-	 * @return The constructed {@link SshKeys} object.
-	 */
+	@Override
 	public SshKeys sshKeys(UserModel user) {
 		return new SshKeysImpl(getHost(), user);
 	}
