@@ -11,7 +11,7 @@ import nl.tudelft.ewi.git.models.RepositoryModel;
 /**
  * This class allows you query and manipulate repositories on the git-server.
  */
-interface Repositories {
+public interface Repositories {
 	
 	/**
 	 * @return All currently active {@link RepositoryModel} objects on the git-server.
