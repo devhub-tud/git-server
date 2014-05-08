@@ -1,13 +1,5 @@
 package nl.tudelft.ewi.git.web;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map.Entry;
-
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -21,6 +13,18 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map.Entry;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.Collections2;
+import com.google.common.io.Files;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
@@ -40,17 +44,11 @@ import nl.tudelft.ewi.git.models.RepositoryModel;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
-
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.io.Files;
 
 /**
  * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve,
@@ -308,6 +306,29 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.retrieveCommits(repository, commitId);
 	}
+	
+	/**
+	 * This lists all the diffs of a specific repository between two specified commit IDs in the
+	 * Gitolite configuration.
+	 * 
+	 * @param repoId
+	 *            The <code>name</code> of the repository to list all diffs for.
+	 * @param commitId
+	 *            The commit ID of the repository to fetch the diff for.
+	 * @throws IOException
+	 *             If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *             If the service could not be reached.
+	 * @throws GitException
+	 *             If an exception occurred while using the Git API.
+	 */
+	@GET
+	@Path("{repoId}/diff/{commitId}")
+	public Collection<DiffModel> calculateDiff(@PathParam("repoId") String repoId, 
+			@PathParam("commitId") String commitId) throws IOException, ServiceUnavailable, GitException {
+		
+		return calculateDiff(repoId, commitId, null);
+	}
 
 	/**
 	 * This lists all the diffs of a specific repository between two specified commit IDs in the
@@ -333,6 +354,10 @@ public class RepositoriesApi extends BaseApi {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
+		
+		if (Strings.isNullOrEmpty(newId)) {
+			return inspector.calculateDiff(repository, decode(oldId));
+		}
 		return inspector.calculateDiff(repository, decode(oldId), decode(newId));
 	}
 
