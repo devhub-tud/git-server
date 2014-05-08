@@ -10,6 +10,12 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
+
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
@@ -18,7 +24,6 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.TagModel;
-
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -40,11 +45,6 @@ import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
-
-import com.google.common.base.Function;
-import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 
 /**
  * This class allows its users to inspect the contents of Git repositories. You can use this class
@@ -253,6 +253,10 @@ public class Inspector {
 		}
 	}
 
+	public Collection<DiffModel> calculateDiff(Repository repository, String commitId) throws IOException, GitException {
+		return calculateDiff(repository, null, commitId);
+	}
+
 	/**
 	 * This method lists a set of diffs of files of a specific {@link Repository} object between two
 	 * specific commit IDs.
@@ -281,12 +285,19 @@ public class Inspector {
 		config.setString("diff", null, "algorithm", "histogram");
 
 		try {
-			AbstractTreeIterator oldTreeIter = createTreeParser(git, leftCommitId);
-			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
+			AbstractTreeIterator oldTreeIter = new EmptyTreeIterator();
+			if (!Strings.isNullOrEmpty(leftCommitId)) {
+				oldTreeIter = createTreeParser(git, leftCommitId);
+			}
+			AbstractTreeIterator newTreeIter = new EmptyTreeIterator();
+			if (!Strings.isNullOrEmpty(rightCommitId)) {
+				newTreeIter = createTreeParser(git, rightCommitId);
+			}
 
 			List<DiffEntry> diffs = git.diff()
-				.setNewTree(newTreeIter)
+				.setContextLines(3)
 				.setOldTree(oldTreeIter)
+				.setNewTree(newTreeIter)
 				.call();
 
 			return Collections2.transform(diffs, new Function<DiffEntry, DiffModel>() {
