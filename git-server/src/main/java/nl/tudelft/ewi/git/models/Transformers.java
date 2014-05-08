@@ -16,6 +16,7 @@ import nl.minicom.gitolite.manager.models.Identifiable;
 import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
+import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 
@@ -109,7 +110,7 @@ public class Transformers {
 	/**
 	 * @return A {@link Function} which can transform {@link Repository} objects into {@link RepositoryModel} objects.
 	 */
-	public static Function<Repository, RepositoryModel> repositories() {
+	public static Function<Repository, RepositoryModel> repositories(final Config config) {
 		return new Function<Repository, RepositoryModel>() {
 			@Override
 			public RepositoryModel apply(Repository input) {
@@ -122,7 +123,7 @@ public class Transformers {
 				model.setName(input.getName());
 				model.setPermissions(permissions);
 				model.setPath("/api/repositories/" + encode(input.getName()));
-				model.setUrl("ssh://git@devhub.ewi.tudelft.nl/" + input.getName() + ".git");
+				model.setUrl(config.getGitoliteBaseUrl() + input.getName() + ".git");
 				return model;
 			}
 		};
@@ -131,7 +132,7 @@ public class Transformers {
 	/**
 	 * @return A {@link Function} which can transform {@link Repository} objects into {@link DetailedRepositoryModel} objects.
 	 */
-	public static Function<Repository, DetailedRepositoryModel> detailedRepositories(final Inspector inspector) {
+	public static Function<Repository, DetailedRepositoryModel> detailedRepositories(final Config config, final Inspector inspector) {
 		return new Function<Repository, DetailedRepositoryModel>() {
 			@Override
 			public DetailedRepositoryModel apply(Repository input) {
@@ -144,7 +145,7 @@ public class Transformers {
 				model.setName(input.getName());
 				model.setPermissions(permissions);
 				model.setPath("/api/repositories/" + encode(input.getName()));
-				model.setUrl("ssh://git@devhub.ewi.tudelft.nl/" + input.getName() + ".git");
+				model.setUrl(config.getGitoliteBaseUrl() + input.getName() + ".git");
 
 				try {
 					model.setBranches(inspector.listBranches(input));

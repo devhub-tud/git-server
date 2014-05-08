@@ -29,8 +29,12 @@ public class Config {
 		return Integer.parseInt(properties.getProperty("http.port", "8080"));
 	}
 	
+	public String getGitoliteBaseUrl() {
+		return properties.getProperty("gitolite.base-url");
+	}
+	
 	public String getGitoliteRepoUrl() {
-		return properties.getProperty("gitolite.repo-url", "git@localhost:gitolite-admin");
+		return properties.getProperty("gitolite.repo-url");
 	}
 
 	public String getPassphrase() {
