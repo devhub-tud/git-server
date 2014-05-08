@@ -149,6 +149,19 @@ public class Repositories extends Backend {
 			}
 		});
 	}
+	
+	/**
+	 * This method lists all diffs for the two specified commit IDs.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to fetch the diffs for.
+	 * @param oldCommitId
+	 *            The first commit ID.
+	 * @return A {@link List} of all {@link DiffModel} objects.
+	 *
+	public List<DiffModel> listDiffs(final RepositoryModel repository, final String oldCommitId) {
+		return listDiffs(repository, oldCommitId, null);
+	}
 
 	/**
 	 * This method lists all diffs for the two specified commit IDs.
@@ -167,7 +180,10 @@ public class Repositories extends Backend {
 		return perform(new Request<List<DiffModel>>() {
 			@Override
 			public List<DiffModel> perform(Client client) {
-				String path = repository.getPath() + "/diff/" + encode(oldCommitId) + "/" + encode(newCommitId);
+				String path = repository.getPath() + "/diff";
+				if(oldCommitId != null)
+					path += "/" + encode(oldCommitId);
+				path += "/" + encode(newCommitId);
 				return client.target(createUrl(path))
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<DiffModel>>() {
