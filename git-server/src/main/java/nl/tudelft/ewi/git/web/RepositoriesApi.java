@@ -91,7 +91,7 @@ public class RepositoriesApi extends BaseApi {
 	@GET
 	public Collection<RepositoryModel> listAllRepositories() throws IOException, ServiceUnavailable, GitException {
 		Config config = manager.get();
-		return Collections2.transform(config.getRepositories(), Transformers.repositories());
+		return Collections2.transform(config.getRepositories(), Transformers.repositories(configuration));
 	}
 
 	/**
@@ -114,7 +114,7 @@ public class RepositoriesApi extends BaseApi {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		return Transformers.detailedRepositories(inspector)
+		return Transformers.detailedRepositories(configuration, inspector)
 			.apply(repository);
 	}
 
@@ -174,7 +174,7 @@ public class RepositoriesApi extends BaseApi {
 			}
 		}
 
-		return Transformers.detailedRepositories(inspector)
+		return Transformers.detailedRepositories(configuration, inspector)
 			.apply(repository);
 	}
 
@@ -220,7 +220,7 @@ public class RepositoriesApi extends BaseApi {
 		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
 
 		manager.apply(config);
-		return Transformers.detailedRepositories(inspector)
+		return Transformers.detailedRepositories(configuration, inspector)
 			.apply(repository);
 	}
 
