@@ -164,7 +164,7 @@ public class Transformers {
 				}
 
 				try {
-					model.setRecentCommits(inspector.listCommits(input, 10));
+					model.setRecentCommits(inspector.listCommits(input, 50));
 				}
 				catch (IOException | GitException e) {
 					log.warn(e.getMessage(), e);
