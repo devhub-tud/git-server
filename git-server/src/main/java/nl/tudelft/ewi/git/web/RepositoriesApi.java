@@ -356,7 +356,14 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		
 		if (Strings.isNullOrEmpty(newId)) {
-			return inspector.calculateDiff(repository, decode(oldId));
+			CommitModel commit = retrieveCommit(repoId, oldId);
+			if(commit.getParents().length == 0) {
+				return inspector.calculateDiff(repository, decode(oldId));
+			} else {
+				// Set the newId to the oldId, and append a ^ to the old id to get its parent
+				newId = oldId;
+				oldId += "^";
+			}
 		}
 		return inspector.calculateDiff(repository, decode(oldId), decode(newId));
 	}
