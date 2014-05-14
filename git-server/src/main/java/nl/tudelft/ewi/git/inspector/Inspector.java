@@ -132,7 +132,10 @@ public class Inspector {
 				@Override
 				public TagModel apply(Ref input) {
 					TagModel tag = new TagModel();
-					ObjectId objectId = input.getObjectId();
+					ObjectId objectId = input.getPeeledObjectId();
+					if (objectId == null) {
+						objectId = input.getObjectId();
+					}
 
 					tag.setName(input.getName());
 					tag.setCommit(objectId.getName());
