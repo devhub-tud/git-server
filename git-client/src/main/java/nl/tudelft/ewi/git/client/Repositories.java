@@ -231,10 +231,9 @@ public class Repositories extends Backend {
 		return perform(new Request<String>() {
 			@Override
 			public String perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
-					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<String>() {
-					});
+				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.TEXT_PLAIN)
+					.get(String.class);
 			}
 		});
 	}
