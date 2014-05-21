@@ -1,5 +1,14 @@
 package nl.tudelft.ewi.git.web;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -13,18 +22,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map.Entry;
-
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.io.Files;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
@@ -40,15 +37,22 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
+
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.Collections2;
+import com.google.common.io.Files;
 
 /**
  * This class is a RESTEasy resource which provides an interface to users over HTTP to retrieve,
@@ -385,7 +389,7 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/tree/{commitId}")
-	public Collection<String> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId)
+	public Map<String, EntryType> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId)
 			throws IOException, ServiceUnavailable, GitException {
 
 		return showTree(repoId, commitId, "");
@@ -408,12 +412,12 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/tree/{commitId}/{path}")
-	public Collection<String> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
+	public Map<String, EntryType> showTree(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
 			@PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		Collection<String> entries = inspector.showTree(repository, decode(commitId), decode(path));
+		Map<String, EntryType> entries = inspector.showTree(repository, decode(commitId), decode(path));
 		if (entries == null) {
 			throw new NotFoundException();
 		}
@@ -438,7 +442,7 @@ public class RepositoriesApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@GET
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.MULTIPART_FORM_DATA)
 	@Path("{repoId}/file/{commitId}/{path}")
 	public InputStream showFile(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
 			@PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
@@ -449,6 +453,7 @@ public class RepositoriesApi extends BaseApi {
 		if (stream == null) {
 			throw new NotFoundException();
 		}
+		
 		return stream;
 	}
 

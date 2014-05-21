@@ -6,16 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-import org.eclipse.jgit.treewalk.EmptyTreeIterator;
-
-import com.google.common.base.Function;
-import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
@@ -23,7 +17,9 @@ import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.DiffModel.Type;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.TagModel;
+
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -31,9 +27,11 @@ import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.diff.DiffFormatter;
+import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.ObjectStream;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
@@ -43,8 +41,15 @@ import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
+
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * This class allows its users to inspect the contents of Git repositories. You can use this class
@@ -56,6 +61,21 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
  */
 @Slf4j
 public class Inspector {
+
+	private static EntryType of(org.eclipse.jgit.lib.Repository repo, TreeWalk walker, String entry) throws IOException {
+		if (entry.endsWith("/")) {
+			return EntryType.FOLDER;
+		}
+
+		ObjectId objectId = walker.getObjectId(0);
+		ObjectLoader loader = repo.open(objectId);
+		try (ObjectStream stream = loader.openStream()) {
+			if (RawText.isBinary(stream)) {
+				return EntryType.BINARY;
+			}
+			return EntryType.TEXT;
+		}
+	}
 
 	private final File repositoriesDirectory;
 
@@ -365,7 +385,7 @@ public class Inspector {
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<String> showTree(Repository repository, String commitId, String path) throws IOException,
+	public Map<String, EntryType> showTree(Repository repository, String commitId, String path) throws IOException,
 			GitException {
 
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
@@ -396,7 +416,7 @@ public class Inspector {
 		return showFile(git.getRepository(), commitId, path);
 	}
 
-	private Collection<String> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
+	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
 			throws GitException, IOException {
 
 		RevWalk walk = new RevWalk(repo);
@@ -412,7 +432,7 @@ public class Inspector {
 			path += "/";
 		}
 
-		List<String> handles = Lists.newArrayList();
+		Map<String, EntryType> handles = Maps.newLinkedHashMap();
 		while (walker.next()) {
 			String entryPath = walker.getPathString();
 			if (!entryPath.startsWith(path)) {
@@ -423,29 +443,13 @@ public class Inspector {
 			if (entry.contains("/")) {
 				entry = entry.substring(0, entry.indexOf('/') + 1);
 			}
-
-			handles.add(entry);
+			
+			handles.put(entry, of(repo, walker, entry));
 		}
 
 		if (handles.isEmpty()) {
 			return null;
 		}
-
-		Collections.sort(handles, new Comparator<String>() {
-			@Override
-			public int compare(String o1, String o2) {
-				if (o1.endsWith("/") && o2.endsWith("/")) {
-					return o1.compareTo(o2);
-				}
-				else if (!o1.endsWith("/") && !o2.endsWith("/")) {
-					return o1.compareTo(o2);
-				}
-				else if (o1.endsWith("/")) {
-					return -1;
-				}
-				return 1;
-			}
-		});
 
 		return handles;
 	}

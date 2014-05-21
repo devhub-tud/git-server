@@ -1,6 +1,8 @@
 package nl.tudelft.ewi.git.client;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -12,6 +14,7 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
 /**
@@ -204,13 +207,13 @@ public class Repositories extends Backend {
 	 *            The path to list all files and folders of.
 	 * @return A {@link List} with files and directory names.
 	 */
-	public List<String> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
-		return perform(new Request<List<String>>() {
+	public Map<String, EntryType> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
+		return perform(new Request<Map<String, EntryType>>() {
 			@Override
-			public List<String> perform(Client client) {
+			public Map<String, EntryType> perform(Client client) {
 				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
 					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<List<String>>() {
+					.get(new GenericType<Map<String, EntryType>>() {
 					});
 			}
 		});
@@ -232,8 +235,30 @@ public class Repositories extends Backend {
 			@Override
 			public String perform(Client client) {
 				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
-					.request(MediaType.TEXT_PLAIN)
+					.request(MediaType.MULTIPART_FORM_DATA)
 					.get(String.class);
+			}
+		});
+	}
+	
+	/**
+	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to inspect.
+	 * @param commitId
+	 *            The commit ID to inspect.
+	 * @param path
+	 *            The path of the file to inspect.
+	 * @return The contents of the specified file.
+	 */
+	public File showBinFile(final RepositoryModel repository, final String commitId, final String path) {
+		return perform(new Request<File>() {
+			@Override
+			public File perform(Client client) {
+				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.MULTIPART_FORM_DATA)
+					.get(File.class);
 			}
 		});
 	}
