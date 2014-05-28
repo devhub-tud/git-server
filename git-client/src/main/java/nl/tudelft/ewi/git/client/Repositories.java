@@ -1,11 +1,14 @@
 package nl.tudelft.ewi.git.client;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
 /**
@@ -98,7 +101,7 @@ public interface Repositories {
 	 *            The path to list all files and folders of.
 	 * @return A {@link List} with files and directory names.
 	 */
-	List<String> listDirectoryEntries(RepositoryModel repository, String commitId, String path);
+	public Map<String, EntryType> listDirectoryEntries(RepositoryModel repository, String commitId, String path);
 
 	/**
 	 * This method retrieves the contents of a file at the specified commit ID of the repository.
@@ -111,6 +114,19 @@ public interface Repositories {
 	 *            The path of the file to inspect.
 	 * @return The contents of the specified file.
 	 */
-	String showFile(RepositoryModel repository, String commitId, String path);
+	public String showFile(RepositoryModel repository, String commitId, String path);
+	
+	/**
+	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to inspect.
+	 * @param commitId
+	 *            The commit ID to inspect.
+	 * @param path
+	 *            The path of the file to inspect.
+	 * @return The contents of the specified file.
+	 */
+	public File showBinFile(RepositoryModel repository, String commitId, String path);
 	
 }

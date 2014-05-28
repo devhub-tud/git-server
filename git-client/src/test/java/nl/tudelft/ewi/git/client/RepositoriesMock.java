@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.client;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 import nl.tudelft.ewi.git.models.TagModel;
 
@@ -24,7 +26,7 @@ import nl.tudelft.ewi.git.models.TagModel;
 public class RepositoriesMock implements Repositories {
 	
 	public static final List<DiffModel> EMPTY_DIFF_MODEL = new ArrayList<>();
-	public static final List<String> EMPTY_DIRECTORY_ENTRIES = new ArrayList<>();
+	public static final Map<String, EntryType> EMPTY_DIRECTORY_ENTRIES = new HashMap<>();
 	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS]";
 	
 	private final Map<String, DetailedRepositoryModel> repositories = new HashMap<>();
@@ -99,14 +101,14 @@ public class RepositoriesMock implements Repositories {
 		return listDiffs;
 	}
 	
-	private List<String> directoryEntries = EMPTY_DIRECTORY_ENTRIES;
+	private Map<String, EntryType> directoryEntries = EMPTY_DIRECTORY_ENTRIES;
 	
-	public void setDirectoryEntries(List<String> entries) {
+	public void setDirectoryEntries(Map<String, EntryType> entries) {
 		this.directoryEntries = entries;
 	}
 	
 	@Override
-	public List<String> listDirectoryEntries(RepositoryModel repository,
+	public Map<String, EntryType> listDirectoryEntries(RepositoryModel repository,
 			String commitId, String path) {
 		return directoryEntries;
 	}
@@ -121,6 +123,20 @@ public class RepositoriesMock implements Repositories {
 	public String showFile(RepositoryModel repository, String commitId,
 			String path) {
 		return file;
+	}
+	
+	private File binFile;
+	
+	public void setBinFile(File file) {
+		this.binFile = file;
+	}
+
+	@Override
+	public File showBinFile(RepositoryModel repository, String commitId, String path) {
+		if(binFile == null) {
+			throw new NotFoundException();
+		}
+		return binFile;
 	}
 
 }

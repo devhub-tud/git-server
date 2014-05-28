@@ -6,12 +6,15 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
 /**
@@ -121,12 +124,12 @@ public class RepositoriesImpl extends Backend implements Repositories {
 				StringBuilder path = new StringBuilder();
 				path.append(repository.getPath());
 				path.append("/diff");
-				
+
 				if(oldCommitId != null) {
 					path.append("/" + encode(oldCommitId));
 				}
 				path.append("/" + encode(newCommitId));
-				
+
 				return client.target(createUrl(path.toString()))
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<DiffModel>>() {
@@ -136,13 +139,13 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	}
 	
 	@Override
-	public List<String> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
-		return perform(new Request<List<String>>() {
+	public Map<String, EntryType> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
+		return perform(new Request<Map<String, EntryType>>() {
 			@Override
-			public List<String> perform(Client client) {
+			public Map<String, EntryType> perform(Client client) {
 				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
 					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<List<String>>() {
+					.get(new GenericType<Map<String, EntryType>>() {
 					});
 			}
 		});
@@ -153,10 +156,21 @@ public class RepositoriesImpl extends Backend implements Repositories {
 		return perform(new Request<String>() {
 			@Override
 			public String perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
-					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<String>() {
-					});
+				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.MULTIPART_FORM_DATA)
+					.get(String.class);
+			}
+		});
+	}
+	
+	@Override
+	public File showBinFile(final RepositoryModel repository, final String commitId, final String path) {
+		return perform(new Request<File>() {
+			@Override
+			public File perform(Client client) {
+				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
+					.request(MediaType.MULTIPART_FORM_DATA)
+					.get(File.class);
 			}
 		});
 	}
