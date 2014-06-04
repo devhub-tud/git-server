@@ -11,7 +11,7 @@ public class DetailedRepositoryModelFactory {
 		model.setPermissions(createRepositoryModel.getPermissions());
 		model.setRecentCommits(Lists.<CommitModel> newArrayList());
 		model.setTags(Lists.<TagModel> newArrayList());
-		model.setUrl(createRepositoryModel.getUrl());
+		model.setUrl("ssh://git@localhost:2222/" + createRepositoryModel.getName());
 		return model;
 	}
 	
