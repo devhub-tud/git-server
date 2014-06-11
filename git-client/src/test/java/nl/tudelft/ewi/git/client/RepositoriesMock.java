@@ -26,7 +26,7 @@ public class RepositoriesMock implements Repositories {
 	
 	public static final List<DiffModel> EMPTY_DIFF_MODEL = new ArrayList<>();
 	public static final Map<String, EntryType> EMPTY_DIRECTORY_ENTRIES = new HashMap<>();
-	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS]";
+	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS\nNEWLINE\nANOTHERNEWLINE]";
 	
 	private final Map<String, DetailedRepositoryModel> repositories = new HashMap<>();
 

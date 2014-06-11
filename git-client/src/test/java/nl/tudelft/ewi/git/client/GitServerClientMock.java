@@ -2,33 +2,28 @@ package nl.tudelft.ewi.git.client;
 
 public class GitServerClientMock implements GitServerClient {
 	
-	private final Repositories repositories;
-	private final Users users;
-	private final Groups groups;
+	private final RepositoriesMock repositories;
+	private final UsersMock users;
+	private final GroupsMock groups;
 	
 	public GitServerClientMock() {
-		this(new RepositoriesMock(), new UsersMock(), new GroupsMock());
-	}
-	
-	public GitServerClientMock(Repositories repositories, Users users,
-			Groups groups) {
-		this.repositories = repositories;
-		this.users = users;
-		this.groups = groups;
+		this.repositories = new RepositoriesMock();
+		this.users = new UsersMock();
+		this.groups = new GroupsMock();
 	}
 
 	@Override
-	public Repositories repositories() {
+	public RepositoriesMock repositories() {
 		return repositories;
 	}
 
 	@Override
-	public Users users() {
+	public UsersMock users() {
 		return users;
 	}
 
 	@Override
-	public Groups groups() {
+	public GroupsMock groups() {
 		return groups;
 	}
 
