@@ -10,14 +10,13 @@ import javax.ws.rs.NotFoundException;
 
 import com.google.common.collect.Lists;
 
-import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
+import nl.tudelft.ewi.git.models.DetailedRepositoryModelFactory;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
-import nl.tudelft.ewi.git.models.TagModel;
 
 /**
  * The {@code RepositoriesMock} mocks a {@link Repositories} class
@@ -27,7 +26,7 @@ public class RepositoriesMock implements Repositories {
 	
 	public static final List<DiffModel> EMPTY_DIFF_MODEL = new ArrayList<>();
 	public static final Map<String, EntryType> EMPTY_DIRECTORY_ENTRIES = new HashMap<>();
-	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS]";
+	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS\nNEWLINE\nANOTHERNEWLINE]";
 	
 	private final Map<String, DetailedRepositoryModel> repositories = new HashMap<>();
 
@@ -53,15 +52,8 @@ public class RepositoriesMock implements Repositories {
 	@Override
 	public DetailedRepositoryModel create(CreateRepositoryModel newRepository) {
 		String name = newRepository.getName();
-		
-		DetailedRepositoryModel response = new DetailedRepositoryModel();
-		response.setName(name);
-		response.setPermissions(newRepository.getPermissions());
-		response.setBranches(new ArrayList<BranchModel>());
-		response.setRecentCommits(new ArrayList<CommitModel>());
-		response.setTags(new ArrayList<TagModel>());
+		DetailedRepositoryModel response = DetailedRepositoryModelFactory.create(newRepository);
 		repositories.put(name, response);
-		
 		return response;
 	}
 	
