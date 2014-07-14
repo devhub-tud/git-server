@@ -12,6 +12,7 @@ import java.util.Map;
 
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
+import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -97,6 +98,28 @@ public class RepositoriesImpl extends Backend implements Repositories {
 				return client.target(createUrl(repository.getPath() + "/commits"))
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<CommitModel>>() {
+					});
+			}
+		});
+	}
+	
+	@Override
+	public DetailedBranchModel retrieveBranch(final RepositoryModel repository,
+			final String branchName) {
+		return retrieveBranch(repository, branchName, 0, Integer.MAX_VALUE);
+	}
+	
+	@Override
+	public DetailedBranchModel retrieveBranch(final RepositoryModel repository,
+			final String branchName, final int skip, final int limit) {
+		return perform(new Request<DetailedBranchModel>() {
+			@Override
+			public DetailedBranchModel perform(Client client) {
+				return client.target(createUrl(repository.getPath() + "/branch/" + encode(branchName)))
+					.queryParam("skip", skip)
+					.queryParam("limit", limit)
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<DetailedBranchModel>() {
 					});
 			}
 		});

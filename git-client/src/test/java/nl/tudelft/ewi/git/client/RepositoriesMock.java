@@ -2,20 +2,27 @@ package nl.tudelft.ewi.git.client;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import javax.ws.rs.NotFoundException;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Queues;
+import com.google.common.collect.Sets;
 
+import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
-import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
-import nl.tudelft.ewi.git.models.DetailedRepositoryModelFactory;
+import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedBranchModel.Pagination;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
+import nl.tudelft.ewi.git.models.MockedRepositoryModel;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
 /**
@@ -28,7 +35,7 @@ public class RepositoriesMock implements Repositories {
 	public static final Map<String, EntryType> EMPTY_DIRECTORY_ENTRIES = new HashMap<>();
 	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS\nNEWLINE\nANOTHERNEWLINE]";
 	
-	private final Map<String, DetailedRepositoryModel> repositories = new HashMap<>();
+	private final Map<String, MockedRepositoryModel> repositories = new HashMap<>();
 
 	@Override
 	public List<RepositoryModel> retrieveAll() {
@@ -36,13 +43,13 @@ public class RepositoriesMock implements Repositories {
 	}
 
 	@Override
-	public DetailedRepositoryModel retrieve(RepositoryModel model) {
+	public MockedRepositoryModel retrieve(RepositoryModel model) {
 		return retrieve(model.getName());
 	}
 
 	@Override
-	public DetailedRepositoryModel retrieve(String name) {
-		DetailedRepositoryModel model = repositories.get(name);
+	public MockedRepositoryModel retrieve(String name) {
+		MockedRepositoryModel model = repositories.get(name);
 		if(model == null) {
 			throw new NotFoundException("Repository model could not be found: " + name);
 		}
@@ -50,9 +57,9 @@ public class RepositoriesMock implements Repositories {
 	}
 
 	@Override
-	public DetailedRepositoryModel create(CreateRepositoryModel newRepository) {
-		String name = newRepository.getName();
-		DetailedRepositoryModel response = DetailedRepositoryModelFactory.create(newRepository);
+	public MockedRepositoryModel create(CreateRepositoryModel createRepositoryModel) {
+		String name = createRepositoryModel.getName();
+		MockedRepositoryModel response = MockedRepositoryModel.from(createRepositoryModel);
 		repositories.put(name, response);
 		return response;
 	}
@@ -66,14 +73,14 @@ public class RepositoriesMock implements Repositories {
 
 	@Override
 	public List<CommitModel> listCommits(RepositoryModel repository) {
-		DetailedRepositoryModel detailedRepository = retrieve(repository);
-		return Lists.newArrayList(detailedRepository.getRecentCommits());
+		MockedRepositoryModel mockedRepository = retrieve(repository);
+		return Lists.newArrayList(mockedRepository.getCommits());
 	}
 
 	@Override
 	public CommitModel retrieveCommit(RepositoryModel repository, String commitId) {
-		DetailedRepositoryModel detailedRepository = retrieve(repository);
-		for(CommitModel commit : detailedRepository.getRecentCommits()) {
+		MockedRepositoryModel mockedRepository = retrieve(repository);
+		for(CommitModel commit : mockedRepository.getCommits()) {
 			if(commit.getCommit().equalsIgnoreCase(commitId)){
 				return commit;
 			}
@@ -81,6 +88,51 @@ public class RepositoriesMock implements Repositories {
 		throw new NotFoundException("Commit could not be found " + commitId);
 	}
 	
+	@Override
+	public DetailedBranchModel retrieveBranch(RepositoryModel repository, String branchName) {
+		return retrieveBranch(repository, branchName, 0, Integer.MAX_VALUE);
+	}
+
+	@Override
+	public DetailedBranchModel retrieveBranch(final RepositoryModel repository,
+			final String branchName, final int skip, final int limit) {
+		
+		MockedRepositoryModel mockedRepository = retrieve(repository);
+		
+		for(BranchModel branch : mockedRepository.getBranches()){
+			if(branch.getName().contains(branchName)) {
+				DetailedBranchModel result = DetailedBranchModel.from(branch);
+				
+				Set<CommitModel> commits = Sets.newTreeSet(new Comparator<CommitModel>() {
+
+					@Override
+					public int compare(CommitModel o1, CommitModel o2) {
+						return (int) (o1.getTime() - o2.getTime());
+					}
+					
+				});
+				
+				Queue<CommitModel> queue = Queues.newArrayDeque();
+				queue.add(retrieveCommit(repository, result.getCommit()));
+				
+				while(!queue.isEmpty()) {
+					CommitModel commit = queue.poll();
+					if(commits.add(commit)) {
+						for(String parent : commit.getParents()) {
+							queue.add(retrieveCommit(repository, parent));
+						}
+					}
+				}
+				
+				result.setCommits(commits);
+				result.setPagination(new Pagination(0, Integer.MAX_VALUE, commits.size()));
+				return result;
+			}
+		}
+		
+		throw new NotFoundException("Branch does not exist!");
+	}
+
 	private List<DiffModel> listDiffs = EMPTY_DIFF_MODEL;
 	
 	public void setListDiffs(List<DiffModel> listDiffs) {
