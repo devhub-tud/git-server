@@ -21,7 +21,7 @@ public class DetailedBranchModel extends BranchModel {
 	
 	private Collection<CommitModel> commits;
 	
-	private Pagination pagination;
+	private int amountOfCommits;
 	
 	/**
 	 * Construct a {@code DetailedBranchModel} based on a {@link BranchModel}
@@ -34,31 +34,6 @@ public class DetailedBranchModel extends BranchModel {
 		result.setName(model.getName());
 		result.setCommit(model.getCommit());
 		return result;
-	}
-	
-	@Data
-	static public class Pagination {
-				
-		private int start, limit, total;
-		
-		public Pagination() {};
-		
-		public Pagination(int start, int limit, int total) {
-			this.start = start;
-			this.limit = limit;
-			this.total = total;
-		}
-		
-		@JsonIgnore
-		public int getPageIndex() {
-			return start / limit;
-		}
-		
-		@JsonIgnore
-		public int getPageCount() {
-			return (total + limit - 1) / limit;
-		}
-		
 	}
 	
 }

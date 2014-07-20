@@ -19,7 +19,6 @@ import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel.Pagination;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.MockedRepositoryModel;
@@ -103,11 +102,11 @@ public class RepositoriesMock implements Repositories {
 			if(branch.getName().contains(branchName)) {
 				DetailedBranchModel result = DetailedBranchModel.from(branch);
 				
-				Set<CommitModel> commits = Sets.newTreeSet(new Comparator<CommitModel>() {
+				Set<CommitModel> commitSet = Sets.newTreeSet(new Comparator<CommitModel>() {
 
 					@Override
 					public int compare(CommitModel o1, CommitModel o2) {
-						return (int) (o1.getTime() - o2.getTime());
+						return (int) (o2.getTime() - o1.getTime());
 					}
 					
 				});
@@ -117,15 +116,20 @@ public class RepositoriesMock implements Repositories {
 				
 				while(!queue.isEmpty()) {
 					CommitModel commit = queue.poll();
-					if(commits.add(commit)) {
+					if(commitSet.add(commit)) {
 						for(String parent : commit.getParents()) {
 							queue.add(retrieveCommit(repository, parent));
 						}
 					}
 				}
 				
-				result.setCommits(commits);
-				result.setPagination(new Pagination(0, Integer.MAX_VALUE, commits.size()));
+				if(skip < 0 || limit < 0 || skip > commitSet.size()) {
+					throw new IllegalArgumentException();
+				}
+				
+				List<CommitModel> commitList = Lists.newArrayList(commitSet);
+				result.setCommits(commitList.subList(skip, Math.min(skip + limit, commitList.size())));
+				result.setAmountOfCommits(commitSet.size());
 				return result;
 			}
 		}

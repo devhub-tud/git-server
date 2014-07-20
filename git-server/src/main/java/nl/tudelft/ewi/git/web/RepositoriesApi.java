@@ -38,7 +38,6 @@ import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel.Pagination;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -314,7 +313,7 @@ public class RepositoriesApi extends BaseApi {
 		}
 		
 		branch.setCommits(commits.subList(skip, Math.min(size, skip + limit)));
-		branch.setPagination(new Pagination(skip, limit, commits.size()));
+		branch.setAmountOfCommits(size);
 		return branch;
 	}
 
