@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper=true)
 public class MockedRepositoryModel extends DetailedRepositoryModel {
 
-	private List<CommitModel> commits;
+	private List<DetailedCommitModel> commits;
 	
 	static public MockedRepositoryModel from(CreateRepositoryModel createRepositoryModel) {
 		MockedRepositoryModel model = new MockedRepositoryModel();
@@ -20,14 +20,14 @@ public class MockedRepositoryModel extends DetailedRepositoryModel {
 		model.setPermissions(createRepositoryModel.getPermissions());
 		
 		model.setTags(Lists.<TagModel> newArrayList());
-		model.setCommits(Lists.<CommitModel> newArrayList());
+		model.setCommits(Lists.<DetailedCommitModel> newArrayList());
 		model.setBranches(Lists.<BranchModel> newArrayList());
 		
 		model.setUrl("ssh://git@localhost:2222/" + createRepositoryModel.getName());
 		return model;
 	}
 	
-	public void addCommit(CommitModel commit) {
+	public void addCommit(DetailedCommitModel commit) {
 		commits.add(commit);
 	}
 	

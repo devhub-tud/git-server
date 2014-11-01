@@ -2,8 +2,6 @@ package nl.tudelft.ewi.git.models;
 
 import java.util.Collection;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

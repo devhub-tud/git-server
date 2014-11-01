@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.models;
 
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Setter;
  * @author michael
  */
 @Data
+@EqualsAndHashCode
 class BaseModel {
 	
 	@Setter(AccessLevel.PACKAGE)

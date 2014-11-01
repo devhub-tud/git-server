@@ -7,6 +7,7 @@ import java.util.Map;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -101,7 +102,7 @@ public interface Repositories {
 	 *            The commit to retrieve.
 	 * @return A {@link CommitModel} object from the specified repository.
 	 */
-	CommitModel retrieveCommit(RepositoryModel repository, String commitId);
+	DetailedCommitModel retrieveCommit(RepositoryModel repository, String commitId);
 
 	/**
 	 * This method lists all diffs for the two specified commit IDs.

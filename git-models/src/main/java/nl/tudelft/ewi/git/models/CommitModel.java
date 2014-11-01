@@ -1,6 +1,7 @@
 package nl.tudelft.ewi.git.models;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import com.google.common.base.Strings;
 
@@ -10,6 +11,7 @@ import com.google.common.base.Strings;
  * @author michael
  */
 @Data
+@EqualsAndHashCode
 public class CommitModel {
 
 	private String commit;

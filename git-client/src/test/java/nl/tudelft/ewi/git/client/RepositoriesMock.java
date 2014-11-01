@@ -19,6 +19,7 @@ import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.MockedRepositoryModel;
@@ -73,13 +74,15 @@ public class RepositoriesMock implements Repositories {
 	@Override
 	public List<CommitModel> listCommits(RepositoryModel repository) {
 		MockedRepositoryModel mockedRepository = retrieve(repository);
-		return Lists.newArrayList(mockedRepository.getCommits());
+		List<CommitModel> result = Lists.newArrayList();
+		result.addAll(mockedRepository.getCommits());
+		return result;
 	}
 
 	@Override
-	public CommitModel retrieveCommit(RepositoryModel repository, String commitId) {
+	public DetailedCommitModel retrieveCommit(RepositoryModel repository, String commitId) {
 		MockedRepositoryModel mockedRepository = retrieve(repository);
-		for(CommitModel commit : mockedRepository.getCommits()) {
+		for(DetailedCommitModel commit : mockedRepository.getCommits()) {
 			if(commit.getCommit().equalsIgnoreCase(commitId)){
 				return commit;
 			}

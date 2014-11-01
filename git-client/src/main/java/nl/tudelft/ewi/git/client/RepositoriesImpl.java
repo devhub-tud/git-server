@@ -13,6 +13,7 @@ import java.util.Map;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -126,13 +127,13 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	}
 
 	@Override
-	public CommitModel retrieveCommit(final RepositoryModel repository, final String commitId) {
-		return perform(new Request<CommitModel>() {
+	public DetailedCommitModel retrieveCommit(final RepositoryModel repository, final String commitId) {
+		return perform(new Request<DetailedCommitModel>() {
 			@Override
-			public CommitModel perform(Client client) {
+			public DetailedCommitModel perform(Client client) {
 				return client.target(createUrl(repository.getPath() + "/commits/" + commitId))
 					.request(MediaType.APPLICATION_JSON)
-					.get(CommitModel.class);
+					.get(DetailedCommitModel.class);
 			}
 		});
 	}
