@@ -32,6 +32,7 @@ import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawText;
+import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
@@ -452,6 +453,10 @@ public class Inspector {
 				.setOldTree(oldTreeIter)
 				.setNewTree(newTreeIter)
 				.call();
+			
+			RenameDetector rd = new RenameDetector(repo);
+			rd.addAll(diffs);
+			diffs = rd.compute();
 
 			return Collections2.transform(diffs, new Function<DiffEntry, DiffModel>() {
 				public DiffModel apply(DiffEntry input) {
