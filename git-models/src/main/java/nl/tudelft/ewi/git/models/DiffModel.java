@@ -1,6 +1,7 @@
 package nl.tudelft.ewi.git.models;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * This class is a data class which represents a diff between two commits in a Git repository.
@@ -8,6 +9,7 @@ import lombok.Data;
  * @author michael
  */
 @Data
+@EqualsAndHashCode
 public class DiffModel {
 	
 	public enum Type {

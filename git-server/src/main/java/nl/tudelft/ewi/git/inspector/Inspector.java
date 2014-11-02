@@ -18,6 +18,7 @@ import nl.minicom.gitolite.manager.models.Repository;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -90,6 +91,7 @@ public class Inspector {
 	 *            The directory where all Git repositories are mirrored to (non-bare repositories).
 	 */
 	public Inspector(File repositoriesDirectory) {
+		log.info("Created Inspector in folder {}", repositoriesDirectory.getAbsolutePath());
 		this.repositoriesDirectory = repositoriesDirectory;
 	}
 
@@ -365,7 +367,7 @@ public class Inspector {
 	 *            with.
 	 * @throws IOException In case the Git repository could not be accessed.
 	 */
-	public CommitModel retrieveCommit(Repository repository, String commitId)
+	public DetailedCommitModel retrieveCommit(Repository repository, String commitId)
 			throws GitException, IOException {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
@@ -388,12 +390,13 @@ public class Inspector {
 			PersonIdent committerIdent = revCommit.getCommitterIdent();
 			ObjectId revCommitId = revCommit.getId();
 
-			CommitModel commit = new CommitModel();
+			DetailedCommitModel commit = new DetailedCommitModel();
 			commit.setCommit(revCommitId.getName());
 			commit.setParents(parentIds);
 			commit.setTime(revCommit.getCommitTime());
 			commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
 			commit.setMessage(revCommit.getShortMessage());
+			commit.setFullMessage(revCommit.getFullMessage());
 
 			return commit;
 		}

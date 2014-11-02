@@ -38,6 +38,7 @@ import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
+import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -333,7 +334,7 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/commits/{commitId}")
-	public CommitModel retrieveCommit(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId)
+	public DetailedCommitModel retrieveCommit(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId)
 			throws IOException, ServiceUnavailable, GitException {
 
 		Config config = manager.get();
