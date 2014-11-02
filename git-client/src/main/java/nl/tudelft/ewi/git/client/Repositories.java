@@ -6,6 +6,7 @@ import java.util.Map;
 
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
+import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -64,6 +65,32 @@ public interface Repositories {
 	 * @return A {@link List} of all {@link CommitModel} object for the specified repository.
 	 */
 	List<CommitModel> listCommits(RepositoryModel repository);
+	
+	/**
+	 * This method retrieves a {@link DetailedBranchModel} on the git server
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to retrieve a branch for
+	 * @param branchName
+	 *            The name of the branch to retrieve
+	 * @return a {@link DetailedBranchModel}
+	 */
+	DetailedBranchModel retrieveBranch(RepositoryModel repository, String branchName);
+	
+	/**
+	 * This method retrieves a {@link DetailedBranchModel} on the git server
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to retrieve a branch for
+	 * @param branchName
+	 *            The name of the branch to retrieve
+	 * @param skip
+	 *            amount of commits to skip in the list of commits (pagination)
+	 * @param limit
+	 *            limit of the size of the list of commits (pagination)
+	 * @return a {@link DetailedBranchModel}
+	 */
+	DetailedBranchModel retrieveBranch(RepositoryModel repository, String branchName, int skip, int limit);
 
 	/**
 	 * This method retrieves a specific commit in the {@link RepositoryModel} on the git-server.

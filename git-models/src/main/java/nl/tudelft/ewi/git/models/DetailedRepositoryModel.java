@@ -17,7 +17,5 @@ public class DetailedRepositoryModel extends RepositoryModel {
 	private Collection<BranchModel> branches;
 
 	private Collection<TagModel> tags;
-
-	private Collection<CommitModel> recentCommits;
-
+	
 }

@@ -163,14 +163,6 @@ public class Transformers {
 					model.setTags(Collections.<TagModel> emptyList());
 				}
 
-				try {
-					model.setRecentCommits(inspector.listCommits(input, 50));
-				}
-				catch (IOException | GitException e) {
-					log.warn(e.getMessage(), e);
-					model.setRecentCommits(Collections.<CommitModel> emptyList());
-				}
-
 				return model;
 			}
 		};

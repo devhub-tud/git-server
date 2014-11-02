@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -20,6 +21,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
+import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -286,6 +289,33 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.listCommits(repository);
 	}
+	
+	@GET
+	@Path("{repoId}/branch/{branchName}")
+	public DetailedBranchModel retrieveBranch(@PathParam("repoId") String repoId,
+			@PathParam("branchName") String branchName,
+			@QueryParam("skip") @DefaultValue("0") int skip,
+			@QueryParam("limit") @DefaultValue("50") int limit)
+			throws IOException, ServiceUnavailable, GitException {
+		
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		
+		DetailedBranchModel branch = DetailedBranchModel
+				.from(inspector.getBranch(repository, branchName));
+		List<CommitModel> commits = inspector.listCommitsInBranch(repository, branch);
+		
+		int size = commits.size();
+	
+		if(skip < 0 || limit < 0 || skip > size) {
+			throw new IllegalArgumentException();
+		}
+		
+		branch.setCommits(commits.subList(skip, Math.min(size, skip + limit)));
+		branch.setAmountOfCommits(size);
+		return branch;
+	}
 
 	/**
 	 * This retrieves a specific commit of a specific repository in the Gitolite configuration.
@@ -308,7 +338,7 @@ public class RepositoriesApi extends BaseApi {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		return inspector.retrieveCommits(repository, commitId);
+		return inspector.retrieveCommit(repository, commitId);
 	}
 	
 	/**
