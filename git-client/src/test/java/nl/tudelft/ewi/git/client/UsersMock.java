@@ -13,9 +13,7 @@ import nl.tudelft.ewi.git.models.UserModel;
 
 public class UsersMock implements Users {
 	
-	private final Map<String, UserModel> users = new HashMap<>();
-	
-	private final Map<String, SshKeys> keys = new HashMap<>();
+	private final Map<String, MockedUserModel> users = new HashMap<>();
 
 	@Override
 	public List<IdentifiableModel> retrieveAll() {
@@ -23,8 +21,8 @@ public class UsersMock implements Users {
 	}
 
 	@Override
-	public UserModel retrieve(String userName) {
-		UserModel user = users.get(userName);
+	public MockedUserModel retrieve(String userName) {
+		MockedUserModel user = users.get(userName);
 		
 		if(user==null) {
 			throw new NotFoundException("User not found: " + userName);
@@ -34,18 +32,19 @@ public class UsersMock implements Users {
 	}
 
 	@Override
-	public UserModel retrieve(UserModel model) {
+	public MockedUserModel retrieve(UserModel model) {
 		return retrieve(model.getName());
 	}
 
 	@Override
-	public UserModel create(UserModel newUser) {
+	public MockedUserModel create(UserModel newUser) {
 		String username = newUser.getName();
 		if(users.containsKey(username)) {
 			throw new RuntimeException("User already exists " + newUser);
 		} else {
-			users.put(newUser.getName(), newUser);
-			return newUser;
+			MockedUserModel decoratedUser = new MockedUserModel(newUser, new SshKeysMock());
+			users.put(newUser.getName(), decoratedUser);
+			return decoratedUser;
 		}
 	}
 
@@ -57,7 +56,7 @@ public class UsersMock implements Users {
 	}
 
 	@Override
-	public UserModel ensureExists(UserModel model) {
+	public MockedUserModel ensureExists(UserModel model) {
 		try {
 			return retrieve(model.getName());
 		} catch (NotFoundException e) {
@@ -70,19 +69,11 @@ public class UsersMock implements Users {
 		// Ensure that the repository exists, or throw an exception
 		retrieve(user.getName());
 		users.remove(user.getName());
-		keys.remove(user.getName());
 	}
 
 	@Override
-	public SshKeys sshKeys(UserModel user) {
-		SshKeys sshKeys = keys.get(user.getName());
-		
-		if(sshKeys==null) {
-			sshKeys = new SshKeysMock();
-			keys.put(user.getName(), sshKeys);
-		}
-		
-		return sshKeys;
+	public SshKeysMock sshKeys(UserModel user) {
+		return retrieve(user).getSshKeys();
 	}
 
 }
