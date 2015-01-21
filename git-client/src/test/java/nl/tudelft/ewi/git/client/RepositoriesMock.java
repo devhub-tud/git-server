@@ -152,6 +152,12 @@ public class RepositoriesMock implements Repositories {
 		return listDiffs;
 	}
 	
+	@Override
+	public List<DiffModel> listDiffs(RepositoryModel repository,
+			String oldCommitId, String newCommitId, int context) {
+		return listDiffs;
+	}
+
 	private Map<String, EntryType> directoryEntries = EMPTY_DIRECTORY_ENTRIES;
 	
 	public void setDirectoryEntries(Map<String, EntryType> entries) {

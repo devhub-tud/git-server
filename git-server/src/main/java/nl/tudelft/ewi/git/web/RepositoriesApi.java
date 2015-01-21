@@ -343,13 +343,15 @@ public class RepositoriesApi extends BaseApi {
 	}
 	
 	/**
-	 * This lists all the diffs of a specific repository between two specified commit IDs in the
-	 * Gitolite configuration.
+	 * This lists all the diffs of a specific repository between two specified
+	 * commit IDs in the Gitolite configuration.
 	 * 
 	 * @param repoId
 	 *            The <code>name</code> of the repository to list all diffs for.
 	 * @param commitId
 	 *            The commit ID of the repository to fetch the diff for.
+	 * @param contextLines
+	 *            amount of context lines
 	 * @throws IOException
 	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
@@ -359,10 +361,13 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/diff/{commitId}")
-	public Collection<DiffModel> calculateDiff(@PathParam("repoId") String repoId, 
-			@PathParam("commitId") String commitId) throws IOException, ServiceUnavailable, GitException {
+	public Collection<DiffModel> calculateDiff(
+			@PathParam("repoId") String repoId,
+			@PathParam("commitId") String commitId,
+			@DefaultValue("3") @QueryParam("contextLines") int contextLines)
+			throws IOException, ServiceUnavailable, GitException {
 		
-		return calculateDiff(repoId, commitId, null);
+		return calculateDiff(repoId, commitId, null, contextLines);
 	}
 
 	/**
@@ -375,6 +380,8 @@ public class RepositoriesApi extends BaseApi {
 	 *            The base commit ID of the repository to compare all the changes with.
 	 * @param newId
 	 *            The reference commit ID of the repository to compare with the base commit ID.
+	 * @param contextLines
+	 *            amount of context lines
 	 * @throws IOException
 	 *             If one or more files in the repository could not be read.
 	 * @throws ServiceUnavailable
@@ -384,8 +391,11 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/diff/{oldId}/{newId}")
-	public Collection<DiffModel> calculateDiff(@PathParam("repoId") String repoId, @PathParam("oldId") String oldId,
-			@PathParam("newId") String newId) throws IOException, ServiceUnavailable, GitException {
+	public Collection<DiffModel> calculateDiff(
+			@PathParam("repoId") String repoId,
+			@PathParam("oldId") String oldId, @PathParam("newId") String newId,
+			@DefaultValue("3") @QueryParam("contextLines") int contextLines)
+			throws IOException, ServiceUnavailable, GitException {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
@@ -393,14 +403,14 @@ public class RepositoriesApi extends BaseApi {
 		if (Strings.isNullOrEmpty(newId)) {
 			CommitModel commit = retrieveCommit(repoId, oldId);
 			if(commit.getParents().length == 0) {
-				return inspector.calculateDiff(repository, decode(oldId));
+				return inspector.calculateDiff(repository, decode(oldId), contextLines);
 			} else {
 				// Set the newId to the oldId, and append a ^ to the old id to get its parent
 				newId = oldId;
 				oldId += "^";
 			}
 		}
-		return inspector.calculateDiff(repository, decode(oldId), decode(newId));
+		return inspector.calculateDiff(repository, decode(oldId), decode(newId), contextLines);
 	}
 
 	/**

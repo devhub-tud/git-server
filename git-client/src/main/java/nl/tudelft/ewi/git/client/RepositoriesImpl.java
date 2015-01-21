@@ -151,9 +151,31 @@ public class RepositoriesImpl extends Backend implements Repositories {
 				if(oldCommitId != null) {
 					target = target.path(encode(oldCommitId));
 				}
-				target = target.path(encode(newCommitId));
 
-				return target.request(MediaType.APPLICATION_JSON)
+				return target.path(encode(newCommitId))
+					.request(MediaType.APPLICATION_JSON)
+					.get(new GenericType<List<DiffModel>>() {
+				});
+			}
+		});
+	}
+	
+	@Override
+	public List<DiffModel> listDiffs(final RepositoryModel repository, final String oldCommitId,
+			final String newCommitId, final int context) {
+
+		return perform(new Request<List<DiffModel>>() {
+			@Override
+			public List<DiffModel> perform(WebTarget target) {
+				target = target.path(repository.getPath()).path("diff");
+
+				if(oldCommitId != null) {
+					target = target.path(encode(oldCommitId));
+				}
+
+				return target.path(encode(newCommitId))
+					.queryParam("contextLines", context)
+					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<DiffModel>>() {
 				});
 			}
@@ -178,7 +200,7 @@ public class RepositoriesImpl extends Backend implements Repositories {
 		return perform(new Request<String>() {
 			@Override
 			public String perform(WebTarget target) {
-				return target.path(repository.getPath()).path("file").path(encode(commitId)).path(path)
+				return target.path(repository.getPath()).path("file").path(encode(commitId)).path(encode(path))
 					.request(MediaType.MULTIPART_FORM_DATA)
 					.get(String.class);
 			}

@@ -359,8 +359,8 @@ public class Inspector {
 		}
 	}
 
-	public Collection<DiffModel> calculateDiff(Repository repository, String commitId) throws IOException, GitException {
-		return calculateDiff(repository, null, commitId);
+	public Collection<DiffModel> calculateDiff(Repository repository, String commitId, int contextLines) throws IOException, GitException {
+		return calculateDiff(repository, null, commitId, contextLines);
 	}
 
 
@@ -381,7 +381,7 @@ public class Inspector {
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<DiffModel> calculateDiff(Repository repository, String leftCommitId, String rightCommitId)
+	public Collection<DiffModel> calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
 			throws IOException, GitException {
 		
 		Preconditions.checkNotNull(repository);
@@ -405,7 +405,7 @@ public class Inspector {
 			}
 
 			List<DiffEntry> diffs = git.diff()
-				.setContextLines(3)
+				.setContextLines(contextLines)
 				.setOldTree(oldTreeIter)
 				.setNewTree(newTreeIter)
 				.call();

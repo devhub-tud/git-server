@@ -156,5 +156,21 @@ public interface Repositories {
 	 * @return The contents of the specified file.
 	 */
 	File showBinFile(RepositoryModel repository, String commitId, String path);
+
+	/**
+	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to inspect.
+	 * @param commitId
+	 *            The commit ID to inspect.
+	 * @param path
+	 *            The path of the file to inspect.
+	 * @param context
+	 * 			  The amount of context lines
+	 * @return The contents of the specified file.
+	 */
+	List<DiffModel> listDiffs(RepositoryModel repository, String oldCommitId,
+			String newCommitId, int context);
 	
 }

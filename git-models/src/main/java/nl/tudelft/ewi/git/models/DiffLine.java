@@ -2,7 +2,9 @@ package nl.tudelft.ewi.git.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * A {@code DiffLine} represents one line in a {@link DiffModel}. It can be added,
@@ -12,6 +14,8 @@ import lombok.Data;
  *
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DiffLine {
 	
 	public enum Type {
