@@ -37,6 +37,8 @@ public class DetailedBranchModel extends BranchModel {
 		result.setName(model.getName());
 		result.setCommit(model.getCommit());
 		result.setPath(model.getPath());
+		result.setBehind(model.getBehind());
+		result.setAhead(model.getAhead());
 		return result;
 	}
 	

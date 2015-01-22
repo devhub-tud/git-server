@@ -16,7 +16,7 @@ import com.google.common.base.Strings;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CommitModel extends BaseModel {
+public class CommitModel extends BaseModel implements Comparable<CommitModel> {
 
 	private String commit;
 	private String[] parents;
@@ -29,6 +29,11 @@ public class CommitModel extends BaseModel {
 			setAuthor(name);
 		}
 		setAuthor(name + " <" + emailAddress + ">");
+	}
+
+	@Override
+	public int compareTo(CommitModel o) {
+		return Long.signum(o.time - time);
 	}
 
 }

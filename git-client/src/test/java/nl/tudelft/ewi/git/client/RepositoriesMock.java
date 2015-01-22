@@ -115,7 +115,7 @@ public class RepositoriesMock implements Repositories {
 				});
 				
 				Queue<CommitModel> queue = Queues.newArrayDeque();
-				queue.add(retrieveCommit(repository, result.getCommit()));
+				queue.add(retrieveCommit(repository, result.getCommit().getCommit()));
 				
 				while(!queue.isEmpty()) {
 					CommitModel commit = queue.poll();

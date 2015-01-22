@@ -11,6 +11,9 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.revwalk.RevWalkUtils;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,8 @@ import com.google.common.collect.Maps;
 @Slf4j
 public class Transformers {
 
+	private static final String REF_MASTER = "master";
+	
 	/**
 	 * @return A {@link Function} which can transform {@link Group} objects into {@link GroupModel} objects.
 	 */
@@ -214,18 +219,46 @@ public class Transformers {
 	 * @param repository {@link RepositoryModel} in which the branch resists
 	 * @return A {@link Function} which can transform {@link Ref} objects into {@link BranchModel} objects.
 	 */
-	public static Function<Ref, BranchModel> branchModel(final Repository repository) {
+	public static Function<Ref, BranchModel> branchModel(final Repository repository, final org.eclipse.jgit.lib.Repository repo) {
 		return new Function<Ref, BranchModel>() {
 			@Override
 			public BranchModel apply(final Ref input) {
-				String name = input.getName();
-				ObjectId objectId = input.getObjectId();
+
 				BranchModel branch = new BranchModel();
-				branch.setCommit(objectId.getName());
+				String name = input.getName();
 				branch.setName(name);
 				branch.setPath("/api/repositories/"
 						+ encode(repository.getName()) + "/branch/"
 						+ encode(name));
+
+				try {
+					int ahead = 0, behind = 0;
+					RevWalk walk = new RevWalk(repo);
+					RevCommit localCommit = walk.parseCommit(input.getObjectId());
+					branch.setCommit(commitModel(repository).apply(localCommit));
+
+					Ref master = repo.getRef(REF_MASTER);
+					if(!input.equals(master)){
+						RevCommit trackingCommit = walk.parseCommit(master.getObjectId());
+
+						walk.setRevFilter(RevFilter.MERGE_BASE);
+						walk.markStart(localCommit);
+						walk.markStart(trackingCommit);
+						RevCommit mergeBase = walk.next();
+
+						walk.reset();
+						walk.setRevFilter(RevFilter.ALL);
+						ahead = RevWalkUtils.count(walk, localCommit, mergeBase);
+						behind = RevWalkUtils.count(walk, trackingCommit, mergeBase);
+					}
+
+					branch.setAhead(ahead);
+					branch.setBehind(behind);
+				}
+				catch (IOException e) {
+					log.warn("Failed to calculate branch tracking status", e);
+				}
+
 				return branch;
 			}
 		};
