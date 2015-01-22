@@ -41,7 +41,7 @@ import com.google.common.collect.Collections2;
 @RequestScoped
 @ValidateRequest
 @RequireAuthentication
-@Consumes(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.WILDCARD)
 @Produces(MediaType.APPLICATION_JSON)
 public class GroupsApi extends BaseApi {
 
@@ -109,6 +109,7 @@ public class GroupsApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
 	public GroupModel createNewGroup(@Valid GroupModel model) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
 
@@ -144,7 +145,6 @@ public class GroupsApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@DELETE
-	@Consumes(MediaType.WILDCARD)
 	@Produces(MediaType.WILDCARD)
 	@Path("{groupId}")
 	public void deleteGroup(@PathParam("groupId") String groupId) throws IOException, ServiceUnavailable,
@@ -196,6 +196,7 @@ public class GroupsApi extends BaseApi {
 	 */
 	@POST
 	@Path("{groupId}/members")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Collection<IdentifiableModel> addNewMember(@PathParam("groupId") String groupId,
 			@Valid IdentifiableModel model) throws IOException, ServiceUnavailable, ModificationException, GitException {
 
@@ -230,7 +231,6 @@ public class GroupsApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@DELETE
-	@Consumes(MediaType.WILDCARD)
 	@Produces(MediaType.WILDCARD)
 	@Path("{groupId}/members/{identifiableId}")
 	public void removeMember(@PathParam("groupId") String groupId, @PathParam("identifiableId") String identifiableId)
