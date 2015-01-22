@@ -18,7 +18,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @EqualsAndHashCode(callSuper = true)
 public class GroupModel extends IdentifiableModel {
 
-	@Pattern(regexp = "^\\@[a-zA-Z0-9]+$")
+	@Pattern(regexp = "^\\@\\w[\\w._\\@+-]+$")
 	private String name;
 
 	@NotEmpty
