@@ -68,7 +68,7 @@ import com.google.common.io.Files;
 @RequestScoped
 @ValidateRequest
 @RequireAuthentication
-@Consumes(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.WILDCARD)
 @Produces(MediaType.APPLICATION_JSON)
 @Slf4j
 public class RepositoriesApi extends BaseApi {
@@ -144,6 +144,7 @@ public class RepositoriesApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
 	public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel model) throws IOException,
 			ServiceUnavailable, ModificationException, GitException {
 
@@ -247,7 +248,6 @@ public class RepositoriesApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@DELETE
-	@Consumes(MediaType.WILDCARD)
 	@Produces(MediaType.WILDCARD)
 	@Path("{repoId}")
 	public void deleteRepository(@PathParam("repoId") String repoId) throws IOException, ServiceUnavailable,

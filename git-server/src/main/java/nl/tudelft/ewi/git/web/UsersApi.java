@@ -41,7 +41,7 @@ import com.google.common.collect.ImmutableMap;
  * @author michael
  */
 @Path("api/users")
-@Consumes(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.WILDCARD)
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @ValidateRequest
@@ -110,6 +110,7 @@ public class UsersApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
 	public UserModel createNewUser(@Valid UserModel model) throws IOException, ServiceUnavailable,
 			ModificationException, GitException {
 
@@ -139,7 +140,6 @@ public class UsersApi extends BaseApi {
 	 *         If an exception occurred while using the Git API.
 	 */
 	@DELETE
-	@Consumes(MediaType.WILDCARD)
 	@Produces(MediaType.WILDCARD)
 	@Path("{userId}")
 	public void deleteUser(@PathParam("userId") String userId) throws IOException, ServiceUnavailable,
@@ -230,6 +230,7 @@ public class UsersApi extends BaseApi {
 	 */
 	@POST
 	@Path("{userId}/keys")
+	@Consumes(MediaType.APPLICATION_JSON)
 	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel model) throws IOException,
 			ServiceUnavailable, ModificationException, GitException {
 
