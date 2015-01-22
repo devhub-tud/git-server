@@ -99,8 +99,12 @@ class gitolite::install {
 	
 	file { "/home/git/mirrors":
 		ensure		=> directory,
-		owner		=> "git",
-		group		=> "git",
+		mode		=> 777,
+		require		=> File["/home/git"],
+	}
+	
+	file { "/home/git/repositories":
+		ensure		=> directory,
 		mode		=> 777,
 		require		=> File["/home/git"],
 	}
