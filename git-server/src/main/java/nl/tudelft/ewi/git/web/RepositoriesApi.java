@@ -40,7 +40,7 @@ import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
-import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
@@ -361,7 +361,7 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/diff/{commitId}")
-	public Collection<DiffModel> calculateDiff(
+	public DiffResponse calculateDiff(
 			@PathParam("repoId") String repoId,
 			@PathParam("commitId") String commitId,
 			@DefaultValue("3") @QueryParam("contextLines") int contextLines)
@@ -391,7 +391,7 @@ public class RepositoriesApi extends BaseApi {
 	 */
 	@GET
 	@Path("{repoId}/diff/{oldId}/{newId}")
-	public Collection<DiffModel> calculateDiff(
+	public DiffResponse calculateDiff(
 			@PathParam("repoId") String repoId,
 			@PathParam("oldId") String oldId, @PathParam("newId") String newId,
 			@DefaultValue("3") @QueryParam("contextLines") int contextLines)

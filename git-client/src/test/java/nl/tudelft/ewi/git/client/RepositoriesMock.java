@@ -1,7 +1,6 @@
 package nl.tudelft.ewi.git.client;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +19,7 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
-import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.MockedRepositoryModel;
 import nl.tudelft.ewi.git.models.RepositoryModel;
@@ -31,7 +30,7 @@ import nl.tudelft.ewi.git.models.RepositoryModel;
  */
 public class RepositoriesMock implements Repositories {
 	
-	public static final List<DiffModel> EMPTY_DIFF_MODEL = new ArrayList<>();
+	public static final DiffResponse EMPTY_DIFF_MODEL = new DiffResponse();
 	public static final Map<String, EntryType> EMPTY_DIRECTORY_ENTRIES = new HashMap<>();
 	public static final String DEFAULT_FILE_CONTENTS = "[FILE CONTENTS\nNEWLINE\nANOTHERNEWLINE]";
 	
@@ -140,20 +139,25 @@ public class RepositoriesMock implements Repositories {
 		throw new NotFoundException("Branch does not exist!");
 	}
 
-	private List<DiffModel> listDiffs = EMPTY_DIFF_MODEL;
+	private DiffResponse listDiffs = EMPTY_DIFF_MODEL;
 	
-	public void setListDiffs(List<DiffModel> listDiffs) {
+	public void setListDiffs(DiffResponse listDiffs) {
 		this.listDiffs = listDiffs;
 	}
 
 	@Override
-	public List<DiffModel> listDiffs(RepositoryModel repository,
+	public DiffResponse listDiffs(RepositoryModel repository, String newCommitId) {
+		return listDiffs(repository, null, newCommitId);
+	}
+	
+	@Override
+	public DiffResponse listDiffs(RepositoryModel repository,
 			String oldCommitId, String newCommitId) {
 		return listDiffs;
 	}
 	
 	@Override
-	public List<DiffModel> listDiffs(RepositoryModel repository,
+	public DiffResponse listDiffs(RepositoryModel repository,
 			String oldCommitId, String newCommitId, int context) {
 		return listDiffs;
 	}

@@ -16,7 +16,7 @@ import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
-import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
@@ -140,12 +140,17 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	}
 
 	@Override
-	public List<DiffModel> listDiffs(final RepositoryModel repository, final String oldCommitId,
+	public DiffResponse listDiffs(RepositoryModel repository, String newCommitId) {
+		return listDiffs(repository, null, newCommitId);
+	}
+
+	@Override
+	public DiffResponse listDiffs(final RepositoryModel repository, final String oldCommitId,
 			final String newCommitId) {
 
-		return perform(new Request<List<DiffModel>>() {
+		return perform(new Request<DiffResponse>() {
 			@Override
-			public List<DiffModel> perform(WebTarget target) {
+			public DiffResponse perform(WebTarget target) {
 				target = target.path(repository.getPath()).path("diff");
 
 				if(oldCommitId != null) {
@@ -154,19 +159,18 @@ public class RepositoriesImpl extends Backend implements Repositories {
 
 				return target.path(encode(newCommitId))
 					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<List<DiffModel>>() {
-				});
+					.get(DiffResponse.class);
 			}
 		});
 	}
 	
 	@Override
-	public List<DiffModel> listDiffs(final RepositoryModel repository, final String oldCommitId,
+	public DiffResponse listDiffs(final RepositoryModel repository, final String oldCommitId,
 			final String newCommitId, final int context) {
 
-		return perform(new Request<List<DiffModel>>() {
+		return perform(new Request<DiffResponse>() {
 			@Override
-			public List<DiffModel> perform(WebTarget target) {
+			public DiffResponse perform(WebTarget target) {
 				target = target.path(repository.getPath()).path("diff");
 
 				if(oldCommitId != null) {
@@ -176,8 +180,7 @@ public class RepositoriesImpl extends Backend implements Repositories {
 				return target.path(encode(newCommitId))
 					.queryParam("contextLines", context)
 					.request(MediaType.APPLICATION_JSON)
-					.get(new GenericType<List<DiffModel>>() {
-				});
+					.get(DiffResponse.class);
 			}
 		});
 	}

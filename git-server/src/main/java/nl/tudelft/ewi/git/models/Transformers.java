@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.jgit.diff.DiffEntry;
+import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
@@ -25,7 +27,9 @@ import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.Config;
+import nl.tudelft.ewi.git.inspector.DiffContextFormatter;
 import nl.tudelft.ewi.git.inspector.Inspector;
+import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 
 import com.google.common.base.Function;
@@ -327,6 +331,49 @@ public class Transformers {
 						+ encode(repository.getName()) + "/commits/"
 						+ encode(revCommitId.getName()));
 				return commit;
+			}
+		};
+	}
+	
+	/**
+	 * @param repo {@link org.eclipse.jgit.lib.Repository} for this calculation
+	 * @return a {@link Function} that transforms a {@link DiffEntry} to a {@link DiffModel}
+	 */
+	public static Function<DiffEntry, DiffModel> diffEntry(final org.eclipse.jgit.lib.Repository repo) {
+		return new Function<DiffEntry, DiffModel>() {
+			public DiffModel apply(DiffEntry input) {
+				DiffModel diff = new DiffModel();
+				diff.setType(convertChangeType(input.getChangeType()));
+				diff.setOldPath(input.getOldPath());
+				diff.setNewPath(input.getNewPath());
+				
+				DiffContextFormatter formatter = new DiffContextFormatter(diff, repo);
+				
+				try {
+					formatter.format(input);
+				}
+				catch (IOException e) {
+					log.warn(e.getMessage(), e);
+				}
+				
+				return diff;
+			}
+
+			private Type convertChangeType(ChangeType changeType) {
+				switch (changeType) {
+					case ADD:
+						return Type.ADD;
+					case COPY:
+						return Type.COPY;
+					case DELETE:
+						return Type.DELETE;
+					case MODIFY:
+						return Type.MODIFY;
+					case RENAME:
+						return Type.RENAME;
+					default:
+						throw new IllegalArgumentException("Cannot convert change type: " + changeType);
+				}
 			}
 		};
 	}

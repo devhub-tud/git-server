@@ -16,8 +16,8 @@ import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.Transformers;
-import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.TagModel;
 
@@ -26,14 +26,16 @@ import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
+import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.ObjectStream;
-import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.DepthWalk.Commit;
@@ -41,6 +43,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.revwalk.RevWalkUtils;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
@@ -242,27 +245,8 @@ public class Inspector {
 				.setMaxCount(limit)
 				.call();
 
-			List<CommitModel> commits = Lists.newArrayList();
-			for (RevCommit revCommit : revCommits) {
-				RevCommit[] parents = revCommit.getParents();
-				String[] parentIds = new String[parents.length];
-				for (int i = 0; i < parents.length; i++) {
-					ObjectId parentId = parents[i].getId();
-					parentIds[i] = parentId.getName();
-				}
-
-				PersonIdent committerIdent = revCommit.getCommitterIdent();
-				ObjectId commitId = revCommit.getId();
-
-				CommitModel commit = new CommitModel();
-				commit.setCommit(commitId.getName());
-				commit.setParents(parentIds);
-				commit.setTime(revCommit.getCommitTime());
-				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
-				commit.setMessage(revCommit.getShortMessage());
-				commits.add(commit);
-			}
-			return commits;
+			return Lists.transform(Lists.newArrayList(revCommits),
+					Transformers.commitModel(repository));
 		}
 		catch (NoHeadException e) {
 			return Lists.newArrayList();
@@ -392,7 +376,7 @@ public class Inspector {
 		}
 	}
 
-	public Collection<DiffModel> calculateDiff(Repository repository, String commitId, int contextLines) throws IOException, GitException {
+	public DiffResponse calculateDiff(Repository repository, String commitId, int contextLines) throws IOException, GitException {
 		return calculateDiff(repository, null, commitId, contextLines);
 	}
 
@@ -414,7 +398,7 @@ public class Inspector {
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<DiffModel> calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
+	public DiffResponse calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
 			throws IOException, GitException {
 		
 		Preconditions.checkNotNull(repository);
@@ -447,42 +431,12 @@ public class Inspector {
 			rd.addAll(diffs);
 			diffs = rd.compute();
 			
-			return Collections2.transform(diffs, new Function<DiffEntry, DiffModel>() {
-				public DiffModel apply(DiffEntry input) {
-					DiffModel diff = new DiffModel();
-					diff.setType(convertChangeType(input.getChangeType()));
-					diff.setOldPath(input.getOldPath());
-					diff.setNewPath(input.getNewPath());
-					
-					DiffContextFormatter formatter = new DiffContextFormatter(diff, repo);
-					
-					try {
-						formatter.format(input);
-					}
-					catch (IOException e) {
-						log.warn(e.getMessage(), e);
-					}
-					
-					return diff;
-				}
-
-				private Type convertChangeType(ChangeType changeType) {
-					switch (changeType) {
-						case ADD:
-							return Type.ADD;
-						case COPY:
-							return Type.COPY;
-						case DELETE:
-							return Type.DELETE;
-						case MODIFY:
-							return Type.MODIFY;
-						case RENAME:
-							return Type.RENAME;
-						default:
-							throw new IllegalArgumentException("Cannot convert change type: " + changeType);
-					}
-				}
-			});
+			List<DiffModel> diffModels = Lists.transform(diffs, Transformers.diffEntry(repo));
+			List<CommitModel> commitModels = Lists.transform(
+					commitDifference(git, rightCommitId, leftCommitId),
+					Transformers.commitModel(repository));
+			
+			return new DiffResponse(diffModels, commitModels);
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
@@ -633,6 +587,20 @@ public class Inspector {
 		}
 
 		return oldTreeParser;
+	}
+	
+	private List<RevCommit> commitDifference(Git git, String startRef, String endRef)
+			throws RevisionSyntaxException, MissingObjectException,
+			IncorrectObjectTypeException, AmbiguousObjectException, IOException {
+		
+		assert git != null : "Git should not be null";
+		assert startRef != null && !startRef.isEmpty() : "Ref should not be empty or null";
+		
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		RevWalk walk = new RevWalk(repo);
+		RevCommit start = walk.parseCommit(repo.resolve(startRef));
+		RevCommit end = endRef == null ? null : walk.parseCommit(repo.resolve(endRef));
+		return RevWalkUtils.find(walk, start, end);
 	}
 
 }

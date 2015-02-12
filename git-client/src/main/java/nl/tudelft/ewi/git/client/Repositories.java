@@ -10,6 +10,7 @@ import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.RepositoryModel;
 
@@ -109,13 +110,24 @@ public interface Repositories {
 	 * 
 	 * @param repository
 	 *            The {@link RepositoryModel} to fetch the diffs for.
+	 * @param newCommitId
+	 *            The second commit ID.
+	 * @return A {@link List} of all {@link DiffModel} objects.
+	 */
+	DiffResponse listDiffs(RepositoryModel repository, String newCommitId);
+	
+	/**
+	 * This method lists all diffs for the two specified commit IDs.
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to fetch the diffs for.
 	 * @param oldCommitId
 	 *            The first commit ID.
 	 * @param newCommitId
 	 *            The second commit ID.
 	 * @return A {@link List} of all {@link DiffModel} objects.
 	 */
-	List<DiffModel> listDiffs(RepositoryModel repository, String oldCommitId, String newCommitId);
+	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId, String newCommitId);
 
 	/**
 	 * THis method lists all entries on the specified path of the specified repository at the
@@ -170,7 +182,7 @@ public interface Repositories {
 	 * 			  The amount of context lines
 	 * @return The contents of the specified file.
 	 */
-	List<DiffModel> listDiffs(RepositoryModel repository, String oldCommitId,
+	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId,
 			String newCommitId, int context);
 	
 }
