@@ -128,6 +128,18 @@ public interface Repositories {
 	 * @return A {@link List} of all {@link DiffModel} objects.
 	 */
 	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId, String newCommitId);
+	
+	/**
+	 * 
+	 * @param repository
+	 *            The {@link RepositoryModel} to fetch the diffs for.
+	 * @param oldCommitId
+	 *            The first commit ID.
+	 * @param newCommitId
+	 *            The second commit ID.
+	 * @return {@link CommitModel Merge base} for the two commits 
+	 */
+	CommitModel mergeBase(RepositoryModel repository, String oldCommitId, String newCommitId);
 
 	/**
 	 * THis method lists all entries on the specified path of the specified repository at the

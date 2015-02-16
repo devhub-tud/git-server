@@ -39,6 +39,7 @@ import org.eclipse.jgit.lib.ObjectStream;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.DepthWalk.Commit;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -447,6 +448,43 @@ public class Inspector {
 	}
 
 	/**
+	 * Get the merge base for two commits
+	 * 
+	 * @param repository
+	 *            Repository to search for
+	 * @param leftCommitId
+	 *            CommitId for the first commit
+	 * @param rightCommitId
+	 *            CommitId for the second commit
+	 * @return the {@link CommitModel} for the commit
+	 * @throws IOException
+	 *             If an IO error occurs
+	 */
+	public CommitModel mergeBase(Repository repository, String leftCommitId, String rightCommitId) throws IOException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(leftCommitId);
+		Preconditions.checkNotNull(rightCommitId);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
+
+		try {
+			RevWalk walk = new RevWalk(git.getRepository());
+			walk.setRevFilter(RevFilter.MERGE_BASE);
+			walk.markStart(walk.lookupCommit(Commit.fromString(leftCommitId)));
+			walk.markStart(walk.lookupCommit(Commit.fromString(rightCommitId)));
+			RevCommit mergeBase = walk.next();
+			return Transformers.commitModel(repository).apply(mergeBase);
+		}
+		finally {
+			repo.close();
+		}
+	}
+
+	/**
 	 * This method lists files and folders in a specified path at a specific commit of the
 	 * repository.
 	 * 
@@ -526,7 +564,7 @@ public class Inspector {
 
 		throw new NotFoundException("File " + path + " not found in commit " + commitId);
 	}
-
+	
 	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
 			throws GitException, IOException {
 

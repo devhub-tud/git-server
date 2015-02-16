@@ -186,6 +186,20 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	}
 	
 	@Override
+	public CommitModel mergeBase(final RepositoryModel repository,
+			final String oldCommitId, final String newCommitId) {
+		return perform(new Request<CommitModel>() {
+			@Override
+			public CommitModel perform(WebTarget target) {
+				return target.path(repository.getPath())
+					.path("merge-base").path(oldCommitId).path(newCommitId)
+					.request(MediaType.APPLICATION_JSON)
+					.get(CommitModel.class);
+			}
+		});
+	}
+
+	@Override
 	public Map<String, EntryType> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
 		return perform(new Request<Map<String, EntryType>>() {
 			@Override

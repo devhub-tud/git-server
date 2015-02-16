@@ -412,6 +412,19 @@ public class RepositoriesApi extends BaseApi {
 		}
 		return inspector.calculateDiff(repository, decode(oldId), decode(newId), contextLines);
 	}
+	
+	@GET
+	@Path("{repoId}/merge-base/{oldId}/{newId}")
+	public CommitModel mergeBase(
+			@PathParam("repoId") String repoId,
+			@PathParam("oldId") String leftCommitId,
+			@PathParam("newId") String rightCommitId)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.mergeBase(repository, leftCommitId, rightCommitId);
+	}
 
 	/**
 	 * This lists all the files and folders of a specific repository at a specific commit IDs in the
