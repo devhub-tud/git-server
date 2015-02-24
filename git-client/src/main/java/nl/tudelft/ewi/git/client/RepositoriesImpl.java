@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
@@ -236,6 +237,23 @@ public class RepositoriesImpl extends Backend implements Repositories {
 					.path(encode(path))
 					.request(MediaType.WILDCARD_TYPE)
 					.get(File.class);
+			}
+		});
+	}
+
+	@Override
+	public BlameModel blame(final RepositoryModel repository, final String commitId,
+			final String filePath) {
+		return perform(new Request<BlameModel>() {
+			@Override
+			public BlameModel perform(WebTarget target) {
+				return target
+					.path(repository.getPath())
+					.path("blame")
+					.path(encode(commitId))
+					.path(encode(filePath))
+					.request(MediaType.APPLICATION_JSON)
+					.get(BlameModel.class);
 			}
 		});
 	}

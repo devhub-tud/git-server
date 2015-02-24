@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
+import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
@@ -25,6 +26,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
@@ -478,6 +480,49 @@ public class Inspector {
 			walk.markStart(walk.lookupCommit(Commit.fromString(rightCommitId)));
 			RevCommit mergeBase = walk.next();
 			return Transformers.commitModel(repository).apply(mergeBase);
+		}
+		finally {
+			repo.close();
+		}
+	}
+	
+	/**
+	 * Generate a {@link BlameModel}
+	 * 
+	 * @param repository
+	 *            Repository to search for
+	 * @param commitId
+	 *            CommitId for the first commit
+	 * @param filePath
+	 *            The path of the file to inspect at the specified commit ID.
+	 * @return a {@link BlameModel}
+	 * @throws IOException
+	 *             If an IO error occurs
+	 * @throws GitException
+	 *             In case the Git repository could not be interacted with.
+	 */
+	public BlameModel blame(Repository repository, String commitId,
+			String filePath) throws IOException, GitException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		Preconditions.checkNotNull(filePath);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
+
+		try {
+			BlameResult blameResult = git.blame()
+				.setStartCommit(repo.resolve(commitId))
+				.setFilePath(filePath)
+				.setFollowFileRenames(true)
+				.call();
+			return Transformers.blameModel(repo, commitId, filePath).apply(blameResult);
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
 		}
 		finally {
 			repo.close();

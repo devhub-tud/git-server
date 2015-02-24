@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 
+import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
@@ -26,7 +27,8 @@ import nl.tudelft.ewi.git.models.RepositoryModel;
 
 /**
  * The {@code RepositoriesMock} mocks a {@link Repositories} class
- * @author Jan-Willem
+ * 
+ * @author Jan-Willem Gmelig Meyling
  */
 public class RepositoriesMock implements Repositories {
 	
@@ -198,6 +200,18 @@ public class RepositoriesMock implements Repositories {
 			throw new NotFoundException();
 		}
 		return binFile;
+	}
+
+	@Override
+	public CommitModel mergeBase(RepositoryModel repository,
+			String oldCommitId, String newCommitId) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public BlameModel blame(RepositoryModel repository, String commitId,
+			String filePath) {
+		throw new UnsupportedOperationException();
 	}
 
 }

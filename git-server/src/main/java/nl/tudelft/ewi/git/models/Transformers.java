@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
 import org.eclipse.jgit.lib.ObjectId;
@@ -29,6 +30,7 @@ import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.inspector.DiffContextFormatter;
 import nl.tudelft.ewi.git.inspector.Inspector;
+import nl.tudelft.ewi.git.models.BlameModel.BlameBlock;
 import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
 
@@ -374,6 +376,50 @@ public class Transformers {
 					default:
 						throw new IllegalArgumentException("Cannot convert change type: " + changeType);
 				}
+			}
+		};
+	}
+	
+	/**
+	 * {@link Function} to transform a {@link BlameResult} into a {@link BlameModel}
+	 * @param repo
+	 * @param commitId
+	 * @param path
+	 * @return {@link BlameModel}
+	 */
+	public static Function<BlameResult, BlameModel> blameModel(
+			final org.eclipse.jgit.lib.Repository repo, final String commitId,
+			final String path) {
+		return new Function<BlameResult, BlameModel>() {
+			@Override
+			public BlameModel apply(BlameResult input) {
+				final BlameModel model = new BlameModel();
+				model.setCommitId(commitId);
+				model.setPath(path);
+				final List<BlameBlock> blames = Lists.<BlameBlock> newArrayList();
+				
+				BlameBlock block = null;
+				
+				for(int i = 0, length = input.getResultContents().size(); i < length; i++) {
+					String commitId = input.getSourceCommit(i).getName();
+					if(block == null || (!block.getFromCommitId().equals(commitId))) {
+						// First block or from another commit
+						int destinationFrom = block == null ? 0 : block.getDestinationTo();
+						block = new BlameBlock();
+						block.setFromCommitId(commitId);
+						block.setDestinationFrom(destinationFrom);
+						block.setSourceFrom(block.getSourceFrom());
+						block.setLength(1);
+						blames.add(block);
+					}
+					else {
+						// Another line in current block
+						block.incrementLength();
+					}
+				}
+				
+				model.setBlames(blames);
+				return model;
 			}
 		};
 	}

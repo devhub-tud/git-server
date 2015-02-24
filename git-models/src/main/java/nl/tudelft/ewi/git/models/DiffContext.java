@@ -2,6 +2,8 @@ package nl.tudelft.ewi.git.models;
 
 import java.util.List;
 
+import nl.tudelft.ewi.git.models.DiffLine.Type;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
@@ -43,5 +45,15 @@ public class DiffContext {
 	public int getLineCount() {
 		return diffLines.size();
 	}
-
+	
+	@JsonIgnore
+	public int getRemovedCount() {
+		return amountOfLinesWithType(Type.REMOVED);
+	}
+	
+	@JsonIgnore
+	public int getAddedCount() {
+		return amountOfLinesWithType(Type.ADDED);
+	}
+	
 }

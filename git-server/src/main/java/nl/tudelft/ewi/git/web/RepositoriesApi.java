@@ -35,6 +35,7 @@ import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.inspector.Inspector;
+import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
@@ -413,6 +414,52 @@ public class RepositoriesApi extends BaseApi {
 		return inspector.calculateDiff(repository, decode(oldId), decode(newId), contextLines);
 	}
 	
+	/**
+	 * Perform a git blame
+	 * @param repoId
+	 *            The <code>name</code> of the repository to list all diffs for.
+	 * @param commitId
+	 *            The base commit ID of the repository to compare all the
+	 *            changes with.
+	 * @param filePath
+	 *            The path of the file.
+	 * @return {@link BlameModel}
+	 * @throws IOException
+	 *             If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *             If the service could not be reached.
+	 * @throws GitException
+	 *             If an exception occurred while using the Git API.
+	 */
+	@GET
+	@Path("{repoId}/blame/{commitId}/{filePath}")
+	public BlameModel blame(
+			@PathParam("repoId") String repoId,
+			@PathParam("commitId") String commitId,
+			@PathParam("filePath") String filePath)
+			throws IOException, GitException, ServiceUnavailable {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.blame(repository, commitId, filePath);
+	}
+	
+	/**
+	 * 
+	 * @param repoId
+	 *            The <code>name</code> of the repository to list all diffs for.
+	 * @param leftCommitId
+	 *            The base commit ID of the repository to compare all the changes with.
+	 * @param rightCommitId
+	 *            The reference commit ID of the repository to compare with the base commit ID.
+	 * @return {@link CommitModel}
+	 * @throws IOException
+	 *             If one or more files in the repository could not be read.
+	 * @throws ServiceUnavailable
+	 *             If the service could not be reached.
+	 * @throws GitException
+	 *             If an exception occurred while using the Git API.
+	 */
 	@GET
 	@Path("{repoId}/merge-base/{oldId}/{newId}")
 	public CommitModel mergeBase(

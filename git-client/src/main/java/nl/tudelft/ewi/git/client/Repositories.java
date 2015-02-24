@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedBranchModel;
@@ -196,5 +197,18 @@ public interface Repositories {
 	 */
 	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId,
 			String newCommitId, int context);
+	
+	/**
+	 * Perform a git blame
+	 * @param repository
+	 *            The <code>name</code> of the repository to list all diffs for.
+	 * @param commitId
+	 *            The base commit ID of the repository to compare all the
+	 *            changes with.
+	 * @param filePath
+	 *            The path of the file.
+	 * @return {@link BlameModel}
+	 */
+	BlameModel blame(RepositoryModel repository, String commitId, String filePath);
 	
 }
