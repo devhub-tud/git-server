@@ -405,10 +405,13 @@ public class Transformers {
 					if(block == null || (!block.getFromCommitId().equals(commitId))) {
 						// First block or from another commit
 						int destinationFrom = block == null ? 0 : block.getDestinationTo();
+                        int sourceFrom = block == null ? 0 : block.getSourceTo();
+                        // Replace previous block with a new one
 						block = new BlameBlock();
 						block.setFromCommitId(commitId);
 						block.setDestinationFrom(destinationFrom);
-						block.setSourceFrom(block.getSourceFrom());
+						block.setSourceFrom(sourceFrom);
+                        block.setFromFilePath(input.getSourcePath(i));
 						block.setLength(1);
 						blames.add(block);
 					}

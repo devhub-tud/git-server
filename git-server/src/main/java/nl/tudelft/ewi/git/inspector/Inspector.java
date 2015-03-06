@@ -30,9 +30,6 @@ import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
-import org.eclipse.jgit.errors.AmbiguousObjectException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
-import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
@@ -308,7 +305,6 @@ public class Inspector {
 	 * {@link Repository}
 	 * 
 	 * @param repository The {@link Repository} to list a limited amount of
-	 *           commits of.
 	 * @param branch The branch to fetch commits for
 	 * @return A {@link Collections} of {@link CommitModel} objects, each
 	 *         representing one commit in the specified Git repository. The
@@ -425,10 +421,10 @@ public class Inspector {
 			}
 
 			List<DiffEntry> diffs = git.diff()
-				.setContextLines(contextLines)
-				.setOldTree(oldTreeIter)
-				.setNewTree(newTreeIter)
-				.call();
+                    .setContextLines(contextLines)
+                    .setOldTree(oldTreeIter)
+                    .setNewTree(newTreeIter)
+                    .call();
 			
 			RenameDetector rd = new RenameDetector(repo);
 			rd.addAll(diffs);
@@ -673,8 +669,7 @@ public class Inspector {
 	}
 	
 	private List<RevCommit> commitDifference(Git git, String startRef, String endRef)
-			throws RevisionSyntaxException, MissingObjectException,
-			IncorrectObjectTypeException, AmbiguousObjectException, IOException {
+			throws RevisionSyntaxException, IOException {
 		
 		assert git != null : "Git should not be null";
 		assert startRef != null && !startRef.isEmpty() : "Ref should not be empty or null";

@@ -8,9 +8,11 @@ import com.google.common.base.Preconditions;
 import lombok.Data;
 
 /**
- * A {@link BlameModel} is the response for Git blame requests
- * @author Jan-Willem Gmelig Meyling
+ * A {@link BlameModel} is the response for Git blame requests.
+ * A Blame result contains the source commitId and line number for
+ * every line within a file at a certain commit.
  *
+ * @author Jan-Willem Gmelig Meyling
  */
 @Data
 public class BlameModel {
@@ -20,19 +22,24 @@ public class BlameModel {
 	private List<BlameBlock> blames;
 	
 	/**
-	 * A Blame result contains the source commitId and line number for every line
-	 * within a file at a certain commit. In {@link BlameBlock BlameBlocks} we
-	 * aggregate adjacent lines from the same commit to deduplicate data.
+	 * In {@link BlameBlock BlameBlocks} we aggregate adjacent lines from
+     * the same commit to deduplicate data.
 	 * 
 	 * @author Jan-Willem Gmelig Meyling
 	 */
 	@Data
 	public static class BlameBlock {
-		
+
+        // Line number in the destination commit
 		private int destinationFrom;
+        // Line number in the commit where these lines were introduced
 		private int sourceFrom;
+        // Amount of adjacent lines that were introduced in the same commit
 		private int length;
+        // The commit that introduced these lines
 		private String fromCommitId;
+        // Original file path
+        private String fromFilePath;
 		
 		/**
 		 * Helper function to check if a line number is within this block. Note:
@@ -44,9 +51,9 @@ public class BlameModel {
 		 * @return true if the line number is within this block
 		 */
 		public boolean contains(int lineNumber) {
-			return sourceFrom >= lineNumber && lineNumber <= (sourceFrom + length);
+			return sourceFrom <= lineNumber && lineNumber < (sourceFrom + length);
 		}
-		
+
 		@JsonIgnore
 		public int getDestinationTo() {
 			return destinationFrom + length;
@@ -61,35 +68,23 @@ public class BlameModel {
 		public void incrementLength() {
 			length++;
 		}
+
+        /**
+         * @param lineNumber line number in the destination commit
+         * @return the line number in the original commit
+         */
+        public Integer getFromLineNumber(Integer lineNumber) {
+            return lineNumber - sourceFrom + destinationFrom;
+        }
 		
 	}
-	
-	/**
-	 * Get the line number in the destination commit for a line number in a
-	 * source commit.
-	 * 
-	 * @param commitId
-	 *            Commit id for the line number. The source commit should be
-	 *            author of the line, and thus be included in the blame result.
-	 * @param lineNumber
-	 *            Line number of the line at the given commitId
-	 * @return line number in the destination commit, or null if not found
-	 */
-	public Integer lineNumberFor(final String commitId, int lineNumber) {
-		Preconditions.checkNotNull(commitId);
-		
-		if(commitId.equals(getCommitId())) {
-			return lineNumber;
-		}
-		
-		for(BlameBlock block : getBlames()) {
-			if (commitId.equals(block.getFromCommitId())
-					&& block.contains(lineNumber)) {
-				return lineNumber - block.getSourceFrom() + block.getDestinationFrom();
-			}
-		}
-		
-		return null;
-	}
-	
+
+    public BlameBlock getBlameBlock(Integer lineNumber) {
+        for(BlameBlock block : blames) {
+            if(block.contains(lineNumber)) {
+                return block;
+            }
+        }
+        throw new IllegalArgumentException("Line " + lineNumber + " not in " + blames);
+    }
 }
