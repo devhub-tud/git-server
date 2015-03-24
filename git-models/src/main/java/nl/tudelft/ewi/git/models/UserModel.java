@@ -24,7 +24,7 @@ import com.google.common.collect.Sets;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserModel extends IdentifiableModel {
 
-	@Pattern(regexp = "^[a-zA-Z0-9]+$")
+	@Pattern(regexp = "^\\w[\\w._\\@+-]+$")
 	private String name;
 
 	@Setter(AccessLevel.PACKAGE)
