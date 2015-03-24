@@ -164,7 +164,7 @@ public class RepositoriesApi extends BaseApi {
 			}
 		}
 
-		repository.setPermission(fetchUser(config, "git"), Permission.ALL);
+		repository.setPermission(fetchUser(config, configuration.getGitoliteAdmin()), Permission.ALL);
 
 		manager.apply(config);
 
