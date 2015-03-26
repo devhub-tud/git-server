@@ -21,19 +21,18 @@ import com.google.inject.AbstractModule;
 class GitServerModule extends AbstractModule {
 
 	private final ConfigManager configManager;
-	private final File mirrorsDirectory;
+	private final Config config;
 
 	/**
 	 * Constructs a new {@link GitServerModule} object which specifies how to configure the {@link GitServer}.
 	 * 
 	 * @param configManager
 	 *        The {@link ConfigManager} to use when interacting with the Gitolite-admin repository.
-	 * @param mirrorsDirectory
-	 *        The location of the mirrors directory which is used to run diff, tree and file inspection commands.
+	 * @param config the config
 	 */
-	public GitServerModule(ConfigManager configManager, File mirrorsDirectory) {
+	public GitServerModule(ConfigManager configManager, Config config) {
 		this.configManager = configManager;
-		this.mirrorsDirectory = mirrorsDirectory;
+		this.config = config;
 	}
 
 	@Override
@@ -46,7 +45,7 @@ class GitServerModule extends AbstractModule {
 		findResourcesWith(Provider.class);
 
 		bind(ConfigManager.class).toInstance(configManager);
-		bind(Inspector.class).toInstance(new Inspector(mirrorsDirectory));
+		bind(Inspector.class).toInstance(new Inspector(config));
 	}
 
 	private void findResourcesWith(Class<? extends Annotation> ann) {

@@ -1,9 +1,6 @@
 package nl.tudelft.ewi.git.client;
 
-import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.CommitSubList;
-import nl.tudelft.ewi.git.models.DiffBlameModel;
-import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.*;
 
 /**
  * The Branch backend can be used for all git server interactions with a branch
@@ -57,5 +54,13 @@ public interface Branch extends Comparable<Branch> {
      * @return simple name for the branch
      */
     String getSimpleName();
+
+    /**
+     * Merge this branch into the master
+     * @param message Message for merge commit
+     * @return a MergeResponse
+     * @throws GitClientException if an GitClientException occurs
+     */
+    MergeResponse merge(String message) throws GitClientException;
 
 }

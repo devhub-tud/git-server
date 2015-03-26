@@ -294,6 +294,18 @@ public class RepositoriesApi extends BaseApi {
 		return inspector.getBranch(repository, branchName);
 	}
 
+	@POST
+	@Path("{repoId}/branch/{branchName}/merge")
+	public MergeResponse mergeBranch(@PathParam("repoId") String repoId,
+									 @PathParam("branchName") String branchName,
+									 @QueryParam("message") String message)
+			throws IOException, ServiceUnavailable, GitException, GitAPIException  {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.merge(repository, branchName, message);
+	}
+
 	@GET
 	@Path("{repoId}/branch/{branchName}/commits")
 	public CommitSubList retrieveCommitsInBracn(@PathParam("repoId") String repoId,

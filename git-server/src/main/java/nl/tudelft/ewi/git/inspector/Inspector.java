@@ -13,18 +13,14 @@ import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
-import nl.tudelft.ewi.git.models.BlameModel;
-import nl.tudelft.ewi.git.models.BranchModel;
-import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.DetailedCommitModel;
+import nl.tudelft.ewi.git.Config;
+import nl.tudelft.ewi.git.models.*;
 import nl.tudelft.ewi.git.models.DiffModel.*;
-import nl.tudelft.ewi.git.models.DiffModel;
-import nl.tudelft.ewi.git.models.Transformers;
-import nl.tudelft.ewi.git.models.EntryType;
-import nl.tudelft.ewi.git.models.TagModel;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
+import org.eclipse.jgit.api.MergeCommand;
+import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.blame.BlameResult;
@@ -32,12 +28,8 @@ import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.ObjectStream;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.DepthWalk.Commit;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -83,18 +75,22 @@ public class Inspector {
 		}
 	}
 
+	private final Config config;
 	private final File repositoriesDirectory;
+	private final File mirrorsDirectory;
 
 	/**
 	 * Creates a new {@link Inspector} object.
 	 * 
-	 * @param repositoriesDirectory
-	 *            The directory where all Git repositories are mirrored to (non-bare repositories).
+	 * @param config
+	 *            Config for the Inspector
 	 */
-	public Inspector(File repositoriesDirectory) {
-		Preconditions.checkNotNull(repositoriesDirectory);
+	public Inspector(Config config) {
+		Preconditions.checkNotNull(config);
+		this.config = config;
+		this.repositoriesDirectory = config.getRepositoriesDirectory();
+		this.mirrorsDirectory = config.getMirrorsDirectory();
 		log.info("Created Inspector in folder {}", repositoriesDirectory.getAbsolutePath());
-		this.repositoriesDirectory = repositoriesDirectory;
 	}
 
 	/**
@@ -635,6 +631,60 @@ public class Inspector {
 		}
 
 		throw new NotFoundException("File " + path + " not found in commit " + commitId);
+	}
+
+	/**
+	 * Merge a branch
+	 * @param repository The repository to merge
+	 * @param branchName The branch to merge
+	 * @param message Message for the merge
+	 * @return MergeResponse
+	 * @throws IOException if an I/O error occurs
+	 * @throws GitException if an GitException occurs
+	 * @throws GitAPIException if an GitAPIException occurs
+	 */
+	public MergeResponse merge(Repository repository, String branchName, String message)
+			throws IOException, GitException, GitAPIException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branchName);
+		Preconditions.checkNotNull(message);
+		branchName = "origin/" + branchName.substring(branchName.lastIndexOf('/') + 1);
+
+		File repositoryDirectory = new File(mirrorsDirectory, repository.getName());
+		Git git;
+
+		if(!repositoryDirectory.exists()) {
+			repositoryDirectory.mkdirs();
+			git = Git.cloneRepository()
+				.setURI(config.getGitoliteBaseUrl() + repository.getName())
+				.setDirectory(repositoryDirectory)
+				.setCloneAllBranches(true)
+				.call();
+		}
+		else {
+			git = Git.open(repositoryDirectory);
+		}
+
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		git.checkout().setName("master").call();
+		git.pull().call();
+
+		MergeResult ret = git.merge()
+			.include(repo.getRef(branchName))
+			.setStrategy(MergeStrategy.RECURSIVE)
+			.setSquash(false)
+			.setFastForward(MergeCommand.FastForwardMode.NO_FF)
+			.setMessage(message)
+			.call();
+
+		log.info("Merged {} into {} with status {}", branchName, repository.getName(), ret.getMergeStatus());
+		git.push().call();
+
+		MergeResponse res = new MergeResponse();
+		res.setStatus(ret.getMergeStatus().name());
+		res.setSuccess(ret.getMergeStatus().isSuccessful());
+		return res;
 	}
 	
 	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)

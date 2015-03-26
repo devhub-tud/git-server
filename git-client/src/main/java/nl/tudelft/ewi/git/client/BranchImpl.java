@@ -62,6 +62,19 @@ private final static String MASTER = "master";
     }
 
     @Override
+    public MergeResponse merge(final String message) throws GitClientException {
+        return perform(new Request<MergeResponse>() {
+            @Override
+            public MergeResponse perform(WebTarget target) {
+                return target.path(branchModel.getPath()).path("merge")
+                        .queryParam("message", message)
+                        .request(MediaType.APPLICATION_JSON)
+                        .post(null, MergeResponse.class);
+            }
+        });
+    }
+
+    @Override
     public String getName() {
         return branchModel.getName();
     }
