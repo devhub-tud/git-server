@@ -25,7 +25,7 @@ public class GroupMembersImpl extends Backend implements GroupMembers {
 	}
 
 	@Override
-	public Collection<IdentifiableModel> listAll() {
+	public Collection<IdentifiableModel> listAll() throws GitClientException {
 		return perform(new Request<Collection<IdentifiableModel>>() {
 			@Override
 			public Collection<IdentifiableModel> perform(WebTarget target) {
@@ -38,7 +38,7 @@ public class GroupMembersImpl extends Backend implements GroupMembers {
 	}
 
 	@Override
-	public Collection<IdentifiableModel> addMember(final IdentifiableModel identifiable) {
+	public Collection<IdentifiableModel> addMember(final IdentifiableModel identifiable) throws GitClientException {
 		return perform(new Request<Collection<IdentifiableModel>>() {
 			@Override
 			public Collection<IdentifiableModel> perform(WebTarget target) {
@@ -51,7 +51,7 @@ public class GroupMembersImpl extends Backend implements GroupMembers {
 	}
 
 	@Override
-	public void removeMember(final IdentifiableModel identifiable) {
+	public void removeMember(final IdentifiableModel identifiable) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
 			public Response perform(WebTarget target) {

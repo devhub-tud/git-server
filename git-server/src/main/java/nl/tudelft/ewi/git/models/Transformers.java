@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -31,8 +32,8 @@ import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.inspector.DiffContextFormatter;
 import nl.tudelft.ewi.git.inspector.Inspector;
 import nl.tudelft.ewi.git.models.BlameModel.BlameBlock;
-import nl.tudelft.ewi.git.models.DiffModel.Type;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
+import nl.tudelft.ewi.git.models.DiffModel.*;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
@@ -339,12 +340,12 @@ public class Transformers {
 	
 	/**
 	 * @param repo {@link org.eclipse.jgit.lib.Repository} for this calculation
-	 * @return a {@link Function} that transforms a {@link DiffEntry} to a {@link DiffModel}
+	 * @return a {@link Function} that transforms a {@link DiffEntry} to a {@link DiffFile}
 	 */
-	public static Function<DiffEntry, DiffModel> diffEntry(final org.eclipse.jgit.lib.Repository repo) {
-		return new Function<DiffEntry, DiffModel>() {
-			public DiffModel apply(DiffEntry input) {
-				DiffModel diff = new DiffModel();
+	public static Function<DiffEntry, DiffFile> diffEntry(final org.eclipse.jgit.lib.Repository repo) {
+		return new Function<DiffEntry, DiffFile>() {
+			public DiffFile apply(DiffEntry input) {
+				DiffFile diff = new DiffFile();
 				diff.setType(convertChangeType(input.getChangeType()));
 				diff.setOldPath(input.getOldPath());
 				diff.setNewPath(input.getNewPath());
@@ -361,18 +362,18 @@ public class Transformers {
 				return diff;
 			}
 
-			private Type convertChangeType(ChangeType changeType) {
+			private nl.tudelft.ewi.git.models.ChangeType convertChangeType(ChangeType changeType) {
 				switch (changeType) {
 					case ADD:
-						return Type.ADD;
+						return nl.tudelft.ewi.git.models.ChangeType.ADD;
 					case COPY:
-						return Type.COPY;
+						return nl.tudelft.ewi.git.models.ChangeType.COPY;
 					case DELETE:
-						return Type.DELETE;
+						return nl.tudelft.ewi.git.models.ChangeType.DELETE;
 					case MODIFY:
-						return Type.MODIFY;
+						return nl.tudelft.ewi.git.models.ChangeType.MODIFY;
 					case RENAME:
-						return Type.RENAME;
+						return nl.tudelft.ewi.git.models.ChangeType.RENAME;
 					default:
 						throw new IllegalArgumentException("Cannot convert change type: " + changeType);
 				}
@@ -397,33 +398,107 @@ public class Transformers {
 				model.setCommitId(commitId);
 				model.setPath(path);
 				final List<BlameBlock> blames = Lists.<BlameBlock> newArrayList();
-				
-				BlameBlock block = null;
-				
+
 				for(int i = 0, length = input.getResultContents().size(); i < length; i++) {
-					String commitId = input.getSourceCommit(i).getName();
-					if(block == null || (!block.getFromCommitId().equals(commitId))) {
-						// First block or from another commit
-						int destinationFrom = block == null ? 0 : block.getDestinationTo();
-                        int sourceFrom = block == null ? 0 : block.getSourceTo();
-                        // Replace previous block with a new one
-						block = new BlameBlock();
-						block.setFromCommitId(commitId);
-						block.setDestinationFrom(destinationFrom);
-						block.setSourceFrom(sourceFrom);
-                        block.setFromFilePath(input.getSourcePath(i));
-						block.setLength(1);
-						blames.add(block);
-					}
-					else {
-						// Another line in current block
+					BlameBlock block = new BlameBlock();
+					block.setFromCommitId(input.getSourceCommit(i).getName());
+					block.setSourceFrom(input.getSourceLine(i) + 1);
+					block.setDestinationFrom(i + 1);
+					block.setFromFilePath(input.getSourcePath(i));
+					block.setLength(1);
+
+					for(int j = i + 1; j < length &&
+							equalCommitId(input, j, block) &&
+							nextLineNumberInBlock(input, j, block); j++) {
+						i++;
 						block.incrementLength();
 					}
+
+					blames.add(block);
 				}
 				
 				model.setBlames(blames);
 				return model;
 			}
+		};
+	}
+
+	private final static boolean equalCommitId(BlameResult input, int index, BlameBlock block) {
+		return input.getSourceCommit(index).getName().equals(block.getFromCommitId());
+	}
+
+	private final static boolean nextLineNumberInBlock(BlameResult input, int index, BlameBlock block) {
+		return block.getSourceFrom() + block.getLength() == input.getSourceLine(index) + 1;
+	}
+
+	/**
+	 * Transform a DiffModel into a DiffBlameModel
+	 * @param inspector Inspector instance
+	 * @param repository current Repository
+	 * @return the DiffBlameModel (DiffModel with blame data attached to the lines)
+	 */
+	public static Function<DiffModel, DiffBlameModel> DiffBlameModelTransformer(final Inspector inspector, final Repository repository) {
+		return input -> {
+			DiffBlameModel result = new DiffBlameModel();
+			result.setOldCommit(input.getOldCommit());
+			result.setNewCommit(input.getNewCommit());
+			result.setCommits(input.getCommits());
+
+			result.setDiffs(input.getDiffs().parallelStream().map((diffFile) -> {
+				BlameModel oldBlame;
+				BlameModel newBlame;
+
+				try {
+					oldBlame = (!diffFile.isAdded()) ?
+							inspector.blame(repository, input.getOldCommit().getCommit(), diffFile.getOldPath()) : null;
+					newBlame = (!diffFile.isDeleted()) ?
+							inspector.blame(repository, input.getNewCommit().getCommit(), diffFile.getNewPath()) : null;
+				} catch (GitException | IOException e) {
+					throw new RuntimeException("Failed to fetch BlameModel in DiffBlame transformer: " + e.getMessage(), e);
+				}
+
+				DiffBlameModel.DiffBlameFile diffBlameFile = new DiffBlameModel.DiffBlameFile();
+				diffBlameFile.setNewPath(diffFile.getNewPath());
+				diffBlameFile.setOldPath(diffFile.getOldPath());
+				diffBlameFile.setType(diffFile.getType());
+
+				diffBlameFile.setContexts(diffFile.getContexts().stream().map(context -> {
+
+					DiffBlameModel.DiffBlameContext diffBlameContext = new DiffBlameModel.DiffBlameContext();
+
+					diffBlameContext.setLines(context.getLines().stream().map(line -> {
+						DiffBlameModel.DiffBlameLine diffBlameLine = new DiffBlameModel.DiffBlameLine();
+						diffBlameLine.setNewLineNumber(line.getNewLineNumber());
+						diffBlameLine.setOldLineNumber(line.getOldLineNumber());
+						diffBlameLine.setContent(line.getContent());
+
+						int lineNumber;
+						BlameBlock block;
+
+						if (diffBlameLine.isRemoved()) {
+							lineNumber = line.getOldLineNumber();
+							block = oldBlame.getBlameBlock(lineNumber);
+						}
+						else {
+							lineNumber = line.getNewLineNumber();
+							block = newBlame.getBlameBlock(lineNumber);
+						}
+
+						diffBlameLine.setSourceCommitId(block.getFromCommitId());
+						diffBlameLine.setSourceFilePath(block.getFromFilePath());
+						diffBlameLine.setSourceLineNumber(block.getFromLineNumber(lineNumber));
+						return diffBlameLine;
+					}).collect(Collectors.toList()));
+
+					return diffBlameContext;
+
+				}).collect(Collectors.toList()));
+
+				return diffBlameFile;
+
+			}).collect(Collectors.toList()));
+
+			return result;
 		};
 	}
 

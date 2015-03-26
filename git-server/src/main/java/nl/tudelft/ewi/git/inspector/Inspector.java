@@ -3,21 +3,22 @@ package nl.tudelft.ewi.git.inspector;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
 
-import javax.ws.rs.NotFoundException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
+import nl.tudelft.ewi.git.models.DiffModel.*;
 import nl.tudelft.ewi.git.models.DiffModel;
-import nl.tudelft.ewi.git.models.DiffResponse;
 import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.TagModel;
@@ -53,9 +54,8 @@ import org.eclipse.jgit.treewalk.filter.TreeFilter;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * This class allows its users to inspect the contents of Git repositories. You can use this class
@@ -262,7 +262,7 @@ public class Inspector {
 	 * @param repository The {@link Repository} to list a limited amount of
 	 *           commits of.
 	 * @param branchName The name of the branch
-	 * @return A {@link DetailedBranchModel} of the requested branch
+	 * @return A {@link BranchModel} of the requested branch
 	 * @throws IOException In case the Git repository could not be accessed.
 	 * @throws GitException In case the Git repository could not be interacted
 	 *            with.
@@ -305,8 +305,16 @@ public class Inspector {
 	 * {@link Repository}
 	 * 
 	 * @param repository The {@link Repository} to list a limited amount of
+<<<<<<< HEAD
 	 * @param branch The branch to fetch commits for
 	 * @return A {@link Collections} of {@link CommitModel} objects, each
+=======
+	 *           commits of.
+	 * @param branch The branch to start traversal at
+	 * @param skip amount of commits to skip
+	 * @param limit max number of commits to return
+	 * @return A {@link List} of {@link CommitModel} objects, each
+>>>>>>> 028336f... Refactor and fixes for new git client
 	 *         representing one commit in the specified Git repository. The
 	 *         {@link CommitModel} objects are ordered from newest to oldest. At
 	 *         most "limit" number of {@link CommitModel} objects will be
@@ -316,7 +324,7 @@ public class Inspector {
 	 * @throws IOException In case the Git repository could not be accessed.
 	 */
 	public List<CommitModel> listCommitsInBranch(Repository repository,
-			BranchModel branch) throws GitException,
+			BranchModel branch, int skip, int limit) throws GitException,
 			IOException {
 
 		Preconditions.checkNotNull(repository);
@@ -331,10 +339,44 @@ public class Inspector {
 
 			Iterable<RevCommit> revCommits = git.log()
 					.add(Commit.fromString(commitId))
+					.setSkip(skip)
+					.setMaxCount(limit)
 					.call();
 
 			return Lists.transform(Lists.newArrayList(revCommits),
 					Transformers.commitModel(repository));
+		} catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+
+	/**
+	 * Return the amount of commits in a branch
+	 * @param repository The {@link Repository} to list a limited amount of
+	 *           commits of.
+	 * @param branch The branch to start traversal at
+	 * @return amount of  commits in the branch
+	 * @throws GitException In case the Git repository could not be interacted
+	 *            with.
+	 * @throws IOException In case the Git repository could not be accessed.
+	 */
+	public int sizeOfBranch(Repository repository, BranchModel branch) throws GitException,
+			IOException {
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branch);
+
+		File repositoryDirectory = new File(repositoriesDirectory,
+				repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		try {
+			String commitId = branch.getCommit().getCommit();
+
+			Iterable<RevCommit> revCommits = git.log()
+					.add(Commit.fromString(commitId))
+					.call();
+
+			return Iterables.size(revCommits);
 		} catch (GitAPIException e) {
 			throw new GitException(e);
 		}
@@ -358,27 +400,12 @@ public class Inspector {
 		
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
+        org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
-		try {
-			Iterable<RevCommit> revCommits = git.log()
-				.add(Commit.fromString(commitId))
-				.setMaxCount(1)
-				.call();
-
-			Iterator<RevCommit> iterator = revCommits.iterator();
-			RevCommit revCommit = iterator.next();
-
-			return Transformers.detailedCommitModel(repository).apply(revCommit);
-		}
-		catch (GitAPIException e) {
-			throw new GitException(e);
-		}
+        RevWalk walk = new RevWalk(repo);
+        RevCommit revCommit = walk.parseCommit(repo.resolve(commitId));
+        return Transformers.detailedCommitModel(repository).apply(revCommit);
 	}
-
-	public DiffResponse calculateDiff(Repository repository, String commitId, int contextLines) throws IOException, GitException {
-		return calculateDiff(repository, null, commitId, contextLines);
-	}
-
 
 	/**
 	 * This method lists a set of diffs of files of a specific {@link Repository} object between two
@@ -390,14 +417,14 @@ public class Inspector {
 	 *            The first commit ID to base the diff on.
 	 * @param rightCommitId
 	 *            The second commit ID to base the diff on.
-	 * @return A {@link Collections} of {@link DiffModel} objects, each representing the changes in
+	 * @return A {@link Collections} of {@code DiffFile} objects, each representing the changes in
 	 *         one file in the specified Git repository.
 	 * @throws IOException
 	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public DiffResponse calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
+	public DiffModel calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
 			throws IOException, GitException {
 		
 		Preconditions.checkNotNull(repository);
@@ -411,31 +438,35 @@ public class Inspector {
 		config.setString("diff", null, "algorithm", "histogram");
 
 		try {
+            DiffModel diffModel = new DiffModel();
+
 			AbstractTreeIterator oldTreeIter = new EmptyTreeIterator();
 			if (!Strings.isNullOrEmpty(leftCommitId)) {
 				oldTreeIter = createTreeParser(git, leftCommitId);
+                diffModel.setOldCommit(retrieveCommit(repository, leftCommitId));
 			}
-			AbstractTreeIterator newTreeIter = new EmptyTreeIterator();
-			if (!Strings.isNullOrEmpty(rightCommitId)) {
-				newTreeIter = createTreeParser(git, rightCommitId);
-			}
+
+			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
+            diffModel.setNewCommit(retrieveCommit(repository, rightCommitId));
 
 			List<DiffEntry> diffs = git.diff()
                     .setContextLines(contextLines)
                     .setOldTree(oldTreeIter)
                     .setNewTree(newTreeIter)
                     .call();
-			
+
 			RenameDetector rd = new RenameDetector(repo);
 			rd.addAll(diffs);
 			diffs = rd.compute();
-			
-			List<DiffModel> diffModels = Lists.transform(diffs, Transformers.diffEntry(repo));
+
+			List<DiffFile> diffFiles = Lists.transform(diffs, Transformers.diffEntry(repo));
 			List<CommitModel> commitModels = Lists.transform(
 					commitDifference(git, rightCommitId, leftCommitId),
 					Transformers.commitModel(repository));
-			
-			return new DiffResponse(diffModels, commitModels);
+
+            diffModel.setCommits(commitModels);
+            diffModel.setDiffs(diffFiles);
+			return diffModel;
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);

@@ -13,7 +13,7 @@ public interface GroupMembers {
 	/**
 	 * @return All currently registered {@link GroupModel} objects on the git-server.
 	 */
-	Collection<IdentifiableModel> listAll();
+	Collection<IdentifiableModel> listAll() throws GitClientException;
 	
 	/**
 	 * This method registers a new member for the specified {@link GroupModel}.
@@ -23,7 +23,7 @@ public interface GroupMembers {
 	 * @return A {@link Collection} of {@link IdentifiableModel}s representing all current group
 	 *         members.
 	 */
-	Collection<IdentifiableModel> addMember(IdentifiableModel identifiable);
+	Collection<IdentifiableModel> addMember(IdentifiableModel identifiable) throws GitClientException;
 	
 	/**
 	 * This method removes an existing group member from the specified {@link GroupModel}.
@@ -31,6 +31,6 @@ public interface GroupMembers {
 	 * @param identifiable
 	 *            The member to remove from the {@link GroupModel}.
 	 */
-	void removeMember(IdentifiableModel identifiable);
+	void removeMember(IdentifiableModel identifiable) throws GitClientException;
 	
 }

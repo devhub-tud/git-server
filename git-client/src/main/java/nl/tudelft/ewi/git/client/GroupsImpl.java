@@ -25,7 +25,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public List<IdentifiableModel> retrieveAll() {
+	public List<IdentifiableModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<IdentifiableModel>>() {
 			@Override
 			public List<IdentifiableModel> perform(WebTarget target) {
@@ -38,7 +38,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel retrieve(final String groupName) {
+	public GroupModel retrieve(final String groupName) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
 			public GroupModel perform(WebTarget target) {
@@ -50,7 +50,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel retrieve(final IdentifiableModel model) {
+	public GroupModel retrieve(final IdentifiableModel model) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
 			public GroupModel perform(WebTarget target) {
@@ -62,7 +62,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel create(final GroupModel newGroup) {
+	public GroupModel create(final GroupModel newGroup) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
 			public GroupModel perform(WebTarget target) {
@@ -74,7 +74,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel ensureExists(final GroupModel model) {
+	public GroupModel ensureExists(final GroupModel model) throws GitClientException {
 		try {
 			return retrieve(model.getName());
 		}
@@ -84,7 +84,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public void delete(final IdentifiableModel group) {
+	public void delete(final IdentifiableModel group) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
 			public Response perform(WebTarget target) {

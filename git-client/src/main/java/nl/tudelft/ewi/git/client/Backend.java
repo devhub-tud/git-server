@@ -15,7 +15,7 @@ class Backend {
 		T perform(WebTarget target);
 	}
 
-	private final String host;
+	protected final String host;
 	protected final Client client;
 
 	Backend(Client client, String host) {
@@ -32,13 +32,13 @@ class Backend {
 		return URLEncoder.encode(value, "UTF-8");
 	}
 
-	<T> T perform(Request<T> action) {
+	<T> T perform(Request<T> action) throws GitClientException {
 		try {
 			WebTarget target = client.target(host);
 			return action.perform(target);
 		}
-		catch (ClientErrorException e) {
-			throw e;
+		catch (Exception e) {
+			throw new GitClientException(e.getMessage(), e);
 		}
 	}
 

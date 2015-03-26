@@ -1,19 +1,8 @@
 package nl.tudelft.ewi.git.client;
 
-import java.io.File;
 import java.util.List;
-import java.util.Map;
 
-import nl.tudelft.ewi.git.models.BlameModel;
-import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.CreateRepositoryModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel;
-import nl.tudelft.ewi.git.models.DetailedCommitModel;
-import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
-import nl.tudelft.ewi.git.models.DiffModel;
-import nl.tudelft.ewi.git.models.DiffResponse;
-import nl.tudelft.ewi.git.models.EntryType;
-import nl.tudelft.ewi.git.models.RepositoryModel;
+import nl.tudelft.ewi.git.models.*;
 
 /**
  * This class allows you query and manipulate repositories on the git-server.
@@ -21,194 +10,36 @@ import nl.tudelft.ewi.git.models.RepositoryModel;
 public interface Repositories {
 	
 	/**
-	 * @return All currently active {@link RepositoryModel} objects on the git-server.
+	 * @return All currently active {@link Repository} objects on the git-server.
 	 */
-	List<RepositoryModel> retrieveAll();
+	List<RepositoryModel> retrieveAll() throws GitClientException;
 
 	/**
-	 * This method retrieves the specified {@link RepositoryModel} from the git-server.
+	 * This method retrieves the specified {@link Repository} from the git-server.
 	 * 
 	 * @param model
-	 *            The {@link RepositoryModel} to retrieve from the git-server.
-	 * @return The retrieved {@link RepositoryModel} object.
+	 *            The {@link Repository} to retrieve from the git-server.
+	 * @return The retrieved {@link Repository} object.
 	 */
-	DetailedRepositoryModel retrieve(RepositoryModel model);
+	Repository retrieve(RepositoryModel model) throws GitClientException;
 
 	/**
-	 * This mehtod retrieves the specified {@link RepositoryModel} from the git-server.
+	 * This mehtod retrieves the specified {@link Repository} from the git-server.
 	 * 
 	 * @param name
-	 *            The name of the {@link RepositoryModel} to retrieve from the git-server.
-	 * @return The retrieved {@link RepositoryModel} object.
+	 *            The name of the {@link Repository} to retrieve from the git-server.
+	 * @return The retrieved {@link Repository} object.
 	 */
-	DetailedRepositoryModel retrieve(String name);
+	Repository retrieve(String name) throws GitClientException;
 
 	/**
-	 * This method creates a new {@link RepositoryModel} on the git-server.
+	 * This method creates a new {@link Repository} on the git-server.
 	 * 
 	 * @param newRepository
-	 *            The new {@link RepositoryModel} to provision on the git-server.
-	 * @return The created {@link RepositoryModel} on the git-server.
+	 *            The new {@link Repository} to provision on the git-server.
+	 * @return The created {@link Repository} on the git-server.
 	 */
-	DetailedRepositoryModel create(CreateRepositoryModel newRepository);
+	Repository create(CreateRepositoryModel newRepository) throws GitClientException;
 
-	/**
-	 * This method deletes the specified {@link RepositoryModel} from the git-server.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to remove from the git-server.
-	 */
-	void delete(RepositoryModel repository);
 
-	/**
-	 * This method lists all commits in the {@link RepositoryModel} on the git-server.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to list all commits for.
-	 * @return A {@link List} of all {@link CommitModel} object for the specified repository.
-	 */
-	List<CommitModel> listCommits(RepositoryModel repository);
-	
-	/**
-	 * This method retrieves a {@link DetailedBranchModel} on the git server
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to retrieve a branch for
-	 * @param branchName
-	 *            The name of the branch to retrieve
-	 * @return a {@link DetailedBranchModel}
-	 */
-	DetailedBranchModel retrieveBranch(RepositoryModel repository, String branchName);
-	
-	/**
-	 * This method retrieves a {@link DetailedBranchModel} on the git server
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to retrieve a branch for
-	 * @param branchName
-	 *            The name of the branch to retrieve
-	 * @param skip
-	 *            amount of commits to skip in the list of commits (pagination)
-	 * @param limit
-	 *            limit of the size of the list of commits (pagination)
-	 * @return a {@link DetailedBranchModel}
-	 */
-	DetailedBranchModel retrieveBranch(RepositoryModel repository, String branchName, int skip, int limit);
-
-	/**
-	 * This method retrieves a specific commit in the {@link RepositoryModel} on the git-server.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to list all commits for.
-	 * @param commitId
-	 *            The commit to retrieve.
-	 * @return A {@link CommitModel} object from the specified repository.
-	 */
-	DetailedCommitModel retrieveCommit(RepositoryModel repository, String commitId);
-
-	/**
-	 * This method lists all diffs for the two specified commit IDs.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to fetch the diffs for.
-	 * @param newCommitId
-	 *            The second commit ID.
-	 * @return A {@link List} of all {@link DiffModel} objects.
-	 */
-	DiffResponse listDiffs(RepositoryModel repository, String newCommitId);
-	
-	/**
-	 * This method lists all diffs for the two specified commit IDs.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to fetch the diffs for.
-	 * @param oldCommitId
-	 *            The first commit ID.
-	 * @param newCommitId
-	 *            The second commit ID.
-	 * @return A {@link List} of all {@link DiffModel} objects.
-	 */
-	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId, String newCommitId);
-	
-	/**
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to fetch the diffs for.
-	 * @param oldCommitId
-	 *            The first commit ID.
-	 * @param newCommitId
-	 *            The second commit ID.
-	 * @return {@link CommitModel Merge base} for the two commits 
-	 */
-	CommitModel mergeBase(RepositoryModel repository, String oldCommitId, String newCommitId);
-
-	/**
-	 * THis method lists all entries on the specified path of the specified repository at the
-	 * specified commit ID.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to inspect.
-	 * @param commitId
-	 *            The commit ID to inspect.
-	 * @param path
-	 *            The path to list all files and folders of.
-	 * @return A {@link List} with files and directory names.
-	 */
-	Map<String, EntryType> listDirectoryEntries(RepositoryModel repository, String commitId, String path);
-
-	/**
-	 * This method retrieves the contents of a file at the specified commit ID of the repository.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to inspect.
-	 * @param commitId
-	 *            The commit ID to inspect.
-	 * @param path
-	 *            The path of the file to inspect.
-	 * @return The contents of the specified file.
-	 */
-	String showFile(RepositoryModel repository, String commitId, String path);
-	
-	/**
-	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to inspect.
-	 * @param commitId
-	 *            The commit ID to inspect.
-	 * @param path
-	 *            The path of the file to inspect.
-	 * @return The contents of the specified file.
-	 */
-	File showBinFile(RepositoryModel repository, String commitId, String path);
-
-	/**
-	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
-	 * 
-	 * @param repository
-	 *            The {@link RepositoryModel} to inspect.
-	 * @param commitId
-	 *            The commit ID to inspect.
-	 * @param path
-	 *            The path of the file to inspect.
-	 * @param context
-	 * 			  The amount of context lines
-	 * @return The contents of the specified file.
-	 */
-	DiffResponse listDiffs(RepositoryModel repository, String oldCommitId,
-			String newCommitId, int context);
-	
-	/**
-	 * Perform a git blame
-	 * @param repository
-	 *            The <code>name</code> of the repository to list all diffs for.
-	 * @param commitId
-	 *            The base commit ID of the repository to compare all the
-	 *            changes with.
-	 * @param filePath
-	 *            The path of the file.
-	 * @return {@link BlameModel}
-	 */
-	BlameModel blame(RepositoryModel repository, String commitId, String filePath);
-	
 }

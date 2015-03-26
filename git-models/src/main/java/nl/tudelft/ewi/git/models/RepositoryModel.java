@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.models;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,5 +52,5 @@ public class RepositoryModel extends BaseModel {
 	
 	@NotEmpty
 	private Map<String, Level> permissions;
-	
+
 }

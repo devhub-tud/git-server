@@ -25,7 +25,7 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public List<SshKeyModel> retrieveAll() {
+	public List<SshKeyModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<SshKeyModel>>() {
 			@Override
 			public List<SshKeyModel> perform(WebTarget target) {
@@ -38,7 +38,7 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public SshKeyModel retrieve(final String keyName) {
+	public SshKeyModel retrieve(final String keyName) throws GitClientException {
 		return perform(new Request<SshKeyModel>() {
 			@Override
 			public SshKeyModel perform(WebTarget target) {
@@ -50,7 +50,7 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public SshKeyModel registerSshKey(final SshKeyModel sshKey) {
+	public SshKeyModel registerSshKey(final SshKeyModel sshKey) throws GitClientException {
 		return perform(new Request<SshKeyModel>() {
 			@Override
 			public SshKeyModel perform(WebTarget target) {
@@ -62,7 +62,7 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public void deleteSshKey(final SshKeyModel sshKey) {
+	public void deleteSshKey(final SshKeyModel sshKey) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
 			public Response perform(WebTarget target) {

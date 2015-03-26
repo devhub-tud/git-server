@@ -12,7 +12,7 @@ public interface SshKeys {
 	/**
 	 * @return All SSH keys of the specified user.
 	 */
-	List<SshKeyModel> retrieveAll();
+	List<SshKeyModel> retrieveAll() throws GitClientException;
 	
 	/**
 	 * Retrieves a specific SSH key.
@@ -21,7 +21,7 @@ public interface SshKeys {
 	 *            The name of the SSH key.
 	 * @return The retrieved {@link SshKeyModel} representing the SSH key.
 	 */
-	SshKeyModel retrieve(String keyName);
+	SshKeyModel retrieve(String keyName) throws GitClientException;
 	
 	/**
 	 * This method registers a new SSH key with the git-server.
@@ -30,7 +30,7 @@ public interface SshKeys {
 	 *            The {@link SshKeyModel} to register.
 	 * @return The created {@link SshKeyModel} from the git-server.
 	 */
-	SshKeyModel registerSshKey(SshKeyModel sshKey);
+	SshKeyModel registerSshKey(SshKeyModel sshKey) throws GitClientException;
 	
 	/**
 	 * This method removes an existing SSH key from the git-server.
@@ -38,6 +38,6 @@ public interface SshKeys {
 	 * @param sshKey
 	 *            The {@link SshKeyModel} describing the SSH key to remove.
 	 */
-	void deleteSshKey(SshKeyModel sshKey);
+	void deleteSshKey(SshKeyModel sshKey) throws GitClientException;
 	
 }

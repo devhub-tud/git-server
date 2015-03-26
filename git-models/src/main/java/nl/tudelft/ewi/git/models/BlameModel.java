@@ -51,7 +51,7 @@ public class BlameModel {
 		 * @return true if the line number is within this block
 		 */
 		public boolean contains(int lineNumber) {
-			return sourceFrom <= lineNumber && lineNumber < (sourceFrom + length);
+			return destinationFrom <= lineNumber && lineNumber < (destinationFrom + length);
 		}
 
 		@JsonIgnore
@@ -70,7 +70,7 @@ public class BlameModel {
 		}
 
         /**
-         * @param lineNumber line number in the destination commit
+         * @param lineNumber line index in the destination commit
          * @return the line number in the original commit
          */
         public Integer getFromLineNumber(Integer lineNumber) {
@@ -79,6 +79,10 @@ public class BlameModel {
 		
 	}
 
+	/**
+	 * @param lineNumber the line number (starts at 1)
+	 * @return the BlameBlock for the line at given index
+	 */
     public BlameBlock getBlameBlock(Integer lineNumber) {
         for(BlameBlock block : blames) {
             if(block.contains(lineNumber)) {

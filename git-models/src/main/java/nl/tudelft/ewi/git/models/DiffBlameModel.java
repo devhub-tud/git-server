@@ -1,21 +1,19 @@
 package nl.tudelft.ewi.git.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
+
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-
+/**
+ * Created by jgmeligmeyling on 25/03/15.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class DiffModel {
+public class DiffBlameModel {
 
     private CommitModel newCommit;
 
@@ -24,22 +22,23 @@ public class DiffModel {
     /**
      * The changed files between newCommit and oldCommit
      */
-	private List<DiffFile> diffs;
+    private List<DiffBlameFile> diffs;
 
     /**
      * The commits between newCommit and oldCommit
      */
-	private List<CommitModel> commits;
-	
-	@JsonIgnore
-	public boolean isAhead() {
-		return !commits.isEmpty();
-	}
-	
-	@JsonIgnore
-	public int getAhead() {
-		return commits.size();
-	}
+    private List<CommitModel> commits;
+
+    @JsonIgnore
+    public boolean isAhead() {
+        return !commits.isEmpty();
+    }
+
+    @JsonIgnore
+    public int getAhead() {
+        return commits.size();
+    }
+
 
     /**
      * This class is a data class which represents a diff between two commits in a Git repository.
@@ -48,16 +47,16 @@ public class DiffModel {
      */
     @Data
     @EqualsAndHashCode
-    public static class DiffFile {
+    public static class DiffBlameFile {
 
         private ChangeType type;
         private String oldPath;
         private String newPath;
-        private List<DiffContext> contexts;
+        private List<DiffBlameContext> contexts;
 
         private int amountOfLinesWithType(final LineType type) {
             int amount = 0;
-            for(DiffContext context : contexts)
+            for(DiffBlameContext context : contexts)
                 amount += context.amountOfLinesWithType(type);
             return amount;
         }
@@ -105,19 +104,12 @@ public class DiffModel {
 
     }
 
-    /**
-     * Diffs usually contain 3 context lines around the actual changes. Context
-     * lines are unchanged lines between two commits.
-     *
-     * @author Jan-Willem Gmelig Meyling
-     *
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DiffContext {
+    public static class DiffBlameContext {
 
-        private List<DiffLine> lines;
+        private List<DiffBlameLine> lines;
 
         /**
          * @param type
@@ -126,7 +118,7 @@ public class DiffModel {
          */
         public int amountOfLinesWithType(final LineType type) {
             int amount = 0;
-            for(DiffLine line : lines) {
+            for(DiffBlameLine line : lines) {
                 switch (type){
                     case ADDED:
                         if(line.isAdded()) amount++;
@@ -144,45 +136,16 @@ public class DiffModel {
 
     }
 
-    /**
-     * A {@code DiffLine} represents one line in a {@link DiffFile}. It can be added,
-     * removed or unchanged (context).
-     *
-     * @author Jan-Willem Gmelig Meyling
-     *
-     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DiffLine {
+    public static class DiffBlameLine extends DiffModel.DiffLine {
 
-        private Integer oldLineNumber;
-        private Integer newLineNumber;
-        private String content;
+        private String sourceCommitId;
 
-        /**
-         * @return true if this line was added to the file between these commits
-         */
-        @JsonIgnore
-        public boolean isAdded() {
-            return oldLineNumber == null;
-        }
+        private String sourceFilePath;
 
-        /**
-         * @return true if this line was removed from the file between these commits
-         */
-        @JsonIgnore
-        public boolean isRemoved() {
-            return newLineNumber == null;
-        }
-
-        /**
-         * @return true if this line was not changed between these commits
-         */
-        @JsonIgnore
-        public boolean isUnchanged() {
-            return oldLineNumber != null && newLineNumber != null;
-        }
+        private int sourceLineNumber;
 
     }
 

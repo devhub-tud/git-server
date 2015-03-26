@@ -35,17 +35,8 @@ import nl.minicom.gitolite.manager.models.Permission;
 import nl.minicom.gitolite.manager.models.Repository;
 import nl.minicom.gitolite.manager.models.User;
 import nl.tudelft.ewi.git.inspector.Inspector;
-import nl.tudelft.ewi.git.models.BlameModel;
-import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.CreateRepositoryModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel;
-import nl.tudelft.ewi.git.models.DetailedCommitModel;
-import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
-import nl.tudelft.ewi.git.models.DiffResponse;
-import nl.tudelft.ewi.git.models.EntryType;
-import nl.tudelft.ewi.git.models.RepositoryModel;
+import nl.tudelft.ewi.git.models.*;
 import nl.tudelft.ewi.git.models.RepositoryModel.Level;
-import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
 import org.apache.commons.io.FileUtils;
@@ -294,29 +285,56 @@ public class RepositoriesApi extends BaseApi {
 	
 	@GET
 	@Path("{repoId}/branch/{branchName}")
-	public DetailedBranchModel retrieveBranch(@PathParam("repoId") String repoId,
-			@PathParam("branchName") String branchName,
-			@QueryParam("skip") @DefaultValue("0") int skip,
-			@QueryParam("limit") @DefaultValue("50") int limit)
+	public BranchModel retrieveBranch(@PathParam("repoId") String repoId,
+			@PathParam("branchName") String branchName)
 			throws IOException, ServiceUnavailable, GitException {
-		
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		
-		DetailedBranchModel branch = DetailedBranchModel
-				.from(inspector.getBranch(repository, branchName));
-		List<CommitModel> commits = inspector.listCommitsInBranch(repository, branch);
-		
-		int size = commits.size();
-	
-		if(skip < 0 || limit < 0 || skip > size) {
-			throw new IllegalArgumentException();
-		}
-		
-		branch.setCommits(commits.subList(skip, Math.min(size, skip + limit)));
-		branch.setAmountOfCommits(size);
-		return branch;
+		return inspector.getBranch(repository, branchName);
+	}
+
+	@GET
+	@Path("{repoId}/branch/{branchName}/commits")
+	public CommitSubList retrieveCommitsInBracn(@PathParam("repoId") String repoId,
+												@PathParam("branchName") String branchName,
+												@QueryParam("skip") @DefaultValue("0") int skip,
+												@QueryParam("limit") @DefaultValue("25") int limit)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		BranchModel branch = inspector.getBranch(repository, branchName);
+		int size = inspector.sizeOfBranch(repository, branch);
+		List<CommitModel> commits = inspector.listCommitsInBranch(repository, branch, skip, limit);
+
+		CommitSubList result = new CommitSubList();
+		result.setSkip(skip);
+		result.setLimit(limit);
+		result.setTotal(size);
+		result.setCommits(commits);
+		return result;
+	}
+
+	@GET
+	@Path("{repoId}/branch/{branchName}/diff-blame")
+	public DiffBlameModel branchDiffBlame(@PathParam("repoId") String repoId,
+										  @PathParam("branchName") String branchName,
+										  @DefaultValue("3") @QueryParam("context") int context)
+			throws ServiceUnavailable, GitException, IOException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+
+		BranchModel master = inspector.getBranch(repository, "master");
+		BranchModel branch = inspector.getBranch(repository, branchName);
+
+		CommitModel masterCommit = master.getCommit();
+		CommitModel branchCommit = branch.getCommit();
+		CommitModel mergeBase = inspector.mergeBase(repository, masterCommit.getCommit(), branchCommit.getCommit());
+
+		DiffModel diffs = inspector.calculateDiff(repository, mergeBase.getCommit(), branchCommit.getCommit(), context);
+		return Transformers.DiffBlameModelTransformer(inspector, repository).apply(diffs);
 	}
 
 	/**
@@ -342,76 +360,109 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.retrieveCommit(repository, commitId);
 	}
-	
-	/**
-	 * This lists all the diffs of a specific repository between two specified
-	 * commit IDs in the Gitolite configuration.
-	 * 
-	 * @param repoId
-	 *            The <code>name</code> of the repository to list all diffs for.
-	 * @param commitId
-	 *            The commit ID of the repository to fetch the diff for.
-	 * @param contextLines
-	 *            amount of context lines
-	 * @throws IOException
-	 *             If one or more files in the repository could not be read.
-	 * @throws ServiceUnavailable
-	 *             If the service could not be reached.
-	 * @throws GitException
-	 *             If an exception occurred while using the Git API.
-	 */
-	@GET
-	@Path("{repoId}/diff/{commitId}")
-	public DiffResponse calculateDiff(
-			@PathParam("repoId") String repoId,
-			@PathParam("commitId") String commitId,
-			@DefaultValue("3") @QueryParam("contextLines") int contextLines)
-			throws IOException, ServiceUnavailable, GitException {
-		
-		return calculateDiff(repoId, commitId, null, contextLines);
-	}
 
 	/**
-	 * This lists all the diffs of a specific repository between two specified commit IDs in the
-	 * Gitolite configuration.
-	 * 
-	 * @param repoId
-	 *            The <code>name</code> of the repository to list all diffs for.
-	 * @param oldId
-	 *            The base commit ID of the repository to compare all the changes with.
-	 * @param newId
-	 *            The reference commit ID of the repository to compare with the base commit ID.
-	 * @param contextLines
-	 *            amount of context lines
-	 * @throws IOException
-	 *             If one or more files in the repository could not be read.
-	 * @throws ServiceUnavailable
-	 *             If the service could not be reached.
-	 * @throws GitException
-	 *             If an exception occurred while using the Git API.
+	 * Fetch a DiffModel between two commits
+	 * @param repoId Repository
+	 * @param commitId New commit id
+	 * @param context amount of context lines (default: 3)
+	 * @return The DiffBlameModel
+	 * @throws IOException If an I/O Exception occurs
+	 * @throws ServiceUnavailable If the service is unavailable
+	 * @throws GitException If an GitException occurs
 	 */
 	@GET
-	@Path("{repoId}/diff/{oldId}/{newId}")
-	public DiffResponse calculateDiff(
-			@PathParam("repoId") String repoId,
-			@PathParam("oldId") String oldId, @PathParam("newId") String newId,
-			@DefaultValue("3") @QueryParam("contextLines") int contextLines)
+	@Path("{repoId}/commits/{commitId}/diff")
+	public DiffModel retrieveCommitDiff(@PathParam("repoId") String repoId,
+										@PathParam("commitId") String commitId,
+										@DefaultValue("3") @QueryParam("context") int context)
 			throws IOException, ServiceUnavailable, GitException {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		
-		if (Strings.isNullOrEmpty(newId)) {
-			CommitModel commit = retrieveCommit(repoId, oldId);
-			if(commit.getParents().length == 0) {
-				return inspector.calculateDiff(repository, decode(oldId), contextLines);
-			} else {
-				// Set the newId to the oldId, and append a ^ to the old id to get its parent
-				newId = oldId;
-				oldId += "^";
-			}
-		}
-		return inspector.calculateDiff(repository, decode(oldId), decode(newId), contextLines);
+
+		CommitModel commit = inspector.retrieveCommit(repository, commitId);
+		String[] parents = commit.getParents();
+		String parentId = parents.length > 0 ? inspector.retrieveCommit(repository, parents[0]).getCommit() : null;
+
+		return inspector.calculateDiff(repository, parentId, commit.getCommit(), context);
+	}
+
+	/**
+	 * Fetch a DiffModel between two commits
+	 * @param repoId Repository
+	 * @param commitId New commit id
+	 * @param oldCommitId Old commit id
+	 * @param context amount of context lines (default: 3)
+	 * @return The DiffBlameModel
+	 * @throws IOException If an I/O Exception occurs
+	 * @throws ServiceUnavailable If the service is unavailable
+	 * @throws GitException If an GitException occurs
+	 */
+	@GET
+	@Path("{repoId}/commits/{commitId}/diff/{oldCommitId}")
+	public DiffModel retrieveCommitDiffCmp(@PathParam("repoId") String repoId,
+										   @PathParam("commitId") String commitId,
+										   @PathParam("oldCommitId") String oldCommitId,
+										   @DefaultValue("3") @QueryParam("context") int context)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.calculateDiff(repository, oldCommitId, commitId, context);
+	}
+
+	/**
+	 * Fetch a DiffBlameModel between two commits
+	 * @param repoId Repository
+	 * @param commitId New commit id
+	 * @param context amount of context lines (default: 3)
+	 * @return The DiffBlameModel
+	 * @throws IOException If an I/O Exception occurs
+	 * @throws ServiceUnavailable If the service is unavailable
+	 * @throws GitException If an GitException occurs
+	 */
+	@GET
+	@Path("{repoId}/commits/{commitId}/diff-blame")
+	public DiffBlameModel retrieveCommitDiffBlame(@PathParam("repoId") String repoId,
+												  @PathParam("commitId") String commitId,
+												  @DefaultValue("3") @QueryParam("context") int context)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+
+		CommitModel commit = inspector.retrieveCommit(repository, commitId);
+		String[] parents = commit.getParents();
+		String parentId = parents.length > 0 ? inspector.retrieveCommit(repository, parents[0]).getCommit() : null;
+
+		DiffModel diffs = inspector.calculateDiff(repository, parentId, commit.getCommit(), context);
+		return Transformers.DiffBlameModelTransformer(inspector, repository).apply(diffs);
+	}
+
+	/**
+	 * Fetch a DiffBlameModel between two commits
+	 * @param repoId Repository
+	 * @param commitId New commit id
+	 * @param oldCommitId Old commit id
+	 * @param context amount of context lines (default: 3)
+	 * @return The DiffBlameModel
+	 * @throws IOException If an I/O Exception occurs
+	 * @throws ServiceUnavailable If the service is unavailable
+	 * @throws GitException If an GitException occurs
+	 */
+	@GET
+	@Path("{repoId}/commits/{commitId}/diff-blame/{oldCommitId}")
+	public DiffBlameModel retrieveCommitDiffBlameCmp(@PathParam("repoId") String repoId,
+													 @PathParam("commitId") String commitId,
+													 @PathParam("oldCommitId") String oldCommitId,
+													 @DefaultValue("3") @QueryParam("context") int context)
+			throws IOException, ServiceUnavailable, GitException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		DiffModel diffs = inspector.calculateDiff(repository, oldCommitId, commitId, context);
+		return Transformers.DiffBlameModelTransformer(inspector, repository).apply(diffs);
 	}
 	
 	/**
@@ -432,11 +483,10 @@ public class RepositoriesApi extends BaseApi {
 	 *             If an exception occurred while using the Git API.
 	 */
 	@GET
-	@Path("{repoId}/blame/{commitId}/{filePath}")
-	public BlameModel blame(
-			@PathParam("repoId") String repoId,
-			@PathParam("commitId") String commitId,
-			@PathParam("filePath") String filePath)
+	@Path("{repoId}/commits/{commitId}/blame/{filePath}")
+	public BlameModel blame(@PathParam("repoId") String repoId,
+							@PathParam("commitId") String commitId,
+							@PathParam("filePath") String filePath)
 			throws IOException, GitException, ServiceUnavailable {
 
 		Config config = manager.get();

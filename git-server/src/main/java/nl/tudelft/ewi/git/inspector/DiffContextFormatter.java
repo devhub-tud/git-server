@@ -25,9 +25,7 @@ import org.eclipse.jgit.storage.pack.PackConfig;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import nl.tudelft.ewi.git.models.DiffContext;
-import nl.tudelft.ewi.git.models.DiffLine;
-import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.DiffModel.*;
 
 public class DiffContextFormatter {
 
@@ -42,20 +40,20 @@ public class DiffContextFormatter {
 	private final ContentSource.Pair source;
 	private int context = 3;
 	
-	public DiffContextFormatter(final DiffModel diffModel, final Repository repository) {
-		Preconditions.checkNotNull(diffModel);
+	public DiffContextFormatter(final DiffFile diffFile, final Repository repository) {
+		Preconditions.checkNotNull(diffFile);
 		Preconditions.checkNotNull(repository);
 		
 		reader = repository.newObjectReader();
 		ContentSource cs = ContentSource.create(reader);
 		source = new ContentSource.Pair(cs, cs);
 		
-		if(diffModel.getDiffContexts() != null) {
-			list = diffModel.getDiffContexts();
+		if(diffFile.getContexts() != null) {
+			list = diffFile.getContexts();
 		}
 		else {
 			list = Lists.newArrayList();
-			diffModel.setDiffContexts(list);
+			diffFile.setContexts(list);
 		}
 	}
 	
@@ -90,30 +88,27 @@ public class DiffContextFormatter {
 			final int bEnd = Math.min(b.size(), endEdit.getEndB() + context);
 			
 			final DiffContext diffContext = new DiffContext();
-			diffContext.setOldStart(aCur);
-			diffContext.setOldEnd(bEnd);
-			diffContext.setNewStart(bCur);
-			diffContext.setNewEnd(bEnd);
 			List<DiffLine> diffLines = Lists.newArrayListWithCapacity(2 * context + 1);
-			diffContext.setDiffLines(diffLines);
+			diffContext.setLines(diffLines);
 
 			while (aCur < aEnd || bCur < bEnd) {
 				DiffLine line = new DiffLine();
 
 				if (aCur < curEdit.getBeginA() || endIdx + 1 < curIdx) {
-					line.setType(DiffLine.Type.CONTEXT);
 					line.setContent(a.getString(aCur));
+                    line.setNewLineNumber(bCur + 1);
+                    line.setOldLineNumber(aCur + 1);
 					diffLines.add(line);
 					aCur++;
 					bCur++;
 				} else if (aCur < curEdit.getEndA()) {
-					line.setType(DiffLine.Type.REMOVED);
 					line.setContent(a.getString(aCur));
+                    line.setOldLineNumber(aCur + 1);
 					diffLines.add(line);
 					aCur++;
 				} else if (bCur < curEdit.getEndB()) {
-					line.setType(DiffLine.Type.ADDED);
 					line.setContent(b.getString(bCur));
+                    line.setNewLineNumber(bCur + 1);
 					diffLines.add(line);
 					bCur++;
 				}

@@ -25,7 +25,7 @@ public class UsersImpl extends Backend implements Users {
 	}
 	
 	@Override
-	public List<IdentifiableModel> retrieveAll() {
+	public List<IdentifiableModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<IdentifiableModel>>() {
 			@Override
 			public List<IdentifiableModel> perform(WebTarget target) {
@@ -38,7 +38,7 @@ public class UsersImpl extends Backend implements Users {
 	}
 	
 	@Override
-	public UserModel retrieve(final String userName) {
+	public UserModel retrieve(final String userName) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
 			public UserModel perform(WebTarget target) {
@@ -50,7 +50,7 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public UserModel retrieve(final UserModel model) {
+	public UserModel retrieve(final UserModel model) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
 			public UserModel perform(WebTarget target) {
@@ -62,7 +62,7 @@ public class UsersImpl extends Backend implements Users {
 	}
 	
 	@Override
-	public UserModel create(final UserModel newUser) {
+	public UserModel create(final UserModel newUser) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
 			public UserModel perform(WebTarget target) {
@@ -74,14 +74,14 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public UserModel ensureExists(String name) {
+	public UserModel ensureExists(String name) throws GitClientException {
 		UserModel model = new UserModel();
 		model.setName(name);
 		return ensureExists(model);
 	}
 
 	@Override
-	public UserModel ensureExists(final UserModel model) {
+	public UserModel ensureExists(final UserModel model) throws GitClientException {
 		try {
 			return retrieve(model.getName());
 		}
@@ -91,7 +91,7 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public void delete(final IdentifiableModel user) {
+	public void delete(final IdentifiableModel user) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
 			public Response perform(WebTarget target) {
