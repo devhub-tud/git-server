@@ -16,7 +16,7 @@
 		<hibernate.version>4.2.7.Final</hibernate.version>
 		<jackson.version>2.3.0</jackson.version>
 		<jetty.version>9.1.1.v20140108</jetty.version>
-		<resteasy.version>3.0.4.Final</resteasy.version>
+		<resteasy.version>3.0.10.Final</resteasy.version>
 		<slf4j.version>1.7.5</slf4j.version>
 	</properties>
 
@@ -47,6 +47,11 @@
     </repositories>
 
 	<dependencies>
+		<dependency>
+			<groupId>javax.ejb</groupId>
+			<artifactId>ejb-api</artifactId>
+			<version>3.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
