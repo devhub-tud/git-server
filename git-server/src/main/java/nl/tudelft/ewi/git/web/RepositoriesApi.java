@@ -306,6 +306,17 @@ public class RepositoriesApi extends BaseApi {
 		return inspector.merge(repository, branchName, message);
 	}
 
+	@POST
+	@Path("{repoId}/tag")
+	public TagModel addTag(@PathParam("repoId") String repoId,
+						   @Valid TagModel tagModel)
+			throws IOException, ServiceUnavailable, GitException, GitAPIException  {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		return inspector.tag(repository, tagModel);
+	}
+
 	@GET
 	@Path("{repoId}/branch/{branchName}/commits")
 	public CommitSubList retrieveCommitsInBracn(@PathParam("repoId") String repoId,
@@ -504,35 +515,6 @@ public class RepositoriesApi extends BaseApi {
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
 		return inspector.blame(repository, commitId, filePath);
-	}
-	
-	/**
-	 * 
-	 * @param repoId
-	 *            The <code>name</code> of the repository to list all diffs for.
-	 * @param leftCommitId
-	 *            The base commit ID of the repository to compare all the changes with.
-	 * @param rightCommitId
-	 *            The reference commit ID of the repository to compare with the base commit ID.
-	 * @return {@link CommitModel}
-	 * @throws IOException
-	 *             If one or more files in the repository could not be read.
-	 * @throws ServiceUnavailable
-	 *             If the service could not be reached.
-	 * @throws GitException
-	 *             If an exception occurred while using the Git API.
-	 */
-	@GET
-	@Path("{repoId}/merge-base/{oldId}/{newId}")
-	public CommitModel mergeBase(
-			@PathParam("repoId") String repoId,
-			@PathParam("oldId") String leftCommitId,
-			@PathParam("newId") String rightCommitId)
-			throws IOException, ServiceUnavailable, GitException {
-
-		Config config = manager.get();
-		Repository repository = fetchRepository(config, decode(repoId));
-		return inspector.mergeBase(repository, leftCommitId, rightCommitId);
 	}
 
 	/**

@@ -7,6 +7,8 @@ import lombok.ToString;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Strings;
 
+import javax.validation.constraints.NotNull;
+
 /**
  * This class is a data class which represents a commit in a Git repository.
  * 
@@ -18,6 +20,7 @@ import com.google.common.base.Strings;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CommitModel extends BaseModel implements Comparable<CommitModel> {
 
+	@NotNull
 	private String commit;
 	private String[] parents;
 	private String author;

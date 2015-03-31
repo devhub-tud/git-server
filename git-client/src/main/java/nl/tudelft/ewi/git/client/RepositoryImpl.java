@@ -132,4 +132,17 @@ public class RepositoryImpl extends Backend implements Repository {
         });
     }
 
+    @Override
+    public TagModel tag(TagModel tag) throws GitClientException {
+        return perform(new Request<TagModel>() {
+            @Override
+            public TagModel perform(WebTarget target) {
+                return target
+                        .path(repositoryModel.getPath())
+                        .path("tag")
+                        .request(MediaType.APPLICATION_JSON)
+                        .post(Entity.json(tag), TagModel.class);
+            }
+        });
+    }
 }

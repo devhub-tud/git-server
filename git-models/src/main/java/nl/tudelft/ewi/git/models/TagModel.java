@@ -17,7 +17,8 @@ public class TagModel implements Comparable<TagModel> {
 	@NotEmpty
 	private String name;
 	
-	private DetailedCommitModel commit;
+	private CommitModel commit;
+
 	private String description;
 	
 	@Override
@@ -29,9 +30,5 @@ public class TagModel implements Comparable<TagModel> {
 	public String getSimpleName() {
 		return name.substring(name.lastIndexOf('/') + 1);
 	}
-	
-	public String getDescription(){
-		return description != null ? description : commit.getFullMessage();
-	}
-	
+
 }

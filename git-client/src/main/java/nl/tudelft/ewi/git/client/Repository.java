@@ -98,4 +98,11 @@ public interface Repository {
      */
     Collection<TagModel> getTags();
 
+    /**
+     * Create a tag
+     * @param tag TagModel to create
+     * @return the created TagModel
+     */
+    TagModel tag(TagModel tag) throws GitClientException;
+
 }

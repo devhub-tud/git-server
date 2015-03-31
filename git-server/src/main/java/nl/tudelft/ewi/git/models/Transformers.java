@@ -15,6 +15,7 @@ import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.RevWalkUtils;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
@@ -181,6 +182,49 @@ public class Transformers {
 				}
 
 				return model;
+			}
+		};
+	}
+
+	/**
+	 * @param repository Repository
+	 * @param repo Repository
+	 * @param inspector Inspector
+	 * @return a function that transforms a Ref into a TagModel
+	 */
+	public static Function<Ref, TagModel> tagModel(final Repository repository, final org.eclipse.jgit.lib.Repository repo, final Inspector inspector) {
+		return new Function<Ref, TagModel>() {
+			@Override
+			public TagModel apply(Ref input) {
+				TagModel tag = new TagModel();
+
+				tag.setName(input.getName());
+
+				input = repo.peel(input);
+				ObjectId objectId = input.getPeeledObjectId();
+				if (objectId == null) {
+					objectId = input.getObjectId();
+				}
+				else {
+					try {
+						RevWalk revWalk = new RevWalk(repo);
+						RevTag annotatedTag = revWalk.parseTag(input.getObjectId());
+						tag.setDescription(annotatedTag.getShortMessage());
+					}
+					catch(IOException e) {
+						log.warn("Failed to read tag message", e);
+					}
+				}
+
+				try {
+					tag.setCommit(inspector.retrieveCommit(repository, objectId.getName()));
+
+				}
+				catch (IOException | GitException e) {
+					log.warn("Failed to fetch commit" + objectId, e);
+				}
+
+				return tag;
 			}
 		};
 	}

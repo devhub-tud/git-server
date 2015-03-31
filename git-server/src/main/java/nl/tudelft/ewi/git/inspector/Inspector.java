@@ -21,6 +21,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
+import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.blame.BlameResult;
@@ -33,7 +34,6 @@ import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.DepthWalk.Commit;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.RevWalkUtils;
@@ -43,7 +43,6 @@ import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
@@ -153,39 +152,7 @@ public class Inspector {
 			List<Ref> results = git.tagList()
 				.call();
 
-			return Collections2.transform(results, new Function<Ref, TagModel>() {
-				@Override
-				public TagModel apply(Ref input) {
-					TagModel tag = new TagModel();
-
-					tag.setName(input.getName());
-					
-					input = repo.peel(input);
-					ObjectId objectId = input.getPeeledObjectId();
-					if (objectId == null) {
-						objectId = input.getObjectId();
-					}
-					else {
-						try {
-							RevWalk revWalk = new RevWalk(repo);
-							RevTag annotatedTag = revWalk.parseTag(input.getObjectId());
-							tag.setDescription(annotatedTag.getShortMessage());
-						}
-						catch(IOException e) {
-							log.warn("Failed to read tag message", e);
-						}
-					}
-
-					try {
-						tag.setCommit(retrieveCommit(repository, objectId.getName()));
-					}
-					catch (IOException | GitException e) {
-						log.warn("Failed to fetch commit" + objectId, e);
-					}
-					
-					return tag;
-				}
-			});
+			return Collections2.transform(results, Transformers.tagModel(repository, repo, this));
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
@@ -651,24 +618,8 @@ public class Inspector {
 		Preconditions.checkNotNull(message);
 		branchName = "origin/" + branchName.substring(branchName.lastIndexOf('/') + 1);
 
-		File repositoryDirectory = new File(mirrorsDirectory, repository.getName());
-		Git git;
-
-		if(!repositoryDirectory.exists()) {
-			repositoryDirectory.mkdirs();
-			git = Git.cloneRepository()
-				.setURI(config.getGitoliteBaseUrl() + repository.getName())
-				.setDirectory(repositoryDirectory)
-				.setCloneAllBranches(true)
-				.call();
-		}
-		else {
-			git = Git.open(repositoryDirectory);
-		}
-
+		Git git = createOrOpenRepositoryMirror(repository);
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
-		git.checkout().setName("master").call();
-		git.pull().call();
 
 		MergeResult ret = git.merge()
 			.include(repo.getRef(branchName))
@@ -685,6 +636,67 @@ public class Inspector {
 		res.setStatus(ret.getMergeStatus().name());
 		res.setSuccess(ret.getMergeStatus().isSuccessful());
 		return res;
+	}
+
+	/**
+	 * Tag a commit
+	 * @param repository Repository to tag
+	 * @param tagModel TagModel for the tag
+	 * @return the created TagModel
+	 * @throws IOException If an I/O error occurs
+	 * @throws GitException if a GitException occurs
+	 * @throws GitAPIException if a GitAPIException occurs
+	 */
+	public TagModel tag(Repository repository, TagModel tagModel)
+			throws IOException, GitException, GitAPIException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(tagModel);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		RevWalk walk = new RevWalk(repo);
+
+		try {
+			String commitId = tagModel.getCommit().getCommit();
+			ObjectId id = repo.resolve(commitId);
+			RevCommit commit = walk.parseCommit(id);
+	//
+			TagCommand command = git.tag()
+					.setName(tagModel.getName())
+					.setObjectId(commit);
+
+			if(tagModel.getDescription() != null)
+				command.setMessage(tagModel.getDescription());
+
+			return Transformers.tagModel(repository, repo, this).apply(command.call());
+		}
+		finally {
+			walk.dispose();
+			repo.close();
+		}
+	}
+
+	private Git createOrOpenRepositoryMirror(Repository repository) throws GitException, IOException, GitAPIException {
+		File repositoryDirectory = new File(mirrorsDirectory, repository.getName());
+		Git git;
+
+		if(!repositoryDirectory.exists()) {
+			repositoryDirectory.mkdirs();
+			git = Git.cloneRepository()
+					.setURI(config.getGitoliteBaseUrl() + repository.getName())
+					.setDirectory(repositoryDirectory)
+					.setCloneAllBranches(true)
+					.call();
+		}
+		else {
+			git = Git.open(repositoryDirectory);
+		}
+
+		git.checkout().setName("master").call();
+		git.pull().call();
+		return git;
 	}
 	
 	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
