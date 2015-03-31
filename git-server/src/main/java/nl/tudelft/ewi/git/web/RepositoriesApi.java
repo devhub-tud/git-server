@@ -3,7 +3,6 @@ package nl.tudelft.ewi.git.web;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +22,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
@@ -50,6 +50,10 @@ import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.diff.RawText;
+import org.eclipse.jgit.errors.LargeObjectException;
+import org.eclipse.jgit.lib.ObjectLoader;
+import org.jboss.resteasy.annotations.cache.Cache;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
@@ -451,12 +455,15 @@ public class RepositoriesApi extends BaseApi {
 		return entries;
 	}
 
+	private static final int MAX_AGE = 31556926;
+	
 	/**
-	 * This retrieves the content of a specific file of a specific repository at a specific commit
-	 * ID in the Gitolite configuration.
+	 * This retrieves the content of a specific file of a specific repository at
+	 * a specific commit ID in the Gitolite configuration.
 	 * 
 	 * @param repoId
-	 *            The <code>name</code> of the repository to retrieve the file from.
+	 *            The <code>name</code> of the repository to retrieve the file
+	 *            from.
 	 * @param commitId
 	 *            The commit ID of the repository to retrieve the file from.
 	 * @param path
@@ -467,21 +474,36 @@ public class RepositoriesApi extends BaseApi {
 	 *             If the service could not be reached.
 	 * @throws GitException
 	 *             If an exception occurred while using the Git API.
+	 * @throws NotFoundException
+	 *             In case the file could not be found in the commit
 	 */
 	@GET
-	@Produces(MediaType.MULTIPART_FORM_DATA)
+	@Cache(maxAge=MAX_AGE)
+	@Produces(MediaType.WILDCARD)
 	@Path("{repoId}/file/{commitId}/{path}")
-	public InputStream showFile(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
+	public Response showFile(@PathParam("repoId") String repoId, @PathParam("commitId") String commitId,
 			@PathParam("path") String path) throws IOException, ServiceUnavailable, GitException {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		InputStream stream = inspector.showFile(repository, decode(commitId), decode(path));
-		if (stream == null) {
-			throw new NotFoundException();
+		ObjectLoader loader = inspector.showFile(repository, decode(commitId),
+				decode(path));
+		String fileName = path.substring(path.lastIndexOf('/') + 1);
+
+		return Response.ok(loader, of(loader))
+				.header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+				.build();
+	}
+
+	private static MediaType of(final ObjectLoader objectLoader) {
+		try {
+			if (!objectLoader.isLarge()
+					&& !RawText.isBinary(objectLoader.getCachedBytes())) {
+				return MediaType.TEXT_PLAIN_TYPE;
+			}
+		} catch (LargeObjectException e) {
 		}
-		
-		return stream;
+		return MediaType.APPLICATION_OCTET_STREAM_TYPE;
 	}
 
 	private void pullCommitsFromRemoteRepository(String templateUrl, String repoUrl) throws GitException {

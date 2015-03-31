@@ -497,17 +497,47 @@ public class Inspector {
 	 *            The commit ID of the state of the repository.
 	 * @param path
 	 *            The path of the file to inspect at the specified commit ID.
-	 * @return An {@link InputStream} which outputs the contents of the file. Or NULL if no file is
-	 *         present.
+	 * @return An {@link ObjectLoader} for accessing the object
 	 * @throws IOException
 	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
+	 * @throws NotFoundException
+	 *             In case the file could not be found in the commit
 	 */
-	public InputStream showFile(Repository repository, String commitId, String path) throws IOException, GitException {
+	public ObjectLoader showFile(final Repository repository,
+			final String commitId, final String path) throws IOException,
+			GitException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		Preconditions.checkNotNull(path);
+		
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
-		return showFile(git.getRepository(), commitId, path);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		
+		RevWalk walk = new RevWalk(repo);
+		ObjectId resolvedObjectId = repo.resolve(commitId);
+		RevCommit commit = walk.parseCommit(resolvedObjectId);
+
+		TreeWalk walker = new TreeWalk(repo);
+		walker.setFilter(TreeFilter.ALL);
+		walker.addTree(commit.getTree());
+		walker.setRecursive(true);
+
+		while (walker.next()) {
+			String entryPath = walker.getPathString();
+			if (!entryPath.startsWith(path)) {
+				continue;
+			}
+
+			ObjectId objectId = walker.getObjectId(0);
+			ObjectLoader loader = repo.open(objectId);
+			return loader;
+		}
+
+		throw new NotFoundException("File " + path + " not found in commit " + commitId);
 	}
 
 	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
@@ -548,33 +578,11 @@ public class Inspector {
 		return handles;
 	}
 
-	private InputStream showFile(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
-			throws GitException, IOException {
-
-		RevWalk walk = new RevWalk(repo);
-		ObjectId resolvedObjectId = repo.resolve(commitId);
-		RevCommit commit = walk.parseCommit(resolvedObjectId);
-
-		TreeWalk walker = new TreeWalk(repo);
-		walker.setFilter(TreeFilter.ALL);
-		walker.addTree(commit.getTree());
-		walker.setRecursive(true);
-
-		while (walker.next()) {
-			String entryPath = walker.getPathString();
-			if (!entryPath.startsWith(path)) {
-				continue;
-			}
-
-			ObjectId objectId = walker.getObjectId(0);
-			ObjectLoader loader = repo.open(objectId);
-			return loader.openStream();
-		}
-
-		return null;
-	}
-
 	private AbstractTreeIterator createTreeParser(Git git, String ref) throws IOException, GitAPIException {
+
+		assert git != null : "Git should not be null";
+		assert ref != null && !ref.isEmpty() : "Ref should not be empty or null";
+
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		RevWalk walk = new RevWalk(repo);
