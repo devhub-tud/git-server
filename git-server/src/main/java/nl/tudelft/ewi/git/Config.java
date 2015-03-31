@@ -55,4 +55,8 @@ public class Config {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(path));
 		return new File(path);
 	}
+
+	public String getGitoliteAdmin() {
+		return properties.getProperty("gitolite.administrator", "git");
+	}
 }
