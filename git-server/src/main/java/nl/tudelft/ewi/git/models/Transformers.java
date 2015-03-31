@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.revwalk.RevCommit;
+
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
@@ -201,6 +206,94 @@ public class Transformers {
 				model.setKeys(Collections2.transform(input.getKeys().entrySet(), sshKeys(input)));
 				model.setPath("/api/users/" + encode(input.getName()));
 				return model;
+			}
+		};
+	}
+
+	/**
+	 * @param repository {@link RepositoryModel} in which the branch resists
+	 * @return A {@link Function} which can transform {@link Ref} objects into {@link BranchModel} objects.
+	 */
+	public static Function<Ref, BranchModel> branchModel(final Repository repository) {
+		return new Function<Ref, BranchModel>() {
+			@Override
+			public BranchModel apply(final Ref input) {
+				String name = input.getName();
+				ObjectId objectId = input.getObjectId();
+				BranchModel branch = new BranchModel();
+				branch.setCommit(objectId.getName());
+				branch.setName(name);
+				branch.setPath("/api/repositories/"
+						+ encode(repository.getName()) + "/branch/"
+						+ encode(name));
+				return branch;
+			}
+		};
+	}
+
+	/**
+	 * @param repository {@link RepositoryModel} in which the commit resists
+	 * @return A {@link Function} which can transform {@link RevCommit} objects into {@link CommitModel} objects.
+	 */
+	public static Function<RevCommit, CommitModel> commitModel(final Repository repository) {
+		return new Function<RevCommit, CommitModel>() {
+
+			@Override
+			public CommitModel apply(RevCommit revCommit) {
+				PersonIdent committerIdent = revCommit.getCommitterIdent();
+				ObjectId revCommitId = revCommit.getId();
+
+				RevCommit[] parents = revCommit.getParents();
+				String[] parentIds = new String[parents.length];
+				for (int i = 0; i < parents.length; i++) {
+					ObjectId parentId = parents[i].getId();
+					parentIds[i] = parentId.getName();
+				}
+
+				CommitModel commit = new CommitModel();
+				commit.setCommit(revCommitId.getName());
+				commit.setParents(parentIds);
+				commit.setTime(revCommit.getCommitTime());
+				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
+				commit.setMessage(revCommit.getShortMessage());
+				commit.setPath("/api/repositories/"
+						+ encode(repository.getName()) + "/commits/"
+						+ encode(revCommitId.getName()));
+				return commit;
+			}
+		};
+	}
+
+	/**
+	 * @param repository {@link RepositoryModel} in which the commit resists
+	 * @return A {@link Function} which can transform {@link RevCommit} objects into {@link DetailedCommitModel} objects.
+	 */
+	public static Function<RevCommit, DetailedCommitModel> detailedCommitModel(final Repository repository) {
+		return new Function<RevCommit, DetailedCommitModel>() {
+
+			@Override
+			public DetailedCommitModel apply(RevCommit revCommit) {
+				PersonIdent committerIdent = revCommit.getCommitterIdent();
+				ObjectId revCommitId = revCommit.getId();
+
+				RevCommit[] parents = revCommit.getParents();
+				String[] parentIds = new String[parents.length];
+				for (int i = 0; i < parents.length; i++) {
+					ObjectId parentId = parents[i].getId();
+					parentIds[i] = parentId.getName();
+				}
+
+				DetailedCommitModel commit = new DetailedCommitModel();
+				commit.setCommit(revCommitId.getName());
+				commit.setParents(parentIds);
+				commit.setTime(revCommit.getCommitTime());
+				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
+				commit.setMessage(revCommit.getShortMessage());
+				commit.setFullMessage(revCommit.getFullMessage());
+				commit.setPath("/api/repositories/"
+						+ encode(repository.getName()) + "/commits/"
+						+ encode(revCommitId.getName()));
+				return commit;
 			}
 		};
 	}

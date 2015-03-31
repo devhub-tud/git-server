@@ -2,7 +2,9 @@ package nl.tudelft.ewi.git.models;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Strings;
 
 /**
@@ -11,8 +13,10 @@ import com.google.common.base.Strings;
  * @author michael
  */
 @Data
-@EqualsAndHashCode
-public class CommitModel {
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class CommitModel extends BaseModel {
 
 	private String commit;
 	private String[] parents;

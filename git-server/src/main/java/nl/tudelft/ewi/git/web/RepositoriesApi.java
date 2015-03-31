@@ -258,15 +258,11 @@ public class RepositoriesApi extends BaseApi {
 		config.removeRepository(repository);
 		manager.apply(config);
 		
-		if (!Strings.isNullOrEmpty(configuration.getRepositoriesDirectory())) {
-			File topDirectory = new File(configuration.getRepositoriesDirectory());
-			delete(topDirectory, new File(topDirectory, decode(repoId)));
-		}
-		
-		if (!Strings.isNullOrEmpty(configuration.getMirrorsDirectory())) {
-			File topDirectory = new File(configuration.getMirrorsDirectory());
-			delete(topDirectory, new File(topDirectory, decode(repoId)));
-		}
+		File repositoriesDirectory = configuration.getRepositoriesDirectory();
+		delete(repositoriesDirectory, new File(repositoriesDirectory, decode(repoId)));
+
+		File mirrorsDirectory = configuration.getMirrorsDirectory();
+		delete(mirrorsDirectory, new File(mirrorsDirectory, decode(repoId)));
 	}
 
 	/**

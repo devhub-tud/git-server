@@ -2,8 +2,11 @@ package nl.tudelft.ewi.git.models;
 
 import java.util.Collection;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * This model represents a detailed view of a repository in the Gitolite config.
@@ -14,7 +17,9 @@ import lombok.EqualsAndHashCode;
  *
  */
 @Data
-@EqualsAndHashCode(callSuper=true)
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DetailedBranchModel extends BranchModel {
 	
 	private Collection<CommitModel> commits;
@@ -31,6 +36,7 @@ public class DetailedBranchModel extends BranchModel {
 		DetailedBranchModel result = new DetailedBranchModel();
 		result.setName(model.getName());
 		result.setCommit(model.getCommit());
+		result.setPath(model.getPath());
 		return result;
 	}
 	
