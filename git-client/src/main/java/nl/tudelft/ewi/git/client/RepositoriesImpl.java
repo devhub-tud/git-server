@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.client;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -26,16 +27,16 @@ public class RepositoriesImpl extends Backend implements Repositories {
 
 	private static final String BASE_PATH = "/api/repositories";
 
-	RepositoriesImpl(String host) {
-		super(host);
+	RepositoriesImpl(Client client, String host) {
+		super(client, host);
 	}
 
 	@Override
 	public List<RepositoryModel> retrieveAll() {
 		return perform(new Request<List<RepositoryModel>>() {
 			@Override
-			public List<RepositoryModel> perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public List<RepositoryModel> perform(WebTarget target) {
+				return target.path(BASE_PATH)
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<RepositoryModel>>() {
 					});
@@ -47,8 +48,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public DetailedRepositoryModel retrieve(final RepositoryModel model) {
 		return perform(new Request<DetailedRepositoryModel>() {
 			@Override
-			public DetailedRepositoryModel perform(Client client) {
-				return client.target(createUrl(model.getPath()))
+			public DetailedRepositoryModel perform(WebTarget target) {
+				return target.path(model.getPath())
 					.request(MediaType.APPLICATION_JSON)
 					.get(DetailedRepositoryModel.class);
 			}
@@ -59,8 +60,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public DetailedRepositoryModel retrieve(final String name) {
 		return perform(new Request<DetailedRepositoryModel>() {
 			@Override
-			public DetailedRepositoryModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH + "/" + encode(name)))
+			public DetailedRepositoryModel perform(WebTarget target) {
+				return target.path(BASE_PATH).path(encode(name))
 					.request(MediaType.APPLICATION_JSON)
 					.get(DetailedRepositoryModel.class);
 			}
@@ -71,8 +72,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public DetailedRepositoryModel create(final CreateRepositoryModel newRepository) {
 		return perform(new Request<DetailedRepositoryModel>() {
 			@Override
-			public DetailedRepositoryModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public DetailedRepositoryModel perform(WebTarget target) {
+				return target.path(BASE_PATH)
 					.request(MediaType.APPLICATION_JSON)
 					.post(Entity.json(newRepository), DetailedRepositoryModel.class);
 			}
@@ -83,8 +84,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public void delete(final RepositoryModel repository) {
 		perform(new Request<Response>() {
 			@Override
-			public Response perform(Client client) {
-				return client.target(createUrl(repository.getPath()))
+			public Response perform(WebTarget target) {
+				return target.path(repository.getPath())
 					.request()
 					.delete(Response.class);
 			}
@@ -95,8 +96,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public List<CommitModel> listCommits(final RepositoryModel repository) {
 		return perform(new Request<List<CommitModel>>() {
 			@Override
-			public List<CommitModel> perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/commits"))
+			public List<CommitModel> perform(WebTarget target) {
+				return target.path(repository.getPath()).path("commits")
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<CommitModel>>() {
 					});
@@ -115,8 +116,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 			final String branchName, final int skip, final int limit) {
 		return perform(new Request<DetailedBranchModel>() {
 			@Override
-			public DetailedBranchModel perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/branch/" + encode(branchName)))
+			public DetailedBranchModel perform(WebTarget target) {
+				return target.path(repository.getPath()).path("branch").path(encode(branchName))
 					.queryParam("skip", skip)
 					.queryParam("limit", limit)
 					.request(MediaType.APPLICATION_JSON)
@@ -130,8 +131,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public DetailedCommitModel retrieveCommit(final RepositoryModel repository, final String commitId) {
 		return perform(new Request<DetailedCommitModel>() {
 			@Override
-			public DetailedCommitModel perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/commits/" + commitId))
+			public DetailedCommitModel perform(WebTarget target) {
+				return target.path(repository.getPath()).path("commits").path(commitId)
 					.request(MediaType.APPLICATION_JSON)
 					.get(DetailedCommitModel.class);
 			}
@@ -144,18 +145,15 @@ public class RepositoriesImpl extends Backend implements Repositories {
 
 		return perform(new Request<List<DiffModel>>() {
 			@Override
-			public List<DiffModel> perform(Client client) {
-				StringBuilder path = new StringBuilder();
-				path.append(repository.getPath());
-				path.append("/diff");
+			public List<DiffModel> perform(WebTarget target) {
+				target = target.path(repository.getPath()).path("diff");
 
 				if(oldCommitId != null) {
-					path.append("/" + encode(oldCommitId));
+					target = target.path(encode(oldCommitId));
 				}
-				path.append("/" + encode(newCommitId));
+				target = target.path(encode(newCommitId));
 
-				return client.target(createUrl(path.toString()))
-					.request(MediaType.APPLICATION_JSON)
+				return target.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<List<DiffModel>>() {
 				});
 			}
@@ -166,8 +164,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public Map<String, EntryType> listDirectoryEntries(final RepositoryModel repository, final String commitId, final String path) {
 		return perform(new Request<Map<String, EntryType>>() {
 			@Override
-			public Map<String, EntryType> perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/tree/" + encode(commitId) + "/" + encode(path)))
+			public Map<String, EntryType> perform(WebTarget target) {
+				return target.path(repository.getPath()).path("tree").path(encode(commitId)).path(encode(path))
 					.request(MediaType.APPLICATION_JSON)
 					.get(new GenericType<Map<String, EntryType>>() {
 					});
@@ -179,8 +177,8 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public String showFile(final RepositoryModel repository, final String commitId, final String path) {
 		return perform(new Request<String>() {
 			@Override
-			public String perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
+			public String perform(WebTarget target) {
+				return target.path(repository.getPath()).path("file").path(encode(commitId)).path(path)
 					.request(MediaType.MULTIPART_FORM_DATA)
 					.get(String.class);
 			}
@@ -191,9 +189,13 @@ public class RepositoriesImpl extends Backend implements Repositories {
 	public File showBinFile(final RepositoryModel repository, final String commitId, final String path) {
 		return perform(new Request<File>() {
 			@Override
-			public File perform(Client client) {
-				return client.target(createUrl(repository.getPath() + "/file/" + encode(commitId) + "/" + encode(path)))
-					.request(MediaType.MULTIPART_FORM_DATA)
+			public File perform(WebTarget target) {
+				return target
+					.path(repository.getPath())
+					.path("file")
+					.path(encode(commitId))
+					.path(encode(path))
+					.request(MediaType.WILDCARD_TYPE)
 					.get(File.class);
 			}
 		});

@@ -129,7 +129,7 @@ public interface Repositories {
 	 *            The path to list all files and folders of.
 	 * @return A {@link List} with files and directory names.
 	 */
-	public Map<String, EntryType> listDirectoryEntries(RepositoryModel repository, String commitId, String path);
+	Map<String, EntryType> listDirectoryEntries(RepositoryModel repository, String commitId, String path);
 
 	/**
 	 * This method retrieves the contents of a file at the specified commit ID of the repository.
@@ -142,7 +142,7 @@ public interface Repositories {
 	 *            The path of the file to inspect.
 	 * @return The contents of the specified file.
 	 */
-	public String showFile(RepositoryModel repository, String commitId, String path);
+	String showFile(RepositoryModel repository, String commitId, String path);
 	
 	/**
 	 * This method retrieves the contents of a binary file at the specified commit ID of the repository.
@@ -155,6 +155,6 @@ public interface Repositories {
 	 *            The path of the file to inspect.
 	 * @return The contents of the specified file.
 	 */
-	public File showBinFile(RepositoryModel repository, String commitId, String path);
+	File showBinFile(RepositoryModel repository, String commitId, String path);
 	
 }
