@@ -3,6 +3,7 @@ package nl.tudelft.ewi.git.client;
 import java.net.URLEncoder;
 
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 
@@ -36,6 +37,9 @@ class Backend {
 		try {
 			WebTarget target = client.target(host);
 			return action.perform(target);
+		}
+		catch (NotFoundException e) {
+			throw e;
 		}
 		catch (Exception e) {
 			throw new GitClientException(e.getMessage(), e);
