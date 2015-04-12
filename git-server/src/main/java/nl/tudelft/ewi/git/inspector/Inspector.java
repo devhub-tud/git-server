@@ -17,11 +17,8 @@ import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.models.*;
 import nl.tudelft.ewi.git.models.DiffModel.*;
 
-import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
-import org.eclipse.jgit.api.MergeCommand;
-import org.eclipse.jgit.api.MergeResult;
-import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.blame.BlameResult;
@@ -610,7 +607,7 @@ public class Inspector {
 	 * @throws GitException if an GitException occurs
 	 * @throws GitAPIException if an GitAPIException occurs
 	 */
-	public MergeResponse merge(Repository repository, String branchName, String message)
+	public MergeResponse merge(Repository repository, String branchName, Person person, String message)
 			throws IOException, GitException, GitAPIException {
 
 		Preconditions.checkNotNull(repository);
@@ -625,12 +622,28 @@ public class Inspector {
 			.include(repo.getRef(branchName))
 			.setStrategy(MergeStrategy.RECURSIVE)
 			.setSquash(false)
-			.setFastForward(MergeCommand.FastForwardMode.NO_FF)
+			.setCommit(true)
 			.setMessage(message)
+			.setFastForward(MergeCommand.FastForwardMode.NO_FF)
 			.call();
 
-		log.info("Merged {} into {} with status {}", branchName, repository.getName(), ret.getMergeStatus());
+		if(ret.getMergeStatus().isSuccessful()) {
+			git.commit()
+				.setAmend(true)
+				.setAuthor(person.getName(), person.getEmail())
+				.setCommitter(person.getName(), person.getEmail())
+				.setMessage(message)
+				.call();
+		}
+		else {
+			git.reset()
+				.setMode(ResetCommand.ResetType.HARD)
+				.call();
+		}
+
+
 		git.push().call();
+		log.info("Merged {} into {} with status {}", branchName, repository.getName(), ret.getMergeStatus());
 
 		MergeResponse res = new MergeResponse();
 		res.setStatus(ret.getMergeStatus().name());

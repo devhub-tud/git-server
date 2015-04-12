@@ -92,7 +92,7 @@ public class BranchMock implements Branch {
     }
 
     @Override
-    public MergeResponse merge(String message) throws GitClientException {
+    public MergeResponse merge(final String message, final String user, final String email) throws GitClientException {
         MergeResponse response = new MergeResponse();
         response.setSuccess(true);
         response.setStatus("OK");

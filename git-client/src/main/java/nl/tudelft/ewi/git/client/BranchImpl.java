@@ -12,7 +12,7 @@ import javax.ws.rs.core.MediaType;
  */
 public class BranchImpl extends Backend implements Branch {
 
-private final static String MASTER = "master";
+    private final static String MASTER = "master";
 
     private final BranchModel branchModel;
 
@@ -62,12 +62,14 @@ private final static String MASTER = "master";
     }
 
     @Override
-    public MergeResponse merge(final String message) throws GitClientException {
+    public MergeResponse merge(final String message, final String user, final String email) throws GitClientException {
         return perform(new Request<MergeResponse>() {
             @Override
             public MergeResponse perform(WebTarget target) {
                 return target.path(branchModel.getPath()).path("merge")
                         .queryParam("message", message)
+                        .queryParam("name", user)
+                        .queryParam("email", email)
                         .request(MediaType.APPLICATION_JSON)
                         .post(null, MergeResponse.class);
             }

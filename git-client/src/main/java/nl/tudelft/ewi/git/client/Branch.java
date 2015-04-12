@@ -58,9 +58,11 @@ public interface Branch extends Comparable<Branch> {
     /**
      * Merge this branch into the master
      * @param message Message for merge commit
+     * @param user Committer name
+     * @param email Committer email
      * @return a MergeResponse
      * @throws GitClientException if an GitClientException occurs
      */
-    MergeResponse merge(String message) throws GitClientException;
+    MergeResponse merge(String message, String user, String email) throws GitClientException;
 
 }
