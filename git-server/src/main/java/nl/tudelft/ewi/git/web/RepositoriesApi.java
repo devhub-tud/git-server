@@ -298,12 +298,19 @@ public class RepositoriesApi extends BaseApi {
 	@Path("{repoId}/branch/{branchName}/merge")
 	public MergeResponse mergeBranch(@PathParam("repoId") String repoId,
 									 @PathParam("branchName") String branchName,
-									 @QueryParam("message") String message)
+									 @QueryParam("message") String message,
+									 @QueryParam("name") String name,
+									 @QueryParam("email") String email)
 			throws IOException, ServiceUnavailable, GitException, GitAPIException  {
 
 		Config config = manager.get();
 		Repository repository = fetchRepository(config, decode(repoId));
-		return inspector.merge(repository, branchName, message);
+
+		Person person = new Person();
+		person.setEmail(email);
+		person.setName(name);
+
+		return inspector.merge(repository, branchName, person, message);
 	}
 
 	@POST
