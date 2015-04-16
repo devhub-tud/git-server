@@ -1,7 +1,12 @@
 package nl.tudelft.ewi.git.client;
 
 import com.google.common.collect.ComparisonChain;
-import nl.tudelft.ewi.git.models.*;
+import nl.tudelft.ewi.git.models.BranchModel;
+import nl.tudelft.ewi.git.models.CommitModel;
+import nl.tudelft.ewi.git.models.CommitSubList;
+import nl.tudelft.ewi.git.models.DiffBlameModel;
+import nl.tudelft.ewi.git.models.DiffModel;
+import nl.tudelft.ewi.git.models.MergeResponse;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
@@ -89,6 +94,16 @@ public class BranchImpl extends Backend implements Branch {
     @Override
     public Integer getBehind() {
         return branchModel.getBehind();
+    }
+
+    @Override
+    public boolean isAhead() {
+        return branchModel.isAhead();
+    }
+
+    @Override
+    public boolean isBehind() {
+        return branchModel.isBehind();
     }
 
     @Override

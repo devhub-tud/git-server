@@ -116,6 +116,16 @@ public class BranchMock implements Branch {
     }
 
     @Override
+    public boolean isAhead() {
+        return getAhead() > 0;
+    }
+
+    @Override
+    public boolean isBehind() {
+        return getBehind() > 0;
+    }
+
+    @Override
     public int compareTo(Branch o) {
         return 0;
     }

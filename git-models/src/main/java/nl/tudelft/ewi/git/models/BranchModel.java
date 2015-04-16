@@ -24,10 +24,29 @@ public class BranchModel extends BaseModel implements Comparable<BranchModel> {
 	private String name;
 	private CommitModel commit;
 	private Integer behind, ahead;
-	
+
+	/**
+	 * @return the simple name for this branch
+	 */
 	@JsonIgnore
 	public String getSimpleName() {
 		return name.substring(name.lastIndexOf('/') + 1);
+	}
+
+	/**
+	 * @return true if this branch is ahead
+	 */
+	@JsonIgnore
+	public boolean isAhead() {
+		return ahead > 0;
+	}
+
+	/**
+	 * @return true if this branch is behind
+	 */
+	@JsonIgnore
+	public boolean isBehind() {
+		return behind > 0;
 	}
 
 	@Override
