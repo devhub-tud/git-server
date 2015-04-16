@@ -74,7 +74,7 @@ public class BlameModel {
          * @return the line number in the original commit
          */
         public Integer getFromLineNumber(Integer lineNumber) {
-            return lineNumber - sourceFrom + destinationFrom;
+            return lineNumber + sourceFrom - destinationFrom;
         }
 		
 	}
