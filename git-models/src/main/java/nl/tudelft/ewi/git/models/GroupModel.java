@@ -15,7 +15,6 @@ import org.hibernate.validator.constraints.NotEmpty;
  * @author michael
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 public class GroupModel extends IdentifiableModel {
 
 	@Pattern(regexp = "^\\@\\w[\\w._\\@+-]+$")
@@ -23,5 +22,15 @@ public class GroupModel extends IdentifiableModel {
 
 	@NotEmpty
 	private Collection<IdentifiableModel> members;
+
+	@Override
+	public boolean equals(Object other) {
+		return super.equals(other);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode();
+	}
 
 }
