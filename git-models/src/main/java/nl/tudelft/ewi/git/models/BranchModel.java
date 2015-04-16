@@ -33,22 +33,6 @@ public class BranchModel extends BaseModel implements Comparable<BranchModel> {
 		return name.substring(name.lastIndexOf('/') + 1);
 	}
 
-	/**
-	 * @return true if this branch is ahead
-	 */
-	@JsonIgnore
-	public boolean isAhead() {
-		return ahead > 0;
-	}
-
-	/**
-	 * @return true if this branch is behind
-	 */
-	@JsonIgnore
-	public boolean isBehind() {
-		return behind > 0;
-	}
-
 	@Override
 	public int compareTo(BranchModel o) {
 		return ComparisonChain.start()

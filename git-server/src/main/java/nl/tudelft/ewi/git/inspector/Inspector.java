@@ -640,6 +640,13 @@ public class Inspector {
 		Git git = createOrOpenRepositoryMirror(repository);
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
+		git.fetch().call();
+
+		git.checkout()
+			.setName("master")
+			.setStartPoint("origin/master")
+			.setForce(true).call();
+
 		MergeResult ret = git.merge()
 			.include(repo.getRef(branchName))
 			.setStrategy(MergeStrategy.RECURSIVE)

@@ -99,12 +99,12 @@ public class BranchImpl extends Backend implements Branch {
 
     @Override
     public boolean isAhead() {
-        return branchModel.isAhead();
+        return getAhead() > 0;
     }
 
     @Override
     public boolean isBehind() {
-        return branchModel.isBehind();
+        return getBehind() > 0;
     }
 
     @Override
