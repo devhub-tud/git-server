@@ -11,6 +11,7 @@ import nl.tudelft.ewi.git.models.MergeResponse;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -124,6 +125,18 @@ public class BranchImpl extends Backend implements Branch {
                 return target.path(branchModel.getPath()).path("merge-base")
                         .request(MediaType.APPLICATION_JSON)
                         .get(CommitModel.class);
+            }
+        });
+    }
+
+    @Override
+    public void delete() throws GitClientException {
+        perform(new Request<Response>() {
+            @Override
+            public Response perform(WebTarget target) {
+                return target.path(branchModel.getPath())
+                        .request(MediaType.APPLICATION_JSON)
+                        .delete();
             }
         });
     }

@@ -116,6 +116,11 @@ public class BranchMock implements Branch {
     }
 
     @Override
+    public void delete() throws GitClientException {
+        repositoryMock.removeBranch(this);
+    }
+
+    @Override
     public CommitModel mergeBase() {
         return getDiffBlameModel().getOldCommit();
     }

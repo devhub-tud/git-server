@@ -363,6 +363,17 @@ public class RepositoriesApi extends BaseApi {
 		return inspector.mergeBase(repository, masterCommit.getCommit(), branchCommit.getCommit());
 	}
 
+	@DELETE
+	@Path("{repoId}/branch/{branchName}")
+	public void deleteBranch(@PathParam("repoId") String repoId,
+									@PathParam("branchName") String branchName)
+			throws ServiceUnavailable, GitException, IOException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+		inspector.deleteBranch(repository, branchName);
+	}
+
 	@GET
 	@Path("{repoId}/branch/{branchName}/diff-blame")
 	public DiffBlameModel branchDiffBlame(@PathParam("repoId") String repoId,

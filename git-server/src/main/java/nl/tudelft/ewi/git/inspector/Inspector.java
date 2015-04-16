@@ -437,6 +437,28 @@ public class Inspector {
 	}
 
 	/**
+	 * Delete a branch
+	 * @param repository Repository to remove a branch for
+	 * @param branchName Branch to remove
+	 * @throws IOException If an IOException occurs
+	 * @throws GitAPIException If a GitAPIException occurs
+	 */
+	public void deleteBranch(Repository repository, String branchName) throws IOException, GitException {
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branchName);
+		Preconditions.checkArgument(!branchName.contains("master"));
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		try {
+			git.branchDelete().setBranchNames(branchName).call();
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+
+	/**
 	 * Get the merge base for two commits
 	 * 
 	 * @param repository

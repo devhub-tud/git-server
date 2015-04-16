@@ -76,6 +76,12 @@ public interface Branch extends Comparable<Branch> {
     CommitModel mergeBase() throws GitClientException;
 
     /**
+     * Delete a branch
+     * @throws GitClientException if an GitClientException occurs
+     */
+    void delete() throws GitClientException;
+
+    /**
      * Merge this branch into the master
      * @param message Message for merge commit
      * @param user Committer name

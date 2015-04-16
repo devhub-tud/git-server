@@ -119,6 +119,10 @@ public class RepositoryMock implements Repository {
         return tag;
     }
 
+    public void removeBranch(BranchMock branchMock) {
+        branches.remove(branchMock.getName());
+    }
+
     public RepositoryModel getRepositoryModel() {
         return repositoryModel;
     }
