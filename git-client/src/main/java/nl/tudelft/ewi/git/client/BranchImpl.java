@@ -117,6 +117,18 @@ public class BranchImpl extends Backend implements Branch {
     }
 
     @Override
+    public CommitModel mergeBase() throws GitClientException {
+        return perform(new Request<CommitModel>() {
+            @Override
+            public CommitModel perform(WebTarget target) {
+                return target.path(branchModel.getPath()).path("merge-base")
+                        .request(MediaType.APPLICATION_JSON)
+                        .get(CommitModel.class);
+            }
+        });
+    }
+
+    @Override
     public int compareTo(Branch o) {
         return ComparisonChain.start()
             .compareTrueFirst(getName().contains(MASTER), o.getName().contains(MASTER))

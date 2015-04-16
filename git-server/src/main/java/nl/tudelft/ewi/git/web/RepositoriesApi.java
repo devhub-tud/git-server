@@ -347,6 +347,23 @@ public class RepositoriesApi extends BaseApi {
 	}
 
 	@GET
+	@Path("{repoId}/branch/{branchName}/merge-base")
+	public CommitModel mergeBase(@PathParam("repoId") String repoId,
+								 @PathParam("branchName") String branchName)
+			throws ServiceUnavailable, GitException, IOException {
+
+		Config config = manager.get();
+		Repository repository = fetchRepository(config, decode(repoId));
+
+		BranchModel master = inspector.getBranch(repository, "master");
+		BranchModel branch = inspector.getBranch(repository, branchName);
+		CommitModel masterCommit = master.getCommit();
+		CommitModel branchCommit = branch.getCommit();
+
+		return inspector.mergeBase(repository, masterCommit.getCommit(), branchCommit.getCommit());
+	}
+
+	@GET
 	@Path("{repoId}/branch/{branchName}/diff-blame")
 	public DiffBlameModel branchDiffBlame(@PathParam("repoId") String repoId,
 										  @PathParam("branchName") String branchName,

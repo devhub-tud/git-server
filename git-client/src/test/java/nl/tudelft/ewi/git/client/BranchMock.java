@@ -116,6 +116,11 @@ public class BranchMock implements Branch {
     }
 
     @Override
+    public CommitModel mergeBase() {
+        return getDiffBlameModel().getOldCommit();
+    }
+
+    @Override
     public boolean isAhead() {
         return getAhead() > 0;
     }

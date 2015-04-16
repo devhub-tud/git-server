@@ -70,6 +70,12 @@ public interface Branch extends Comparable<Branch> {
     boolean isBehind();
 
     /**
+     * @return the mergebase for this branch
+     * @throws GitClientException if an GitClientException occurs
+     */
+    CommitModel mergeBase() throws GitClientException;
+
+    /**
      * Merge this branch into the master
      * @param message Message for merge commit
      * @param user Committer name
