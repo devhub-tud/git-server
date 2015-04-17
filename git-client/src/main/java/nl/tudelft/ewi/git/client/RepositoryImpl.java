@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.client;
 
 import nl.tudelft.ewi.git.models.*;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -26,7 +27,13 @@ public class RepositoryImpl extends Backend implements Repository {
 
     @Override
     public BranchImpl retrieveBranch(String branchName) {
-        return new BranchImpl(client, host, repositoryModel.getBranch(branchName));
+        BranchModel branch = repositoryModel.getBranch(branchName);
+        if(branch == null) {
+            throw new NotFoundException("Branch " + branchName + " could not be found in " + repositoryModel.getName());
+        }
+        else {
+            return new BranchImpl(client, host, branch);
+        }
     }
 
     @Override

@@ -451,7 +451,10 @@ public class Inspector {
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 		try {
-			git.branchDelete().setBranchNames(branchName).call();
+			git.branchDelete()
+				.setBranchNames(branchName)
+				.setForce(true)
+				.call();
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
