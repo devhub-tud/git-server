@@ -1,9 +1,12 @@
 package nl.tudelft.ewi.git;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -41,16 +44,19 @@ public class Config {
 		return properties.getProperty("gitolite.passphrase", null);
 	}
 
-	public String getRepositoriesDirectory() {
-		return properties.getProperty("gitolite.repositories");
+	public File getRepositoriesDirectory() {
+		String path = properties.getProperty("gitolite.repositories");
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(path));
+		return new File(path);
 	}
 
-	public String getMirrorsDirectory() {
-		return properties.getProperty("gitolite.mirrors");
+	public File getMirrorsDirectory() {
+		String path = properties.getProperty("gitolite.mirrors");
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(path));
+		return new File(path);
 	}
 
 	public String getGitoliteAdmin() {
-		return properties.getProperty("gitolite.admin.user", "git");
+		return properties.getProperty("gitolite.administrator", "git");
 	}
-	
 }

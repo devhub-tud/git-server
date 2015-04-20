@@ -5,6 +5,7 @@ import java.util.List;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -19,16 +20,16 @@ public class GroupsImpl extends Backend implements Groups {
 
 	private static final String BASE_PATH = "/api/groups";
 
-	GroupsImpl(String host) {
-		super(host);
+	GroupsImpl(Client client, String host) {
+		super(client, host);
 	}
 
 	@Override
-	public List<IdentifiableModel> retrieveAll() {
+	public List<IdentifiableModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<IdentifiableModel>>() {
 			@Override
-			public List<IdentifiableModel> perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public List<IdentifiableModel> perform(WebTarget target) {
+				return target.path(BASE_PATH)
 						.request(MediaType.APPLICATION_JSON)
 						.get(new GenericType<List<IdentifiableModel>>() {
 						});
@@ -37,11 +38,11 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel retrieve(final String groupName) {
+	public GroupModel retrieve(final String groupName) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
-			public GroupModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH + "/" + encode(groupName)))
+			public GroupModel perform(WebTarget target) {
+				return target.path(BASE_PATH).path(encode(groupName))
 						.request(MediaType.APPLICATION_JSON)
 						.get(GroupModel.class);
 			}
@@ -49,11 +50,11 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel retrieve(final IdentifiableModel model) {
+	public GroupModel retrieve(final IdentifiableModel model) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
-			public GroupModel perform(Client client) {
-				return client.target(createUrl(model.getPath()))
+			public GroupModel perform(WebTarget target) {
+				return target.path(model.getPath())
 						.request(MediaType.APPLICATION_JSON)
 						.get(GroupModel.class);
 			}
@@ -61,11 +62,11 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel create(final GroupModel newGroup) {
+	public GroupModel create(final GroupModel newGroup) throws GitClientException {
 		return perform(new Request<GroupModel>() {
 			@Override
-			public GroupModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public GroupModel perform(WebTarget target) {
+				return target.path(BASE_PATH)
 						.request(MediaType.APPLICATION_JSON)
 						.post(Entity.json(newGroup), GroupModel.class);
 			}
@@ -73,7 +74,7 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public GroupModel ensureExists(final GroupModel model) {
+	public GroupModel ensureExists(final GroupModel model) throws GitClientException {
 		try {
 			return retrieve(model.getName());
 		}
@@ -83,11 +84,11 @@ public class GroupsImpl extends Backend implements Groups {
 	}
 
 	@Override
-	public void delete(final IdentifiableModel group) {
+	public void delete(final IdentifiableModel group) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
-			public Response perform(Client client) {
-				return client.target(createUrl(group.getPath()))
+			public Response perform(WebTarget target) {
+				return target.path(group.getPath())
 						.request()
 						.delete(Response.class);
 			}
@@ -96,7 +97,7 @@ public class GroupsImpl extends Backend implements Groups {
 
 	@Override
 	public GroupMembers groupMembers(GroupModel group) {
-		return new GroupMembersImpl(getHost(), group);
+		return new GroupMembersImpl(client, getHost(), group);
 	}
 
 }

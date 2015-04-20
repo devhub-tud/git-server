@@ -3,60 +3,46 @@ package nl.tudelft.ewi.git.client;
 import java.net.URLEncoder;
 
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+
 
 import lombok.SneakyThrows;
 
 class Backend {
 
 	static interface Request<T> {
-		T perform(Client client);
+		T perform(WebTarget target);
 	}
 
-	private final String host;
+	protected final String host;
+	protected final Client client;
 
-	Backend(String host) {
+	Backend(Client client, String host) {
 		this.host = host;
+		this.client = client;
 	}
-	
+
 	String getHost() {
 		return host;
 	}
-	
+
 	@SneakyThrows
 	String encode(String value) {
 		return URLEncoder.encode(value, "UTF-8");
 	}
-	
-	String createUrl(String path) {
-		StringBuilder url = new StringBuilder();
-		if (host.endsWith("/")) {
-			url.append(host.substring(0, host.length() - 1));
-		}
-		else {
-			url.append(host);
-		}
-		url.append("/");
-		if (path.startsWith("/")) {
-			url.append(path.substring(1));
-		}
-		else {
-			url.append(path);
-		}
-		return url.toString();
-	}
-	
-	<T> T perform(Request<T> action) {
-		Client client = ClientBuilder.newClient();
+
+	<T> T perform(Request<T> action) throws GitClientException {
 		try {
-			return action.perform(client);
+			WebTarget target = client.target(host);
+			return action.perform(target);
 		}
-		catch (ClientErrorException e) {
+		catch (NotFoundException e) {
 			throw e;
 		}
-		finally {
-			client.close();
+		catch (Exception e) {
+			throw new GitClientException(e.getMessage(), e);
 		}
 	}
 

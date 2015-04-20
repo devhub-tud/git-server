@@ -5,6 +5,7 @@ import java.util.List;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -19,16 +20,16 @@ public class UsersImpl extends Backend implements Users {
 
 	private static final String BASE_PATH = "/api/users";
 
-	UsersImpl(String host) {
-		super(host);
+	UsersImpl(Client client, String host) {
+		super(client, host);
 	}
 	
 	@Override
-	public List<IdentifiableModel> retrieveAll() {
+	public List<IdentifiableModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<IdentifiableModel>>() {
 			@Override
-			public List<IdentifiableModel> perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public List<IdentifiableModel> perform(WebTarget target) {
+				return target.path(BASE_PATH)
 						.request(MediaType.APPLICATION_JSON)
 						.get(new GenericType<List<IdentifiableModel>>() {
 						});
@@ -37,11 +38,11 @@ public class UsersImpl extends Backend implements Users {
 	}
 	
 	@Override
-	public UserModel retrieve(final String userName) {
+	public UserModel retrieve(final String userName) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
-			public UserModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH + "/" + encode(userName)))
+			public UserModel perform(WebTarget target) {
+				return target.path(BASE_PATH).path(encode(userName))
 						.request(MediaType.APPLICATION_JSON)
 						.get(UserModel.class);
 			}
@@ -49,11 +50,11 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public UserModel retrieve(final UserModel model) {
+	public UserModel retrieve(final UserModel model) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
-			public UserModel perform(Client client) {
-				return client.target(createUrl(model.getPath()))
+			public UserModel perform(WebTarget target) {
+				return target.path(model.getPath())
 						.request(MediaType.APPLICATION_JSON)
 						.get(UserModel.class);
 			}
@@ -61,11 +62,11 @@ public class UsersImpl extends Backend implements Users {
 	}
 	
 	@Override
-	public UserModel create(final UserModel newUser) {
+	public UserModel create(final UserModel newUser) throws GitClientException {
 		return perform(new Request<UserModel>() {
 			@Override
-			public UserModel perform(Client client) {
-				return client.target(createUrl(BASE_PATH))
+			public UserModel perform(WebTarget target) {
+				return target.path(BASE_PATH)
 						.request(MediaType.APPLICATION_JSON)
 						.post(Entity.json(newUser), UserModel.class);
 			}
@@ -73,14 +74,14 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public UserModel ensureExists(String name) {
+	public UserModel ensureExists(String name) throws GitClientException {
 		UserModel model = new UserModel();
 		model.setName(name);
 		return ensureExists(model);
 	}
 
 	@Override
-	public UserModel ensureExists(final UserModel model) {
+	public UserModel ensureExists(final UserModel model) throws GitClientException {
 		try {
 			return retrieve(model.getName());
 		}
@@ -90,11 +91,11 @@ public class UsersImpl extends Backend implements Users {
 	}
 
 	@Override
-	public void delete(final IdentifiableModel user) {
+	public void delete(final IdentifiableModel user) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
-			public Response perform(Client client) {
-				return client.target(createUrl(user.getPath()))
+			public Response perform(WebTarget target) {
+				return target.path(user.getPath())
 						.request()
 						.delete(Response.class);
 			}
@@ -103,7 +104,7 @@ public class UsersImpl extends Backend implements Users {
 
 	@Override
 	public SshKeys sshKeys(UserModel user) {
-		return new SshKeysImpl(getHost(), user);
+		return new SshKeysImpl(client, getHost(), user);
 	}
 
 }

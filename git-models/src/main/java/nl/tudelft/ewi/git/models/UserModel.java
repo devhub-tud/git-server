@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
  * @author michael
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserModel extends IdentifiableModel {
@@ -29,5 +28,15 @@ public class UserModel extends IdentifiableModel {
 
 	@Setter(AccessLevel.PACKAGE)
 	private Collection<SshKeyModel> keys = Sets.newHashSet();
+
+	@Override
+	public boolean equals(Object other) {
+		return super.equals(other);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode();
+	}
 
 }

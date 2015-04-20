@@ -13,7 +13,7 @@ public interface Users {
 	/**
 	 * @return All {@link UserModel} objects currently registered on the git-server.
 	 */
-	List<IdentifiableModel> retrieveAll();
+	List<IdentifiableModel> retrieveAll() throws GitClientException;
 	
 	/**
 	 * This method retrieves a specific {@link UserModel} from the git-server.
@@ -22,17 +22,16 @@ public interface Users {
 	 *            The name of the {@link UserModel} to retrieve.
 	 * @return The retrieved {@link UserModel} object.
 	 */
-	UserModel retrieve(String userName);
+	UserModel retrieve(String userName) throws GitClientException;
 	
 	/**
 	 * This method retrieves a specific {@link UserModel} from the git-server.
 	 * 
 	 * @param model
 	 *            The {@link UserModel} to retrieve from the git-server.
-	 * @throws NotFoundException When the {@link UserModel} could not be found
 	 * @return The retrieved {@link UserModel} object.
 	 */
-	UserModel retrieve(UserModel model);
+	UserModel retrieve(UserModel model) throws GitClientException;
 	
 	/**
 	 * This method creates a new {@link UserModel} object on the git-server.
@@ -41,7 +40,7 @@ public interface Users {
 	 *            The {@link UserModel} object to create on the git-server.
 	 * @return The created {@link UserModel} object.
 	 */
-	UserModel create(UserModel newUser);
+	UserModel create(UserModel newUser) throws GitClientException;
 	
 	/**
 	 * This method ensures that a specific {@link UserModel} exists on the git-server.
@@ -50,7 +49,7 @@ public interface Users {
 	 *            The name of the user to ensure exists on the git-server.
 	 * @return The created or retrieved {@link UserModel}.
 	 */
-	UserModel ensureExists(String name);
+	UserModel ensureExists(String name) throws GitClientException;
 	
 	/**
 	 * This method ensures that a specific {@link UserModel} exists on the git-server.
@@ -59,7 +58,7 @@ public interface Users {
 	 *            The {@link UserModel} to ensure that it exists.
 	 * @return The created or fetched {@link UserModel} on the git-server.
 	 */
-	UserModel ensureExists(UserModel model);
+	UserModel ensureExists(UserModel model) throws GitClientException;
 	
 	/**
 	 * This method deletes an existing {@link UserModel} from the git-server.
@@ -67,7 +66,7 @@ public interface Users {
 	 * @param user
 	 *            The {@link UserModel} to delete.
 	 */
-	void delete(IdentifiableModel user);
+	void delete(IdentifiableModel user) throws GitClientException;
 	
 	/**
 	 * Creates a new returns a {@link SshKeys} object allowing you to query and manipulate the SSH
@@ -77,6 +76,6 @@ public interface Users {
 	 *            The {@link UserModel} to query or manipulate the SSH keys of.
 	 * @return The constructed {@link SshKeys} object.
 	 */
-	SshKeys sshKeys(UserModel user);
+	SshKeys sshKeys(UserModel user) throws GitClientException;
 	
 }

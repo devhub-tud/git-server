@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -18,17 +19,17 @@ public class SshKeysImpl extends Backend implements SshKeys {
 
 	private final String path;
 
-	SshKeysImpl(String host, UserModel user) {
-		super(host);
+	SshKeysImpl(Client client, String host, UserModel user) {
+		super(client, host);
 		this.path = user.getPath();
 	}
 
 	@Override
-	public List<SshKeyModel> retrieveAll() {
+	public List<SshKeyModel> retrieveAll() throws GitClientException {
 		return perform(new Request<List<SshKeyModel>>() {
 			@Override
-			public List<SshKeyModel> perform(Client client) {
-				return client.target(createUrl(path + "/keys"))
+			public List<SshKeyModel> perform(WebTarget target) {
+				return target.path(path).path("keys")
 						.request(MediaType.APPLICATION_JSON)
 						.get(new GenericType<List<SshKeyModel>>() {
 						});
@@ -37,11 +38,11 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public SshKeyModel retrieve(final String keyName) {
+	public SshKeyModel retrieve(final String keyName) throws GitClientException {
 		return perform(new Request<SshKeyModel>() {
 			@Override
-			public SshKeyModel perform(Client client) {
-				return client.target(createUrl(path + "/keys/" + encode(keyName)))
+			public SshKeyModel perform(WebTarget target) {
+				return target.path(path).path("keys").path(encode(keyName))
 						.request(MediaType.APPLICATION_JSON)
 						.get(SshKeyModel.class);
 			}
@@ -49,11 +50,11 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public SshKeyModel registerSshKey(final SshKeyModel sshKey) {
+	public SshKeyModel registerSshKey(final SshKeyModel sshKey) throws GitClientException {
 		return perform(new Request<SshKeyModel>() {
 			@Override
-			public SshKeyModel perform(Client client) {
-				return client.target(createUrl(path + "/keys"))
+			public SshKeyModel perform(WebTarget target) {
+				return target.path(path).path("keys")
 						.request(MediaType.APPLICATION_JSON)
 						.post(Entity.json(sshKey), SshKeyModel.class);
 			}
@@ -61,11 +62,11 @@ public class SshKeysImpl extends Backend implements SshKeys {
 	}
 
 	@Override
-	public void deleteSshKey(final SshKeyModel sshKey) {
+	public void deleteSshKey(final SshKeyModel sshKey) throws GitClientException {
 		perform(new Request<Response>() {
 			@Override
-			public Response perform(Client client) {
-				return client.target(createUrl(sshKey.getPath()))
+			public Response perform(WebTarget target) {
+				return target.path(sshKey.getPath())
 						.request()
 						.delete(Response.class);
 			}

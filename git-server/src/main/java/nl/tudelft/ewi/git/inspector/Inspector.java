@@ -1,61 +1,49 @@
 package nl.tudelft.ewi.git.inspector;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.NotFoundException;
-
+import com.google.common.collect.*;
 import lombok.extern.slf4j.Slf4j;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.models.Repository;
-import nl.tudelft.ewi.git.models.BranchModel;
-import nl.tudelft.ewi.git.models.CommitModel;
-import nl.tudelft.ewi.git.models.DetailedBranchModel;
-import nl.tudelft.ewi.git.models.DetailedCommitModel;
-import nl.tudelft.ewi.git.models.DiffModel;
-import nl.tudelft.ewi.git.models.DiffModel.Type;
-import nl.tudelft.ewi.git.models.EntryType;
-import nl.tudelft.ewi.git.models.TagModel;
+import nl.tudelft.ewi.git.Config;
+import nl.tudelft.ewi.git.models.*;
+import nl.tudelft.ewi.git.models.DiffModel.*;
 
-import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
-import org.eclipse.jgit.diff.DiffEntry.ChangeType;
-import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ObjectLoader;
-import org.eclipse.jgit.lib.ObjectReader;
-import org.eclipse.jgit.lib.ObjectStream;
-import org.eclipse.jgit.lib.PersonIdent;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.revwalk.DepthWalk.Commit;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.revwalk.RevWalkUtils;
 import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+
+import javax.ws.rs.NotFoundException;
 
 /**
  * This class allows its users to inspect the contents of Git repositories. You can use this class
@@ -83,17 +71,22 @@ public class Inspector {
 		}
 	}
 
+	private final Config config;
 	private final File repositoriesDirectory;
+	private final File mirrorsDirectory;
 
 	/**
 	 * Creates a new {@link Inspector} object.
 	 * 
-	 * @param repositoriesDirectory
-	 *            The directory where all Git repositories are mirrored to (non-bare repositories).
+	 * @param config
+	 *            Config for the Inspector
 	 */
-	public Inspector(File repositoriesDirectory) {
+	public Inspector(Config config) {
+		Preconditions.checkNotNull(config);
+		this.config = config;
+		this.repositoriesDirectory = config.getRepositoriesDirectory();
+		this.mirrorsDirectory = config.getMirrorsDirectory();
 		log.info("Created Inspector in folder {}", repositoriesDirectory.getAbsolutePath());
-		this.repositoriesDirectory = repositoriesDirectory;
 	}
 
 	/**
@@ -108,38 +101,27 @@ public class Inspector {
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<BranchModel> listBranches(Repository repository) throws IOException, GitException {
+	public Collection<BranchModel> listBranches(final Repository repository) throws IOException, GitException {
+
+		Preconditions.checkNotNull(repository);
+
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		try {
 			List<Ref> results = git.branchList()
-				.setListMode(ListMode.REMOTE)
+				.setListMode(ListMode.ALL)
 				.call();
 
-			return Collections2.transform(Collections2.filter(results, new Predicate<Ref>() {
-
-				@Override
-				public boolean apply(Ref input) {
-					// Ignore the HEAD of the GitServer clone
-					return !input.getName().equals("refs/remotes/origin/HEAD");
-				}
-				
-			}), new Function<Ref, BranchModel>() {
-				@Override
-				public BranchModel apply(Ref input) {
-					String name = input.getName();
-					ObjectId objectId = input.getObjectId();
-
-					BranchModel branch = new BranchModel();
-					branch.setCommit(objectId.getName());
-					branch.setName(name);
-					return branch;
-				}
-			});
+			return Sets.newTreeSet(Collections2.transform(results, Transformers.branchModel(repository, repo)));
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
+		}
+		finally {
+			repo.close();
+			git.close();
 		}
 	}
 
@@ -155,31 +137,26 @@ public class Inspector {
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<TagModel> listTags(Repository repository) throws IOException, GitException {
+	public Collection<TagModel> listTags(final Repository repository) throws IOException, GitException {
+
+		Preconditions.checkNotNull(repository);
+
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
-		Git git = Git.open(repositoryDirectory);
+		final Git git = Git.open(repositoryDirectory);
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		try {
 			List<Ref> results = git.tagList()
 				.call();
 
-			return Collections2.transform(results, new Function<Ref, TagModel>() {
-				@Override
-				public TagModel apply(Ref input) {
-					TagModel tag = new TagModel();
-					ObjectId objectId = input.getPeeledObjectId();
-					if (objectId == null) {
-						objectId = input.getObjectId();
-					}
-
-					tag.setName(input.getName());
-					tag.setCommit(objectId.getName());
-					return tag;
-				}
-			});
+			return Collections2.transform(results, Transformers.tagModel(repository, repo, this));
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
+		}
+		finally {
+			repo.close();
+			git.close();
 		}
 	}
 
@@ -216,6 +193,9 @@ public class Inspector {
 	 *             In case the Git repository could not be interacted with.
 	 */
 	public List<CommitModel> listCommits(Repository repository, int limit) throws IOException, GitException {
+
+		Preconditions.checkNotNull(repository);
+
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
@@ -225,27 +205,8 @@ public class Inspector {
 				.setMaxCount(limit)
 				.call();
 
-			List<CommitModel> commits = Lists.newArrayList();
-			for (RevCommit revCommit : revCommits) {
-				RevCommit[] parents = revCommit.getParents();
-				String[] parentIds = new String[parents.length];
-				for (int i = 0; i < parents.length; i++) {
-					ObjectId parentId = parents[i].getId();
-					parentIds[i] = parentId.getName();
-				}
-
-				PersonIdent committerIdent = revCommit.getCommitterIdent();
-				ObjectId commitId = revCommit.getId();
-
-				CommitModel commit = new CommitModel();
-				commit.setCommit(commitId.getName());
-				commit.setParents(parentIds);
-				commit.setTime(revCommit.getCommitTime());
-				commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
-				commit.setMessage(revCommit.getShortMessage());
-				commits.add(commit);
-			}
-			return commits;
+			return Lists.transform(Lists.newArrayList(revCommits),
+					Transformers.commitModel(repository));
 		}
 		catch (NoHeadException e) {
 			return Lists.newArrayList();
@@ -261,34 +222,41 @@ public class Inspector {
 	 * @param repository The {@link Repository} to list a limited amount of
 	 *           commits of.
 	 * @param branchName The name of the branch
-	 * @return A {@link DetailedBranchModel} of the requested branch
+	 * @return A {@link BranchModel} of the requested branch
 	 * @throws IOException In case the Git repository could not be accessed.
 	 * @throws GitException In case the Git repository could not be interacted
 	 *            with.
 	 */
 	public BranchModel getBranch(Repository repository,
 			String branchName) throws GitException, IOException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branchName);
+		
 		File repositoryDirectory = new File(repositoriesDirectory,
 				repository.getName());
 		Git git = Git.open(repositoryDirectory);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		try {
-			List<Ref> results = git.branchList().setListMode(ListMode.REMOTE)
+			List<Ref> results = git.branchList()
+					.setListMode(ListMode.ALL)
 					.call();
 
 			for (Ref ref : results) {
 				if (ref.getName().contains(branchName)) {
-					ObjectId objectId = ref.getObjectId();
-					BranchModel branch = new BranchModel();
-					branch.setCommit(objectId.getName());
-					branch.setName(branchName);
-					return branch;
+					return Transformers.branchModel(repository, repo).apply(ref);
 				}
 			}
 
 			throw new NotFoundException("Branch does not exist!");
-		} catch (GitAPIException e) {
+		}
+		catch (GitAPIException e) {
 			throw new GitException(e);
+		}
+		finally {
+			repo.close();
+			git.close();
 		}
 	}
 
@@ -297,11 +265,16 @@ public class Inspector {
 	 * {@link Repository}
 	 * 
 	 * @param repository The {@link Repository} to list a limited amount of
-	 *           commits of.
-	 * @param branchName The branch to start traversal at
-	 * @param skip Amount of commits to skip
-	 * @param limit The maximum amount of {@link CommitModel} objects to return.
+<<<<<<< HEAD
+	 * @param branch The branch to fetch commits for
 	 * @return A {@link Collections} of {@link CommitModel} objects, each
+=======
+	 *           commits of.
+	 * @param branch The branch to start traversal at
+	 * @param skip amount of commits to skip
+	 * @param limit max number of commits to return
+	 * @return A {@link List} of {@link CommitModel} objects, each
+>>>>>>> 028336f... Refactor and fixes for new git client
 	 *         representing one commit in the specified Git repository. The
 	 *         {@link CommitModel} objects are ordered from newest to oldest. At
 	 *         most "limit" number of {@link CommitModel} objects will be
@@ -311,48 +284,59 @@ public class Inspector {
 	 * @throws IOException In case the Git repository could not be accessed.
 	 */
 	public List<CommitModel> listCommitsInBranch(Repository repository,
-			BranchModel branch) throws GitException,
+			BranchModel branch, int skip, int limit) throws GitException,
 			IOException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branch);
+
 		File repositoryDirectory = new File(repositoriesDirectory,
 				repository.getName());
 		Git git = Git.open(repositoryDirectory);
 
 		try {
-			String commitId = branch.getCommit();
+			String commitId = branch.getCommit().getCommit();
+
+			Iterable<RevCommit> revCommits = git.log()
+					.add(Commit.fromString(commitId))
+					.setSkip(skip)
+					.setMaxCount(limit)
+					.call();
+
+			return Lists.transform(Lists.newArrayList(revCommits),
+					Transformers.commitModel(repository));
+		} catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+
+	/**
+	 * Return the amount of commits in a branch
+	 * @param repository The {@link Repository} to list a limited amount of
+	 *           commits of.
+	 * @param branch The branch to start traversal at
+	 * @return amount of  commits in the branch
+	 * @throws GitException In case the Git repository could not be interacted
+	 *            with.
+	 * @throws IOException In case the Git repository could not be accessed.
+	 */
+	public int sizeOfBranch(Repository repository, BranchModel branch) throws GitException,
+			IOException {
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branch);
+
+		File repositoryDirectory = new File(repositoriesDirectory,
+				repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		try {
+			String commitId = branch.getCommit().getCommit();
 
 			Iterable<RevCommit> revCommits = git.log()
 					.add(Commit.fromString(commitId))
 					.call();
 
-			return Lists.transform(Lists.newArrayList(revCommits),
-					new Function<RevCommit, CommitModel>() {
-
-						@Override
-						public CommitModel apply(RevCommit revCommit) {
-							RevCommit[] parents = revCommit.getParents();
-							String[] parentIds = new String[parents.length];
-							for (int i = 0; i < parents.length; i++) {
-								ObjectId parentId = parents[i].getId();
-								parentIds[i] = parentId.getName();
-							}
-
-							PersonIdent committerIdent = revCommit
-									.getCommitterIdent();
-							ObjectId revCommitId = revCommit.getId();
-
-							CommitModel commit = new CommitModel();
-							commit.setCommit(revCommitId.getName());
-							commit.setParents(parentIds);
-							commit.setTime(revCommit.getCommitTime());
-							commit.setAuthor(committerIdent.getName(),
-									committerIdent.getEmailAddress());
-							commit.setMessage(revCommit.getShortMessage());
-
-							return commit;
-						}
-
-					});
-
+			return Iterables.size(revCommits);
 		} catch (GitAPIException e) {
 			throw new GitException(e);
 		}
@@ -370,46 +354,18 @@ public class Inspector {
 	 */
 	public DetailedCommitModel retrieveCommit(Repository repository, String commitId)
 			throws GitException, IOException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
+        org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
-		try {
-			Iterable<RevCommit> revCommits = git.log()
-				.add(Commit.fromString(commitId))
-				.setMaxCount(1)
-				.call();
-
-			Iterator<RevCommit> iterator = revCommits.iterator();
-			RevCommit revCommit = iterator.next();
-			RevCommit[] parents = revCommit.getParents();
-			String[] parentIds = new String[parents.length];
-			for (int i = 0; i < parents.length; i++) {
-				ObjectId parentId = parents[i].getId();
-				parentIds[i] = parentId.getName();
-			}
-
-			PersonIdent committerIdent = revCommit.getCommitterIdent();
-			ObjectId revCommitId = revCommit.getId();
-
-			DetailedCommitModel commit = new DetailedCommitModel();
-			commit.setCommit(revCommitId.getName());
-			commit.setParents(parentIds);
-			commit.setTime(revCommit.getCommitTime());
-			commit.setAuthor(committerIdent.getName(), committerIdent.getEmailAddress());
-			commit.setMessage(revCommit.getShortMessage());
-			commit.setFullMessage(revCommit.getFullMessage());
-
-			return commit;
-		}
-		catch (GitAPIException e) {
-			throw new GitException(e);
-		}
+        RevWalk walk = new RevWalk(repo);
+        RevCommit revCommit = walk.parseCommit(repo.resolve(commitId));
+        return Transformers.detailedCommitModel(repository).apply(revCommit);
 	}
-
-	public Collection<DiffModel> calculateDiff(Repository repository, String commitId) throws IOException, GitException {
-		return calculateDiff(repository, null, commitId);
-	}
-
 
 	/**
 	 * This method lists a set of diffs of files of a specific {@link Repository} object between two
@@ -421,15 +377,18 @@ public class Inspector {
 	 *            The first commit ID to base the diff on.
 	 * @param rightCommitId
 	 *            The second commit ID to base the diff on.
-	 * @return A {@link Collections} of {@link DiffModel} objects, each representing the changes in
+	 * @return A {@link Collections} of {@code DiffFile} objects, each representing the changes in
 	 *         one file in the specified Git repository.
 	 * @throws IOException
 	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
 	 */
-	public Collection<DiffModel> calculateDiff(Repository repository, String leftCommitId, String rightCommitId)
+	public DiffModel calculateDiff(Repository repository, String leftCommitId, String rightCommitId, int contextLines)
 			throws IOException, GitException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(rightCommitId);
 
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
@@ -439,68 +398,146 @@ public class Inspector {
 		config.setString("diff", null, "algorithm", "histogram");
 
 		try {
+            DiffModel diffModel = new DiffModel();
+
 			AbstractTreeIterator oldTreeIter = new EmptyTreeIterator();
 			if (!Strings.isNullOrEmpty(leftCommitId)) {
 				oldTreeIter = createTreeParser(git, leftCommitId);
-			}
-			AbstractTreeIterator newTreeIter = new EmptyTreeIterator();
-			if (!Strings.isNullOrEmpty(rightCommitId)) {
-				newTreeIter = createTreeParser(git, rightCommitId);
+                diffModel.setOldCommit(retrieveCommit(repository, leftCommitId));
 			}
 
+			AbstractTreeIterator newTreeIter = createTreeParser(git, rightCommitId);
+            diffModel.setNewCommit(retrieveCommit(repository, rightCommitId));
+
 			List<DiffEntry> diffs = git.diff()
-				.setContextLines(3)
-				.setOldTree(oldTreeIter)
-				.setNewTree(newTreeIter)
-				.call();
-			
+                    .setContextLines(contextLines)
+                    .setOldTree(oldTreeIter)
+                    .setNewTree(newTreeIter)
+                    .call();
+
 			RenameDetector rd = new RenameDetector(repo);
 			rd.addAll(diffs);
 			diffs = rd.compute();
 
-			return Collections2.transform(diffs, new Function<DiffEntry, DiffModel>() {
-				public DiffModel apply(DiffEntry input) {
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					DiffFormatter formatter = new DiffFormatter(out);
-					formatter.setRepository(repo);
+			List<DiffFile> diffFiles = Lists.transform(diffs, Transformers.diffEntry(repo));
+			List<CommitModel> commitModels = Lists.transform(
+					commitDifference(git, rightCommitId, leftCommitId),
+					Transformers.commitModel(repository));
 
-					String contents = null;
-					try {
-						formatter.format(input);
-						contents = out.toString("UTF-8");
-					}
-					catch (IOException e) {
-						log.error(e.getMessage(), e);
-					}
-
-					DiffModel diff = new DiffModel();
-					diff.setType(convertChangeType(input.getChangeType()));
-					diff.setOldPath(input.getOldPath());
-					diff.setNewPath(input.getNewPath());
-					diff.setRaw(contents.split("\\r?\\n"));
-					return diff;
-				}
-
-				private Type convertChangeType(ChangeType changeType) {
-					switch (changeType) {
-						case ADD:
-							return Type.ADD;
-						case COPY:
-							return Type.COPY;
-						case DELETE:
-							return Type.DELETE;
-						case MODIFY:
-							return Type.MODIFY;
-						case RENAME:
-							return Type.RENAME;
-						default:
-							throw new IllegalArgumentException("Cannot convert change type: " + changeType);
-					}
-				}
-			});
+            diffModel.setCommits(commitModels);
+            diffModel.setDiffs(diffFiles);
+			return diffModel;
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e);
+		}
+		finally {
+			repo.close();
+		}
+	}
+
+	/**
+	 * Delete a branch
+	 * @param repository Repository to remove a branch for
+	 * @param branchName Branch to remove
+	 * @throws IOException If an IOException occurs
+	 * @throws GitAPIException If a GitAPIException occurs
+	 */
+	public void deleteBranch(Repository repository, String branchName) throws IOException, GitException {
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branchName);
+		Preconditions.checkArgument(!branchName.contains("master"));
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		try {
+			git.branchDelete()
+				.setBranchNames(branchName)
+				.setForce(true)
+				.call();
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+	}
+
+	/**
+	 * Get the merge base for two commits
+	 * 
+	 * @param repository
+	 *            Repository to search for
+	 * @param leftCommitId
+	 *            CommitId for the first commit
+	 * @param rightCommitId
+	 *            CommitId for the second commit
+	 * @return the {@link CommitModel} for the commit
+	 * @throws IOException
+	 *             If an IO error occurs
+	 */
+	public CommitModel mergeBase(Repository repository, String leftCommitId, String rightCommitId) throws IOException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(leftCommitId);
+		Preconditions.checkNotNull(rightCommitId);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
+
+		try {
+			RevWalk walk = new RevWalk(git.getRepository());
+			walk.setRevFilter(RevFilter.MERGE_BASE);
+			walk.markStart(walk.lookupCommit(Commit.fromString(leftCommitId)));
+			walk.markStart(walk.lookupCommit(Commit.fromString(rightCommitId)));
+			RevCommit mergeBase = walk.next();
+			return Transformers.commitModel(repository).apply(mergeBase);
+		}
+		finally {
+			repo.close();
+		}
+	}
+	
+	/**
+	 * Generate a {@link BlameModel}
+	 * 
+	 * @param repository
+	 *            Repository to search for
+	 * @param commitId
+	 *            CommitId for the first commit
+	 * @param filePath
+	 *            The path of the file to inspect at the specified commit ID.
+	 * @return a {@link BlameModel}
+	 * @throws IOException
+	 *             If an IO error occurs
+	 * @throws GitException
+	 *             In case the Git repository could not be interacted with.
+	 */
+	public BlameModel blame(Repository repository, String commitId,
+			String filePath) throws IOException, GitException {
+		
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		Preconditions.checkNotNull(filePath);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+
+		final org.eclipse.jgit.lib.Repository repo = git.getRepository();
+
+		try {
+			BlameResult blameResult = git.blame()
+				.setStartCommit(repo.resolve(commitId))
+				.setFilePath(filePath)
+				.setFollowFileRenames(true)
+				.call();
+			return Transformers.blameModel(repo, commitId, filePath).apply(blameResult);
+		}
+		catch (GitAPIException e) {
+			throw new GitException(e);
+		}
+		finally {
+			repo.close();
 		}
 	}
 
@@ -523,6 +560,10 @@ public class Inspector {
 	public Map<String, EntryType> showTree(Repository repository, String commitId, String path) throws IOException,
 			GitException {
 
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		Preconditions.checkNotNull(path);
+
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
 		return showTree(git.getRepository(), commitId, path);
@@ -538,19 +579,171 @@ public class Inspector {
 	 *            The commit ID of the state of the repository.
 	 * @param path
 	 *            The path of the file to inspect at the specified commit ID.
-	 * @return An {@link InputStream} which outputs the contents of the file. Or NULL if no file is
-	 *         present.
+	 * @return An {@link ObjectLoader} for accessing the object
 	 * @throws IOException
 	 *             In case the Git repository could not be accessed.
 	 * @throws GitException
 	 *             In case the Git repository could not be interacted with.
+	 * @throws NotFoundException
+	 *             In case the file could not be found in the commit
 	 */
-	public InputStream showFile(Repository repository, String commitId, String path) throws IOException, GitException {
+	public ObjectLoader showFile(final Repository repository,
+			final String commitId, final String path) throws IOException,
+			GitException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(commitId);
+		Preconditions.checkNotNull(path);
+		
 		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
 		Git git = Git.open(repositoryDirectory);
-		return showFile(git.getRepository(), commitId, path);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		
+		RevWalk walk = new RevWalk(repo);
+		ObjectId resolvedObjectId = repo.resolve(commitId);
+		RevCommit commit = walk.parseCommit(resolvedObjectId);
+
+		TreeWalk walker = new TreeWalk(repo);
+		walker.setFilter(TreeFilter.ALL);
+		walker.addTree(commit.getTree());
+		walker.setRecursive(true);
+
+		while (walker.next()) {
+			String entryPath = walker.getPathString();
+			if (!entryPath.startsWith(path)) {
+				continue;
+			}
+
+			ObjectId objectId = walker.getObjectId(0);
+			ObjectLoader loader = repo.open(objectId);
+			return loader;
+		}
+
+		throw new NotFoundException("File " + path + " not found in commit " + commitId);
 	}
 
+	/**
+	 * Merge a branch
+	 * @param repository The repository to merge
+	 * @param branchName The branch to merge
+	 * @param message Message for the merge
+	 * @return MergeResponse
+	 * @throws IOException if an I/O error occurs
+	 * @throws GitException if an GitException occurs
+	 * @throws GitAPIException if an GitAPIException occurs
+	 */
+	public MergeResponse merge(Repository repository, String branchName, Person person, String message)
+			throws IOException, GitException, GitAPIException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(branchName);
+		Preconditions.checkNotNull(message);
+		branchName = "origin/" + branchName.substring(branchName.lastIndexOf('/') + 1);
+
+		Git git = createOrOpenRepositoryMirror(repository);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+
+		git.fetch().call();
+
+		git.checkout()
+			.setName("master")
+			.setStartPoint("origin/master")
+			.setForce(true).call();
+
+		MergeResult ret = git.merge()
+			.include(repo.getRef(branchName))
+			.setStrategy(MergeStrategy.RECURSIVE)
+			.setSquash(false)
+			.setCommit(true)
+			.setMessage(message)
+			.setFastForward(MergeCommand.FastForwardMode.NO_FF)
+			.call();
+
+		if(ret.getMergeStatus().isSuccessful()) {
+			git.commit()
+				.setAmend(true)
+				.setAuthor(person.getName(), person.getEmail())
+				.setCommitter(person.getName(), person.getEmail())
+				.setMessage(message)
+				.call();
+		}
+		else {
+			git.reset()
+				.setMode(ResetCommand.ResetType.HARD)
+				.call();
+		}
+
+
+		git.push().call();
+		log.info("Merged {} into {} with status {}", branchName, repository.getName(), ret.getMergeStatus());
+
+		MergeResponse res = new MergeResponse();
+		res.setStatus(ret.getMergeStatus().name());
+		res.setSuccess(ret.getMergeStatus().isSuccessful());
+		return res;
+	}
+
+	/**
+	 * Tag a commit
+	 * @param repository Repository to tag
+	 * @param tagModel TagModel for the tag
+	 * @return the created TagModel
+	 * @throws IOException If an I/O error occurs
+	 * @throws GitException if a GitException occurs
+	 * @throws GitAPIException if a GitAPIException occurs
+	 */
+	public TagModel tag(Repository repository, TagModel tagModel)
+			throws IOException, GitException, GitAPIException {
+
+		Preconditions.checkNotNull(repository);
+		Preconditions.checkNotNull(tagModel);
+
+		File repositoryDirectory = new File(repositoriesDirectory, repository.getName());
+		Git git = Git.open(repositoryDirectory);
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		RevWalk walk = new RevWalk(repo);
+
+		try {
+			String commitId = tagModel.getCommit().getCommit();
+			ObjectId id = repo.resolve(commitId);
+			RevCommit commit = walk.parseCommit(id);
+	//
+			TagCommand command = git.tag()
+					.setName(tagModel.getName())
+					.setObjectId(commit);
+
+			if(tagModel.getDescription() != null)
+				command.setMessage(tagModel.getDescription());
+
+			return Transformers.tagModel(repository, repo, this).apply(command.call());
+		}
+		finally {
+			walk.dispose();
+			repo.close();
+		}
+	}
+
+	private Git createOrOpenRepositoryMirror(Repository repository) throws GitException, IOException, GitAPIException {
+		File repositoryDirectory = new File(mirrorsDirectory, repository.getName());
+		Git git;
+
+		if(!repositoryDirectory.exists()) {
+			repositoryDirectory.mkdirs();
+			git = Git.cloneRepository()
+					.setURI(config.getGitoliteBaseUrl() + repository.getName())
+					.setDirectory(repositoryDirectory)
+					.setCloneAllBranches(true)
+					.call();
+		}
+		else {
+			git = Git.open(repositoryDirectory);
+		}
+
+		git.checkout().setName("master").call();
+		git.pull().call();
+		return git;
+	}
+	
 	private Map<String, EntryType> showTree(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
 			throws GitException, IOException {
 
@@ -589,33 +782,11 @@ public class Inspector {
 		return handles;
 	}
 
-	private InputStream showFile(org.eclipse.jgit.lib.Repository repo, String commitId, String path)
-			throws GitException, IOException {
-
-		RevWalk walk = new RevWalk(repo);
-		ObjectId resolvedObjectId = repo.resolve(commitId);
-		RevCommit commit = walk.parseCommit(resolvedObjectId);
-
-		TreeWalk walker = new TreeWalk(repo);
-		walker.setFilter(TreeFilter.ALL);
-		walker.addTree(commit.getTree());
-		walker.setRecursive(true);
-
-		while (walker.next()) {
-			String entryPath = walker.getPathString();
-			if (!entryPath.startsWith(path)) {
-				continue;
-			}
-
-			ObjectId objectId = walker.getObjectId(0);
-			ObjectLoader loader = repo.open(objectId);
-			return loader.openStream();
-		}
-
-		return null;
-	}
-
 	private AbstractTreeIterator createTreeParser(Git git, String ref) throws IOException, GitAPIException {
+
+		assert git != null : "Git should not be null";
+		assert ref != null && !ref.isEmpty() : "Ref should not be empty or null";
+
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		RevWalk walk = new RevWalk(repo);
@@ -633,6 +804,19 @@ public class Inspector {
 		}
 
 		return oldTreeParser;
+	}
+	
+	private List<RevCommit> commitDifference(Git git, String startRef, String endRef)
+			throws RevisionSyntaxException, IOException {
+		
+		assert git != null : "Git should not be null";
+		assert startRef != null && !startRef.isEmpty() : "Ref should not be empty or null";
+		
+		org.eclipse.jgit.lib.Repository repo = git.getRepository();
+		RevWalk walk = new RevWalk(repo);
+		RevCommit start = walk.parseCommit(repo.resolve(startRef));
+		RevCommit end = endRef == null ? null : walk.parseCommit(repo.resolve(endRef));
+		return RevWalkUtils.find(walk, start, end);
 	}
 
 }

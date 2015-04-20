@@ -13,7 +13,7 @@ public interface Groups {
 	/**
 	 * @return all {@link GroupModel} objects currently registered with the git-server.
 	 */
-	public List<IdentifiableModel> retrieveAll();
+	public List<IdentifiableModel> retrieveAll() throws GitClientException;
 	
 	/**
 	 * This method retrieves the specified {@link GroupModel} from the git-server.
@@ -22,7 +22,7 @@ public interface Groups {
 	 *            The name of the {@link GroupModel}.
 	 * @return The retrieved {@link GroupModel} object.
 	 */
-	GroupModel retrieve(String groupName);
+	GroupModel retrieve(String groupName) throws GitClientException;
 	
 	/**
 	 * This method retrieves the specified {@link GroupModel} from the git-server.
@@ -31,7 +31,7 @@ public interface Groups {
 	 *            The {@link IdentifiableModel} to retrieve.
 	 * @return The retrieved {@link GroupModel}.
 	 */
-	GroupModel retrieve(IdentifiableModel model);
+	GroupModel retrieve(IdentifiableModel model) throws GitClientException;
 	
 	/**
 	 * This method creates a new {@link GroupModel} on the git-server.
@@ -40,7 +40,7 @@ public interface Groups {
 	 *            The new {@link GroupModel} to construct on the git-server.
 	 * @return The created {@link GroupModel} object.
 	 */
-	GroupModel create(GroupModel newGroup);
+	GroupModel create(GroupModel newGroup) throws GitClientException;
 	
 	/**
 	 * This method ensures that a specified {@link GroupModel} exists on the server.
@@ -49,7 +49,7 @@ public interface Groups {
 	 *            The {@link GroupModel} to create if it does not yet exist.
 	 * @return The created or fetched {@link GroupModel} object.
 	 */
-	GroupModel ensureExists(GroupModel model);
+	GroupModel ensureExists(GroupModel model) throws GitClientException;
 	
 	/**
 	 * This method deletes a {@link GroupModel} from the git-server.
@@ -57,7 +57,7 @@ public interface Groups {
 	 * @param group
 	 *            The {@link IdentifiableModel} to remove from the git-server.
 	 */
-	void delete(IdentifiableModel group);
+	void delete(IdentifiableModel group) throws GitClientException;
 	
 	/**
 	 * This method returns a {@link GroupMembers} object which allows you to query and manipulate
@@ -67,6 +67,6 @@ public interface Groups {
 	 *            The {@link GroupModel} of which you wish to query or manipulate group members.
 	 * @return The constructed {@link GroupMembers} object.
 	 */
-	GroupMembers groupMembers(GroupModel group);
+	GroupMembers groupMembers(GroupModel group) throws GitClientException;
 	
 }

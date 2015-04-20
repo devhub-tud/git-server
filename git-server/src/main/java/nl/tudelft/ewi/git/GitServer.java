@@ -138,8 +138,7 @@ public class GitServer {
 						log.warn("Could not connect to the gitolite instance: " + e.getMessage(), e);
 					}
 
-					File mirrorsDirectory = new File("mirrors");
-					return ImmutableList.<Module> of(new GitServerModule(configManager, mirrorsDirectory));
+					return ImmutableList.<Module> of(new GitServerModule(configManager, config));
 				}
 
 				@Override
