@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>nl.tudelft.ewi.git</groupId>
 		<artifactId>git-server-parent</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>1.0.1</version>
 	</parent>
 
 	<dependencies>
