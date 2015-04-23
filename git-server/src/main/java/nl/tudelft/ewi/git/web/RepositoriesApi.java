@@ -1,7 +1,6 @@
 package nl.tudelft.ewi.git.web;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -255,10 +254,9 @@ public class RepositoriesApi extends BaseApi {
 		manager.apply(config);
 		
 		File repositoriesDirectory = configuration.getRepositoriesDirectory();
-		delete(repositoriesDirectory, new File(repositoriesDirectory, decode(repoId)));
-
 		File mirrorsDirectory = configuration.getMirrorsDirectory();
-		delete(mirrorsDirectory, new File(mirrorsDirectory, decode(repoId)));
+		FileUtils.deleteDirectory(new File(repositoriesDirectory, decode(repoId).concat(".git")));
+		FileUtils.deleteDirectory(new File(mirrorsDirectory, decode(repoId)));
 	}
 
 	/**
@@ -693,32 +691,6 @@ public class RepositoriesApi extends BaseApi {
 				return Permission.READ_WRITE;
 			default:
 				throw new IllegalArgumentException("Level: " + level + " is not supported!");
-		}
-	}
-
-	private void delete(File topDirectory, File handle) {
-		try {
-			FileUtils.deleteDirectory(handle);
-			
-			File parentFile = handle;
-			while (!((parentFile = parentFile.getParentFile()).equals(topDirectory))) {
-				File[] listFiles = parentFile.listFiles(new FileFilter() {
-					@Override
-					public boolean accept(File pathname) {
-						return true;
-					}
-				});
-				
-				if (listFiles.length == 0) {
-					FileUtils.deleteDirectory(parentFile);
-				}
-				else {
-					break;
-				}
-			}
-		}
-		catch (Throwable e) {
-			log.warn(e.getMessage(), e);
 		}
 	}
 
