@@ -60,3 +60,4 @@ git-server/target/
 .idea/
 *.iml
 .DS_Store
+pom.xml.versionsBackup

@@ -674,7 +674,7 @@ public class Inspector {
 		}
 
 
-		git.push().call();
+		git.push().setForce(true).call();
 		log.info("Merged {} into {} with status {}", branchName, repository.getName(), ret.getMergeStatus());
 
 		MergeResponse res = new MergeResponse();
