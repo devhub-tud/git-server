@@ -6,19 +6,28 @@
 	<parent>
 		<groupId>nl.tudelft.ewi.git</groupId>
 		<artifactId>git-server-parent</artifactId>
-		<version>1.0.2-SNAPSHOT</version>
+		<version>v1.0.3-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
-			<artifactId>resteasy-hibernatevalidator-provider</artifactId>
-			<version>${resteasy.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jackson2-provider</artifactId>
 			<version>${resteasy.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-annotations</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
