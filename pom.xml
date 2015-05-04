@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nl.tudelft.ewi.git</groupId>
 	<artifactId>git-server-parent</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>v1.0.2</version>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -13,66 +13,140 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
 		<guice.version>3.0</guice.version>
-		<hibernate.version>4.2.7.Final</hibernate.version>
-		<jackson.version>2.3.0</jackson.version>
-		<jetty.version>9.1.1.v20140108</jetty.version>
-		<resteasy.version>3.0.10.Final</resteasy.version>
+		<hibernate.version>4.3.2.Final</hibernate.version>
+		<jackson.version>2.5.3</jackson.version>
+		<jetty.version>9.2.10.v20150310</jetty.version>
+		<resteasy.version>3.0.11.Final</resteasy.version>
 		<slf4j.version>1.7.5</slf4j.version>
 	</properties>
 
-    <repositories>
-        <repository>
-            <id>devhub</id>
-            <url>https://devhub.ewi.tudelft.nl/nexus/content/repositories/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+	<description>The Devhub Git-server is a REST API over the Git API and can be used for Gitolite server administration</description>
 
-        <distributionManagement>
-                <repository>
-                        <id>devhub</id>
-                        <url>https://devhub.ewi.tudelft.nl/nexus/content/repositories/releases/</url>
-                </repository>
-        </distributionManagement>
+	<organization>
+		<name>TU Delft</name>
+		<url>http://ewi.tudelft.nl</url>
+	</organization>
+
+	<scm>
+		<connection>scm:git:git@github.com:devhub-tud/git-server.git</connection>
+		<developerConnection>scm:git:git@github.com:devhub-tud/git-server</developerConnection>
+		<url>https://github.com/devhub-tud/git-server</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Michael de Jong</name>
+			<email>M.deJong-2@student.tudelft.nl</email>
+		</developer>
+		<developer>
+			<name>Jan-Willem Gmelig Meyling</name>
+			<email>j.gmeligmeyling@student.tudelft.nl</email>
+		</developer>
+	</developers>
+
+	<repositories>
+		<repository>
+			<id>devhub</id>
+			<url>https://devhub.ewi.tudelft.nl/nexus/content/repositories/releases/</url>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+		<repository>
+			<id>devhub</id>
+			<url>https://devhub.ewi.tudelft.nl/nexus/content/repositories/releases/</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
-			<groupId>javax.ejb</groupId>
-			<artifactId>ejb-api</artifactId>
-			<version>3.0</version>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-hibernatevalidator-provider</artifactId>
+			<version>${resteasy.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.12.2</version>
+			<version>1.16.4</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>15.0</version>
+			<version>18.0</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+
 	</dependencies>
 
-	<build>
+	<reporting>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.0</version>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<version>2.8</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.1</version>
 				<configuration>
-					<annotationProcessors>
-						<annotationProcessor>lombok.core.AnnotationProcessor</annotationProcessor>
-					</annotationProcessors>
+					<failOnError>false</failOnError>
 				</configuration>
+				<reportSets>
+					<reportSet>
+						<id>default</id>
+						<reports>
+							<report>javadoc</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+				<configuration>
+					<linkJavadoc>true</linkJavadoc>
+				</configuration>
+				<version>2.5</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.0</version>
+			</plugin>
+
+			<plugin> <!-- JUnit report -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+				<version>2.18.1</version>
 			</plugin>
 		</plugins>
-	</build>
+	</reporting>
 
 	<modules>
 		<module>git-server</module>

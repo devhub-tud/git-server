@@ -60,3 +60,7 @@ git-server/target/
 .idea/
 *.iml
 .DS_Store
+pom.xml.versionsBackup
+*org.eclipse.jdt.core.prefs
+org.eclipse.jdt.core.prefs
+*.prefs
