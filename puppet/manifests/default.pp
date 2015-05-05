@@ -14,15 +14,6 @@ class gitolite::install {
 	package { "openssh-server":
 		ensure		=> present,
 	}
-	package { "samba":
-		ensure		=> present,
-	}
-	
-	file { "/var/lib/samba/usershares":
-		ensure		=> directory,
-		mode 		=> 777,
-		require		=> Package["samba"],
-	}
 	
 	group { "git":
 		ensure		=> present,
@@ -33,7 +24,7 @@ class gitolite::install {
 		home		=> "/home/git",
 		password	=> "git",
 		managehome	=> true,
-		gid			=> [ "git", "sambashare" ],
+		gid			=> [ "git", ],
 		require		=> [ 
 			Group["git"],
 		],
@@ -125,14 +116,6 @@ class gitolite::install {
 		user		=> "git",
 		group		=> "git",
 		require		=> File["/home/git/.gitolite/hooks/common/post-receive"],
-	}
-	
-	exec { "share mirror folder":
-		command		=> "net usershare add mirrors /home/git/mirrors \"Git repositories\" everyone:F guest_ok=y",
-		path		=> ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"],
-		require		=> [ File["/home/git/mirrors"], Package["samba"], File["/var/lib/samba/usershares"] ], 
-		user		=> "git",
-		group		=> "git",
 	}
 	
 }
