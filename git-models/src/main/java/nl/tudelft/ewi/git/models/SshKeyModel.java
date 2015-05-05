@@ -18,11 +18,11 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class SshKeyModel extends BaseModel {
 
 	@NotNull
-	@Pattern(regexp = "^[a-zA-Z0-9\\.]+$")
+	@Pattern(regexp = "^[\\w._+-]*$")
 	private String name;
 	
 	@NotEmpty
-	@Pattern(regexp = "^[ssh-rsa\\ ].+$")
+	@Pattern(regexp = "ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}(\\s([^@]+@[^@]+))?[\\r\\n\\s]*")
 	private String contents;
 	
 }

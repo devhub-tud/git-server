@@ -1,7 +1,10 @@
 package nl.tudelft.ewi.git.client;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.ws.rs.client.Client;
 
+import nl.tudelft.ewi.git.models.Version;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 
 /**
@@ -20,7 +23,8 @@ public class GitServerClientImpl implements GitServerClient {
 	 * @param host
 	 *            The hostname of the git-server.
 	 */
-	public GitServerClientImpl(String host) {
+	@Inject
+	public GitServerClientImpl(@Named("git.server.host") String host) {
 		this.client = new ResteasyClientBuilder().connectionPoolSize(25).build();
 		this.users = new UsersImpl(client, host);
 		this.repositories = new RepositoriesImpl(client, host);
@@ -41,7 +45,15 @@ public class GitServerClientImpl implements GitServerClient {
 	public Groups groups() {
 		return groups;
 	}
-	
+
+	@Override
+	public Version version() {
+		return this.client.target("api")
+			.path("version")
+			.request()
+			.get(Version.class);
+	}
+
 	public void close() {
 		client.close();
 	}

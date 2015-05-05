@@ -1,9 +1,11 @@
 package nl.tudelft.ewi.git.client;
 
+import nl.tudelft.ewi.git.models.Version;
+
 /**
  * The {@link GitServerClient} allows you to query and manipulate data from the git-server.
  */
-public interface GitServerClient {
+public interface GitServerClient extends AutoCloseable {
 	
 	/**
 	 * @return the {@link Repositories} interface which lets you query and manipulate data related
@@ -22,5 +24,10 @@ public interface GitServerClient {
 	 *         groups.
 	 */
 	Groups groups();
+
+	/**
+	 * @return the {@link Version} for the Git server
+	 */
+	Version version();
 	
 }

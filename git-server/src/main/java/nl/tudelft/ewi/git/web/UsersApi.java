@@ -15,6 +15,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import nl.minicom.gitolite.manager.exceptions.GitException;
 import nl.minicom.gitolite.manager.exceptions.ModificationException;
 import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
@@ -27,7 +29,10 @@ import nl.tudelft.ewi.git.models.Transformers;
 import nl.tudelft.ewi.git.models.UserModel;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
+import org.apache.sshd.common.util.Buffer;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
@@ -233,21 +238,67 @@ public class UsersApi extends BaseApi {
 	public SshKeyModel addNewKey(@PathParam("userId") String userId, @Valid SshKeyModel model) throws IOException,
 			ServiceUnavailable, ModificationException, GitException {
 
+		String keyId = model.getName();
+		String content = model.getContents();
+
 		Config config = manager.get();
 		User user = fetchUser(config, decode(userId));
-		String keyId = model.getName();
 		if (keyId.equals("default")) {
 			keyId = "";
 		}
-		
-		if (user.getKeys().containsKey(keyId)) {
-			throw new IllegalArgumentException("A key with name: \"" + model.getName() + "\" already exists!");
-		}
-		
+
+		validateKeyNotExists(model, keyId, user);
+		validateKeyContents(content);
 		user.setKey(keyId, model.getContents());
 		manager.apply(config);
 
-		return Transformers.sshKeys(user).apply(ImmutablePair.of(keyId, model.getContents()));
+		return Transformers.sshKeys(user).apply(ImmutablePair.of(keyId, content));
+	}
+
+	/**
+	 * Validate that the key does not exists
+	 *
+	 * @param model
+	 * 			The {@link SshKeyModel} describing the SSH key to add.
+	 * @param keyId
+	 * 			KeyId for key
+	 * @param user
+	 * 			User for key
+	 */
+	@VisibleForTesting
+	static void validateKeyNotExists(SshKeyModel model, String keyId, User user) {
+		if (user.getKeys().containsKey(keyId)) {
+			throw new IllegalArgumentException("A key with name: \"" + model.getName() + "\" already exists!");
+		}
+	}
+
+	/**
+	 * Validate the contents of a key. This method checks the the key contents stronger
+	 * than the regular expression does. A valid key consists of:
+	 *
+	 * <ul>
+	 * 	<li>the prefix {@code ssh-rsa}</li>
+	 * 	<li>the RSA modulus, a positive integer</li>
+	 * 	<li>the RSA public exponent, a positive integer</li>
+	 * </ul>
+	 *
+	 * The key should be Base64 decoded.
+	 *
+	 * @param content key contents
+	 */
+	@VisibleForTesting
+	static void validateKeyContents(final String content) {
+		Preconditions.checkNotNull(content);
+
+		try {
+			String[] parts = content.split("[\\r\\n\\s]+");
+			String keyPart = parts[1];
+			final byte[] bin = Base64.decodeBase64(keyPart);
+			new Buffer(bin).getRawPublicKey();
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException("Validation failed for key \"" + content + "\"", e);
+		}
 	}
 
 	/**
