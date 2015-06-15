@@ -597,7 +597,7 @@ public class RepositoriesApi extends BaseApi {
 		Repository repository = fetchRepository(config, decode(repoId));
 		Map<String, EntryType> entries = inspector.showTree(repository, decode(commitId), decode(path));
 		if (entries == null) {
-			throw new NotFoundException();
+			throw new NotFoundException(String.format("%s not found in %s at %s", path, repoId, commitId));
 		}
 		return entries;
 	}

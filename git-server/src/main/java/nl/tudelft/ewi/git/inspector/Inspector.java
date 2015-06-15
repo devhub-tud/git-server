@@ -20,11 +20,13 @@ import nl.tudelft.ewi.git.models.DiffModel.*;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.RawText;
 import org.eclipse.jgit.diff.RenameDetector;
+import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.merge.MergeStrategy;
@@ -363,8 +365,13 @@ public class Inspector {
         org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
         RevWalk walk = new RevWalk(repo);
-        RevCommit revCommit = walk.parseCommit(repo.resolve(commitId));
-        return Transformers.detailedCommitModel(repository).apply(revCommit);
+        try {
+			RevCommit revCommit = walk.parseCommit(repo.resolve(commitId));
+        	return Transformers.detailedCommitModel(repository).apply(revCommit);
+		}
+		catch (MissingObjectException e) {
+			throw new NotFoundException(e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -531,9 +538,19 @@ public class Inspector {
 				.setFilePath(filePath)
 				.setFollowFileRenames(true)
 				.call();
+
+			if(blameResult == null) {
+				throw new NotFoundException(String.format("%s not found in %S at %s", filePath,
+					repository.getName(), commitId));
+			}
+
 			return Transformers.blameModel(repo, commitId, filePath).apply(blameResult);
 		}
-		catch (GitAPIException e) {
+		catch (JGitInternalException | GitAPIException e) {
+			Throwable cause = e.getCause();
+			if(MissingObjectException.class.isInstance(cause)) {
+				throw new NotFoundException(cause.getMessage(), e);
+			}
 			throw new GitException(e);
 		}
 		finally {
@@ -749,7 +766,14 @@ public class Inspector {
 
 		RevWalk walk = new RevWalk(repo);
 		ObjectId resolvedObjectId = repo.resolve(commitId);
-		RevCommit commit = walk.parseCommit(resolvedObjectId);
+
+		RevCommit commit;
+		try {
+			commit = walk.parseCommit(resolvedObjectId);
+		}
+		catch (MissingObjectException e) {
+			throw new NotFoundException(e.getMessage(), e);
+		}
 
 		TreeWalk walker = new TreeWalk(repo);
 		walker.setFilter(TreeFilter.ALL);
@@ -790,9 +814,17 @@ public class Inspector {
 		org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
 		RevWalk walk = new RevWalk(repo);
-		RevCommit commit = walk.parseCommit(repo.resolve(ref));
+		RevCommit commit;
+		try {
+			commit = walk.parseCommit(repo.resolve(ref));
+		}
+		catch (MissingObjectException e) {
+			throw new NotFoundException(e.getMessage(), e);
+		}
+
 		RevTree commitTree = commit.getTree();
 		RevTree tree = walk.parseTree(commitTree.getId());
+
 
 		CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
 		ObjectReader oldReader = repo.newObjectReader();

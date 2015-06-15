@@ -1,6 +1,5 @@
 package nl.tudelft.ewi.git;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
