@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
@@ -41,6 +42,9 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 
 /**
  * This class provides several transformation {@link Function}s which allow you to transform the data objects from the
@@ -167,18 +171,13 @@ public class Transformers {
 
 				try {
 					model.setBranches(inspector.listBranches(input));
-				}
-				catch (IOException | GitException e) {
-					log.warn(e.getMessage(), e);
-					model.setBranches(Collections.<BranchModel> emptyList());
-				}
-
-				try {
 					model.setTags(inspector.listTags(input));
 				}
+				catch (RepositoryNotFoundException e) {
+					throw new NotFoundException(e.getMessage(), e);
+				}
 				catch (IOException | GitException e) {
-					log.warn(e.getMessage(), e);
-					model.setTags(Collections.<TagModel> emptyList());
+					throw new InternalServerErrorException(e.getMessage(), e);
 				}
 
 				return model;
