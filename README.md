@@ -194,7 +194,7 @@ vagrant up --provision
 
 Now you should have a VM running Gitolite. Next you can import the project into your favorite IDE, and run the `nl.tudelft.ewi.git.GitServer` class to start the server. Please ensure you import the project into your IDE as a Maven project to ensure that all dependencies are automatically downloaded and registered on your build path.
 
-Please not that not all dependencies are present in Maven Central. You'll also need to import the [Java-Gitolite-Manager project](https://github.com/devhub-tud/Java-Gitolite-Manager) into the workspace of your IDE.
+Please note that not all dependencies are present in Maven Central. You'll also need to import the [Java-Gitolite-Manager project](https://github.com/devhub-tud/Java-Gitolite-Manager) into the workspace of your IDE.
 
 ### Limitations ###
 
