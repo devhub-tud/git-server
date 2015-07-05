@@ -34,7 +34,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import org.jboss.resteasy.plugins.guice.RequestScoped;
-import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableMap;
@@ -49,7 +48,6 @@ import com.google.common.collect.ImmutableMap;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
-@ValidateRequest
 @RequireAuthentication
 public class UsersApi extends BaseApi {
 

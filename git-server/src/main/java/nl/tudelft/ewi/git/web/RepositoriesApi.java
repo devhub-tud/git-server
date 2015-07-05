@@ -46,7 +46,6 @@ import org.eclipse.jgit.errors.LargeObjectException;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.jboss.resteasy.annotations.cache.Cache;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
-import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -61,7 +60,6 @@ import com.google.common.io.Files;
  */
 @Path("api/repositories")
 @RequestScoped
-@ValidateRequest
 @RequireAuthentication
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)

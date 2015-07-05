@@ -29,7 +29,6 @@ import nl.tudelft.ewi.git.models.UserModel;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 
 import org.jboss.resteasy.plugins.guice.RequestScoped;
-import org.jboss.resteasy.plugins.validation.hibernate.ValidateRequest;
 
 import com.google.common.collect.Collections2;
 
@@ -39,7 +38,6 @@ import com.google.common.collect.Collections2;
  */
 @Path("api/groups")
 @RequestScoped
-@ValidateRequest
 @RequireAuthentication
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)

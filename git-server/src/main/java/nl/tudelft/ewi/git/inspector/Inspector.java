@@ -267,16 +267,10 @@ public class Inspector {
 	 * {@link Repository}
 	 * 
 	 * @param repository The {@link Repository} to list a limited amount of
-<<<<<<< HEAD
-	 * @param branch The branch to fetch commits for
-	 * @return A {@link Collections} of {@link CommitModel} objects, each
-=======
-	 *           commits of.
 	 * @param branch The branch to start traversal at
 	 * @param skip amount of commits to skip
 	 * @param limit max number of commits to return
 	 * @return A {@link List} of {@link CommitModel} objects, each
->>>>>>> 028336f... Refactor and fixes for new git client
 	 *         representing one commit in the specified Git repository. The
 	 *         {@link CommitModel} objects are ordered from newest to oldest. At
 	 *         most "limit" number of {@link CommitModel} objects will be
