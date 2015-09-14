@@ -15,21 +15,7 @@
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>3.7.0.201502260915-r</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.httpcomponents</groupId>
-					<artifactId>httpclient</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-simple</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-api</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
+			<version>4.0.1.201506240215-r</version>
 		</dependency>
 		<!-- Web -->
 		<dependency>
@@ -125,18 +111,6 @@
 			</exclusions>
 		</dependency>
 
-		<!-- SSH Key validation -->
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.10</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.sshd</groupId>
-			<artifactId>sshd-core</artifactId>
-			<version>0.14.0</version>
-		</dependency>
-
 		<!-- Testing -->
 		<dependency>
 			<groupId>junit</groupId>
@@ -170,28 +144,9 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>nl.minicom</groupId>
-			<artifactId>java-gitolite-manager</artifactId>
-			<version>0.0.5</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>org.eclipse.jgit</artifactId>
-					<groupId>org.eclipse.jgit</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>org.slf4j</artifactId>
-					<groupId>slf4j-api</groupId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.google.guava</groupId>
-					<artifactId>guava</artifactId>
-				</exclusion>
-				<exclusion>
-
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>nl.tudelft.ewi</groupId>
+			<artifactId>gitolite</artifactId>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

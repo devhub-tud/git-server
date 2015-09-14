@@ -16,10 +16,9 @@ import org.hibernate.validator.constraints.NotEmpty;
  * @author michael
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class RepositoryModel extends BaseModel {
+public class RepositoryModel {
 	
-	public static enum Level {
+	public enum Level {
 		ADMIN		("RW+"),
 		READ_WRITE	("RW"),
 		READ_ONLY	("R");
@@ -35,7 +34,7 @@ public class RepositoryModel extends BaseModel {
 		
 		private final String level;
 		
-		private Level(String level) {
+		Level(String level) {
 			this.level = level;
 		}
 		
@@ -46,8 +45,7 @@ public class RepositoryModel extends BaseModel {
 
 	@NotEmpty
 	private String name;
-	
-	@Setter(AccessLevel.PACKAGE)
+
 	private String url;
 	
 	@NotEmpty

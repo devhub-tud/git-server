@@ -16,9 +16,8 @@ import javax.validation.constraints.NotNull;
  */
 @Data
 @ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CommitModel extends BaseModel implements Comparable<CommitModel> {
+public class CommitModel implements Comparable<CommitModel> {
 
 	@NotNull
 	private String commit;

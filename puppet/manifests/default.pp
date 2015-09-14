@@ -52,7 +52,7 @@ class gitolite::install {
 	}
 	
 	exec { "clone gitolite":
-		command		=> "git clone git://github.com/sitaramc/gitolite.git",
+		command		=> "git clone -b v3.6.3 git://github.com/sitaramc/gitolite.git",
 		path		=> ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin"],
 		timeout		=> 0,
 		cwd			=> "/home/git",

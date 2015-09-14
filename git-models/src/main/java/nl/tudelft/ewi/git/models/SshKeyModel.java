@@ -14,8 +14,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  * @author michael
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class SshKeyModel extends BaseModel {
+public class SshKeyModel {
 
 	@NotNull
 	@Pattern(regexp = "^[\\w._+-]*$")

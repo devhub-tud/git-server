@@ -26,7 +26,6 @@ public class UserModel extends IdentifiableModel {
 	@Pattern(regexp = "^\\w[\\w._\\@+-]+$")
 	private String name;
 
-	@Setter(AccessLevel.PACKAGE)
 	private Collection<SshKeyModel> keys = Sets.newHashSet();
 
 	@Override

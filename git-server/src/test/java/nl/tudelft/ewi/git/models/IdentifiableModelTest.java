@@ -16,11 +16,9 @@ public class IdentifiableModelTest {
 
         IdentifiableModel a = new IdentifiableModel();
         a.setName(name);
-        a.setPath(path);
 
         UserModel b = new UserModel();
         b.setName(name);
-        b.setPath(path);
 
         assertEquals(a, b);
         assertEquals(b, a);
@@ -33,11 +31,9 @@ public class IdentifiableModelTest {
 
         IdentifiableModel a = new IdentifiableModel();
         a.setName(name);
-        a.setPath(path);
 
         GroupModel b = new GroupModel();
         b.setName(name);
-        b.setPath(path);
 
         assertEquals(a, b);
         assertEquals(b, a);

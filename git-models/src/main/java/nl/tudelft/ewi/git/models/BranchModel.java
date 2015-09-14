@@ -15,9 +15,8 @@ import lombok.ToString;
  */
 @Data
 @ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BranchModel extends BaseModel implements Comparable<BranchModel> {
+public class BranchModel implements Comparable<BranchModel> {
 
 	private final static String MASTER = "master";
 	

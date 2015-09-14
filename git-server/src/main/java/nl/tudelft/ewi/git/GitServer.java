@@ -1,20 +1,18 @@
 package nl.tudelft.ewi.git;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.ServletContext;
 
 import lombok.extern.slf4j.Slf4j;
-import nl.minicom.gitolite.manager.exceptions.GitException;
-import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
-import nl.minicom.gitolite.manager.git.PassphraseCredentialsProvider;
-import nl.minicom.gitolite.manager.models.ConfigManager;
 
+import nl.tudelft.ewi.gitolite.ManagedConfig;
+import nl.tudelft.ewi.gitolite.ManagedConfigFactory;
+import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
+import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshSessionFactory;
@@ -120,24 +118,34 @@ public class GitServer {
 							session.setConfig("StrictHostKeyChecking", "no");
 						}
 					});
-					
-					ConfigManager configManager;
-					if (config.getPassphrase() == null) {
-						configManager = ConfigManager.create(config.getGitoliteRepoUrl());
-					}
-					else {
-						CredentialsProvider credentials = new PassphraseCredentialsProvider(config.getPassphrase());
-						configManager = ConfigManager.create(config.getGitoliteRepoUrl(), credentials);
-					}
-					
+
+					ManagedConfig managedConfig = null;
+					RepositoriesManager repositoriesManager = null;
 					try {
-						configManager.get();
+						managedConfig = new ManagedConfigFactory().init(config.getGitoliteRepoUrl());
+						repositoriesManager = new PathRepositoriesManager(config.getRepositoriesDirectory());
 					}
-					catch (IOException | ServiceUnavailable | GitException e) {
-						log.warn("Could not connect to the gitolite instance: " + e.getMessage(), e);
+					catch (Exception e) {
+						log.error("Could not connect to the gitolite instance: " + e.getMessage(), e);
 					}
 
-					return ImmutableList.<Module> of(new GitServerModule(configManager, config));
+//					ConfigManager configManager;
+//					if (config.getPassphrase() == null) {
+//						configManager = ConfigManager.create(config.getGitoliteRepoUrl());
+//					}
+//					else {
+//						CredentialsProvider credentials = new PassphraseCredentialsProvider(config.getPassphrase());
+//						configManager = ConfigManager.create(config.getGitoliteRepoUrl(), credentials);
+//					}
+//
+//					try {
+//						configManager.get();
+//					}
+//					catch (IOException | ServiceUnavailable | GitException e) {
+//						log.warn("Could not connect to the gitolite instance: " + e.getMessage(), e);
+//					}
+
+					return ImmutableList.<Module> of(new GitServerModule(managedConfig, repositoriesManager, config));
 				}
 
 				@Override
