@@ -157,7 +157,6 @@
 	<modules>
 		<module>git-server</module>
 		<module>git-models</module>
-		<module>git-client</module>
 		<module>Java-Gitolite-Manager</module>
 	</modules>
 
