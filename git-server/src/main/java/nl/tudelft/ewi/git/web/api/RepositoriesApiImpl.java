@@ -5,7 +5,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.io.Files;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
@@ -21,13 +21,19 @@ import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
 import nl.tudelft.ewi.gitolite.permission.Permission;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.test.LogPrintWriter;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.NullProgressMonitor;
+import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -77,7 +83,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 		String templateUrl = createRepositoryModel.getTemplateRepository();
 		String repositoryUrl = config.getGitoliteBaseUrl().concat(name);
 		if(!Strings.isNullOrEmpty(templateUrl)) {
-			cloneTemplateRepository(repositoryUrl, templateUrl);
+			cloneTemplateRepository(name, repositoryUrl, templateUrl);
 		}
 
 		return getRepository(name).getRepositoryModel();
@@ -103,30 +109,41 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 		}
 	}
 
-	protected void cloneTemplateRepository(String repositoryUrl, String templateUrl) {
-		File dir = Files.createTempDir();
+	protected void cloneTemplateRepository(String repositoryName, String repositoryUrl, String templateUrl) {
+
+		File repositoryDirectory = new File(config.getMirrorsDirectory(), repositoryName);
 
 		try {
+
+			if(repositoryDirectory.exists()) {
+				FileUtils.deleteDirectory(repositoryDirectory);
+			}
+
+			FileUtils.forceMkdir(repositoryDirectory);
+
+			log.info("Cloning {} into {}", templateUrl, repositoryDirectory);
 			Git repo = Git.cloneRepository()
-				.setDirectory(dir)
+				.setDirectory(repositoryDirectory)
 				.setURI(templateUrl)
 				.setCloneAllBranches(true)
 				.setCloneSubmodules(true)
 				.call();
 
+			log.info("Pushing {} to {}", repositoryDirectory, repositoryUrl);
 			repo.push()
 				.setRemote(repositoryUrl)
 				.setPushAll()
 				.setPushTags()
 				.call();
+
+			log.info("Finished provisioning {}", repositoryName);
 		}
-		catch (GitAPIException e) {
+		catch (GitAPIException | IOException e) {
 			log.warn(e.getMessage(), e);
+			FileUtils.deleteQuietly(repositoryDirectory);
 			throw new GitException(e);
 		}
-		finally {
-			FileUtils.deleteQuietly(dir);
-		}
+
 	}
 
 }

@@ -38,7 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 
 @Slf4j
-class GitServerModule extends AbstractModule {
+public class GitServerModule extends AbstractModule {
 
 	private final ManagedConfig managedConfig;
 	private final RepositoriesManager repositoriesManager;
@@ -76,6 +76,7 @@ class GitServerModule extends AbstractModule {
 		bindSubResourceFactory(BranchApi.class, BranchApiImpl.class, BranchApiFactory.class);
 		bindSubResourceFactory(RepositoryApi.class, RepositoryApiImpl.class, RepositoryApiFactory.class);
 
+		bind(Config.class).toInstance(config);
 		bind(ManagedConfig.class).toInstance(managedConfig);
 		bind(RepositoriesManager.class).toInstance(repositoriesManager);
 	}
