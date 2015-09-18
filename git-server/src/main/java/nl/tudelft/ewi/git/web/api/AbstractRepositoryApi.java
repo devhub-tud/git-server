@@ -1,6 +1,7 @@
 package nl.tudelft.ewi.git.web.api;
 
 import nl.tudelft.ewi.gitolite.ManagedConfig;
+import nl.tudelft.ewi.gitolite.objects.Identifier;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.Repository;
 import nl.tudelft.ewi.gitolite.repositories.RepositoryNotFoundException;
@@ -35,6 +36,11 @@ public abstract class AbstractRepositoryApi {
 
 	protected URI getRepositoryURI(String repositoryName) {
 		return URI.create(repositoryName + ".git/");
+	}
+
+	protected String getRepositoryName() {
+		String repoName = repository.getURI().toString();
+		return repoName.substring(0, repoName.lastIndexOf('/'));
 	}
 
 }

@@ -15,6 +15,7 @@
 			<artifactId>resteasy-client</artifactId>
 			<version>${resteasy.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>nl.tudelft.ewi.git</groupId>
 			<artifactId>git-models</artifactId>

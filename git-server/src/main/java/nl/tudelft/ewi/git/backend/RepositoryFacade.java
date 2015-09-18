@@ -30,24 +30,28 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Get a description of this {@link DetailedRepositoryModel}.
+	 *
 	 * @return the {@code DetailedRepositoryModel}.
 	 */
 	DetailedRepositoryModel getRepositoryModel();
 
 	/**
 	 * List the branches for this repository.
+	 *
 	 * @return A list of {@link BranchModel BranchModels}.
 	 */
 	Collection<BranchModel> getBranches();
 
 	/**
 	 * List the tags for this repository.
+	 *
 	 * @return A List of {@link TagModel TagModels}.
 	 */
 	Collection<TagModel> getTags();
 
 	/**
 	 * Get a specific branch.
+	 *
 	 * @param name string that the actual branch name should contain (for example: master).
 	 * @return the {@link BranchModel}.
 	 */
@@ -55,6 +59,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Create a new tag.
+	 *
 	 * @param tagModel Tag to add.
 	 * @return The created tag.
 	 */
@@ -62,12 +67,14 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * List the commits in this repository.
+	 *
 	 * @return a List of {@link CommitModel CommitModels}.
 	 */
 	Collection<CommitModel> listCommits();
 
 	/**
 	 * Retrieve a specific commit.
+	 *
 	 * @param commitId Commit id for the commit.
 	 * @return The {@link DetailedCommitModel}.
 	 */
@@ -75,6 +82,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Get a list of commits in a branch.
+	 *
 	 * @param branchName string that the actual branch name should contain (for example: master).
 	 * @param skip amount of commits to skip.
 	 * @param limit amount of commits wanted for the result.
@@ -84,6 +92,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Get the merge base for a branch (assuming master as other branch).
+	 *
 	 * @param branchName string that the actual branch name should contain (for example: master).
 	 * @return the {@link CommitModel} of the merge base.
 	 */
@@ -91,12 +100,14 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Delete a branch.
+	 *
 	 * @param branchName string that the actual branch name should contain (for example: master).
 	 */
 	void deleteBranch(String branchName);
 
 	/**
 	 * Calculate a diff between two commits.
+	 *
 	 * @param leftCommitId First commit id.
 	 * @param rightCommitId Second commit id - may be null.
 	 * @param contextLines Amount of context lines around added/removed blocks.
@@ -106,6 +117,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Calculate the blame for a file at a specific version.
+	 *
 	 * @param commitId Commit id.
 	 * @param filePath Path to the file.
 	 * @return {@link BlameModel} response.
@@ -117,6 +129,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Add blame data to a {@link DiffModel}.
+	 *
 	 * @param input {@code DiffModel} to transform.
 	 * @return a {@link DiffBlameModel} that combines data from the {@link DiffModel} with data from the
 	 *    {@link BlameModel BlameModels} of the edited files.
@@ -127,6 +140,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * List the entries in a folder.
+	 *
 	 * @param commitId Commit id.
 	 * @param path Path to the folder.
 	 * @return a Map containing folder entries.
@@ -137,6 +151,7 @@ public interface RepositoryFacade extends AutoCloseable {
 
 	/**
 	 * Load a file from a git repository.
+	 *
 	 * @param commitId Commit id.
 	 * @param path File path.
 	 * @return {@link ObjectLoader} for the object.

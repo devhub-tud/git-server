@@ -9,6 +9,7 @@ import nl.tudelft.ewi.git.models.UserModel;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.keystore.KeyHolder;
 import nl.tudelft.ewi.gitolite.keystore.PersistedKey;
+import nl.tudelft.ewi.gitolite.objects.Identifier;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -76,6 +77,7 @@ public class UsersApiImpl implements UsersApi {
 				for (PersistedKey key : ImmutableList.copyOf(keyStore.getKeys(username))) {
 					key.delete();
 				}
+				managedConfig.writeConfig(config -> config.deleteIdentifierUses(new Identifier(username)));
 			});
 		}
 

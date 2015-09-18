@@ -90,7 +90,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 
 		if(!permissions.isEmpty()) {
 			RepositoryRule.RepositoryRuleBuilder repositoryRuleBuilder = RepositoryRule.builder()
-				.identifiable(new Identifier(createRepositoryModel.getName()));
+				.identifiable(Identifier.valueOf(createRepositoryModel.getName()));
 
 			for(Level level : permissions.keySet()) {
 				Permission permission = Permission.valueOf(level.getLevel());

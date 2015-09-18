@@ -15,6 +15,8 @@ import javax.ws.rs.core.MediaType;
 import java.util.Collection;
 
 /**
+ * API endpoint for interacting with groups.
+ *
  * @author Jan-Willem Gmelig Meyling
  */
 @Consumes(MediaType.WILDCARD)

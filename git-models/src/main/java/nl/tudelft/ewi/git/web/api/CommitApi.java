@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.web.api;
 
+import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
@@ -11,7 +12,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 /**
@@ -69,5 +73,26 @@ public interface CommitApi extends DiffableApi {
 	@GET
 	@Path("file/{path:.*}")
 	InputStream showFile(@PathParam("path") String path);
+
+	/**
+	 * Read a text file using the {@link Charsets#UTF_8 UTF-8} encoding.
+	 * @param path File path.
+	 * @return File contents.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	default String showTextFile(String path) throws IOException {
+		return showTextFile(path, Charsets.UTF_8);
+	}
+
+	/**
+	 *  Read a text file using the specified encoding.
+	 * @param path File path.
+	 * @param charset {@link Charset} to use.
+	 * @return File contents.
+	 * @throws IOException if an I/O error occurs.
+	 */
+	default String showTextFile(String path, Charset charset) throws IOException {
+		return CharStreams.toString(new InputStreamReader(showFile(path), charset));
+	}
 
 }

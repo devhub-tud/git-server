@@ -14,6 +14,8 @@ import javax.ws.rs.core.MediaType;
 import java.util.Collection;
 
 /**
+ * API for interacting with a group.
+ *
  * @author Jan-Willem Gmelig Meyling
  */
 @Consumes(MediaType.WILDCARD)
@@ -34,15 +36,30 @@ public interface GroupApi {
 	@Consumes(MediaType.WILDCARD)
 	void deleteGroup();
 
+	/**
+	 * Get the group members.
+	 *
+	 * @return a list of members.
+	 */
 	@GET
 	@Path("members")
 	Collection<IdentifiableModel> listMembers();
 
+	/**
+	 * Add a member to the group.
+	 * @param model User to add.
+	 * @return the group members.
+	 * @see #listMembers()
+	 */
 	@POST
 	@Path("members")
 	@Consumes(MediaType.APPLICATION_JSON)
 	Collection<IdentifiableModel> addNewMember(@Valid IdentifiableModel model);
 
+	/**
+	 * Remove a member from the group.
+	 * @param model User to remove.
+	 */
 	@DELETE
 	@Path("members")
 	@Produces(MediaType.WILDCARD)

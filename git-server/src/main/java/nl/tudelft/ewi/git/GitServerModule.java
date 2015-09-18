@@ -81,6 +81,7 @@ class GitServerModule extends AbstractModule {
 	}
 
 	protected <T> void bindSubResourceFactory(Class<T> iface, Class<? extends T> implementation, Class<? extends Factory<T>> factory) {
+		log.info("Registering sub-resource {}", implementation);
 		install(new FactoryModuleBuilder()
 			.implement(iface, implementation)
 			.build(factory));

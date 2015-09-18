@@ -1,5 +1,7 @@
 package nl.tudelft.ewi.git.web.api;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import lombok.SneakyThrows;
@@ -14,9 +16,11 @@ import nl.tudelft.ewi.git.web.api.di.BranchApiFactory;
 import nl.tudelft.ewi.git.web.api.di.CommitApiFactory;
 import nl.tudelft.ewi.git.web.security.RequireAuthentication;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
-import nl.tudelft.ewi.gitolite.config.Config;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.objects.Identifier;
+import nl.tudelft.ewi.gitolite.parser.rules.AccessRule;
+import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
+import nl.tudelft.ewi.gitolite.permission.Permission;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 
 import javax.inject.Provider;
@@ -74,7 +78,28 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public DetailedRepositoryModel updateRepository(@Valid RepositoryModel repositoryModel) {
-		throw new UnsupportedOperationException();
+		Multimap<Permission, Identifier> permissions = HashMultimap.create();
+		// Store the permissions in a multimap, switch generics
+		repositoryModel.getPermissions().forEach((k, v) -> permissions.put(Permission.valueOf(v.getLevel()), new Identifier(k)));
+		Identifier identifier = Identifier.valueOf(getRepositoryName());
+
+		managedConfig.writeConfig(config -> {
+			config.getRepositoryRule(identifier).stream()
+				.map(RepositoryRule::getRules).flatMap(Collection::stream)
+				// Filter only default access rules, keep custom ones
+				.filter(accessRule -> accessRule.getAdjustedRefex().equals(AccessRule.DEFAULT_REFEX))
+				.forEach(accessRule -> {
+					// Clear all members...
+					accessRule.getMembers().clear();
+					// Add all new members
+					accessRule.getMembers().addAll(permissions.get(accessRule.getPermission()));
+				});
+
+			// If a group has been deleted, remove it and its uses
+			config.cleanUpModifiedRepositories();
+		});
+
+		return getRepositoryModel();
 	}
 
 	@Override
@@ -84,8 +109,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 		String repoName = repository.getURI().toString();
 		repoName = repoName.substring(0, repoName.lastIndexOf('/'));
 		Identifier identifier = Identifier.valueOf(repoName);
-		managedConfig.writeConfig(config ->
-			config.getRepositoryRule(identifier).forEach(config::deleteRepositoryRule));
+		managedConfig.writeConfig(config -> config.deleteIdentifierUses(identifier));
 		repository.delete();
 	}
 
