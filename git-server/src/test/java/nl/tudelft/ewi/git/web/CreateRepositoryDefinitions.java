@@ -73,6 +73,7 @@ public class CreateRepositoryDefinitions {
 		detailedRepositoryModel = repositoriesApi.createRepository(createRepositoryModel);
 	}
 
+	// Simulate the gitolite server that creates a bare repository if not exists....
 	private void prepareBareRepository(String name) throws GitAPIException {
 		Git.init()
 			.setBare(true)

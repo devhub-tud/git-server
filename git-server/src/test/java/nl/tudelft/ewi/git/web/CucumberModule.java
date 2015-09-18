@@ -3,13 +3,13 @@ package nl.tudelft.ewi.git.web;
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.google.inject.util.Modules;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.GitServerModule;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.config.Config;
 import nl.tudelft.ewi.gitolite.config.ConfigImpl;
+import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.GitManager;
 import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
@@ -20,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.io.File;
+import java.io.IOException;
 
 import static org.mockito.Mockito.when;
 
@@ -29,12 +30,12 @@ import static org.mockito.Mockito.when;
 @Slf4j
 public class CucumberModule extends AbstractModule {
 
-	@Mock private GitManager gitManager;
+	@Spy private GitManager gitManager = new MockedGitManager();
 	@Spy private Config gitoliteConfig = new ConfigImpl();
 	@InjectMocks private ManagedConfig managedConfig;
 	@Mock private nl.tudelft.ewi.git.Config configuration;
 
-	private File confFolder;
+	private File adminFolder;
 	private File mirrorsFolder;
 	private File repositoriesFolder;
 	private RepositoriesManager repositoriesManager;
@@ -71,16 +72,39 @@ public class CucumberModule extends AbstractModule {
 
 	@SneakyThrows
 	protected void createMockedGitoliteManagerRepo() {
-		confFolder = Files.createTempDir();
-		FileUtils.forceMkdir(new File(confFolder, "conf"));
-		when(gitManager.getWorkingDirectory()).thenReturn(confFolder);
+		adminFolder = Files.createTempDir();
+		File conf = new File(adminFolder, "conf");
+		File config = new File(conf, "gitolite.conf");
+		Files.createParentDirs(config);
 	}
 
 	@SneakyThrows
 	private void removeFolders() {
 		FileUtils.deleteDirectory(repositoriesFolder);
-		FileUtils.deleteDirectory(confFolder);
+		FileUtils.deleteDirectory(adminFolder);
 		FileUtils.deleteDirectory(mirrorsFolder);
+	}
+
+	/*
+	 * Instead of stubbing the admin folder, we spy a custom implementation, so
+	 * users can still reset the mock.
+	 */
+	public class MockedGitManager implements GitManager {
+
+		@Override
+		public File getWorkingDirectory() {
+			return adminFolder;
+		}
+
+		@Override public boolean exists(){ return true; }
+		@Override public void open() {}
+		@Override public void remove(String filePattern) throws IOException, GitException, InterruptedException {}
+		@Override public void clone(String uri) throws IOException, InterruptedException, GitException { }
+		@Override public void init() throws IOException, InterruptedException, GitException { }
+		@Override public boolean pull() throws IOException, InterruptedException, GitException {return false; }
+		@Override public void commitChanges() throws IOException, InterruptedException, IOException, GitException {}
+		@Override public void push() throws IOException, InterruptedException, GitException {}
+
 	}
 
 }

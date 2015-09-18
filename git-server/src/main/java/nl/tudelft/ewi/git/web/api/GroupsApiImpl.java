@@ -45,8 +45,9 @@ public class GroupsApiImpl implements GroupsApi {
 		return managedConfig.writeConfigWithReturn(config -> {
 			GroupRule.GroupRuleBuilder builder = GroupRule.builder()
 				.pattern(groupModel.getName());
-			GroupRule rule = builder.build();
 			addMembers(config, groupModel, builder);
+
+			GroupRule rule = builder.build();
 			config.addGroup(rule);
 			return Transformers.transformGroupRuleToGroupModel(rule);
 		});
