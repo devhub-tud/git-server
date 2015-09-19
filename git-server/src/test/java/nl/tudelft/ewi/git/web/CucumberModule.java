@@ -11,6 +11,9 @@ import nl.tudelft.ewi.gitolite.config.Config;
 import nl.tudelft.ewi.gitolite.config.ConfigImpl;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.GitManager;
+import nl.tudelft.ewi.gitolite.keystore.Key;
+import nl.tudelft.ewi.gitolite.keystore.KeyStore;
+import nl.tudelft.ewi.gitolite.keystore.KeyStoreImpl;
 import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.apache.commons.io.FileUtils;
@@ -25,19 +28,25 @@ import java.io.IOException;
 import static org.mockito.Mockito.when;
 
 /**
+ * Mock out the Gitolite manager components, so we are not dependent on a Gitolite installation.
+ *
  * @author Jan-Willem Gmelig Meyling
  */
 @Slf4j
 public class CucumberModule extends AbstractModule {
 
+	private File adminFolder = Files.createTempDir();
+	private File configFolder = ensureExists(new File(adminFolder, "conf"));
+	private File keyDir = ensureExists(new File(adminFolder, "keydir"));
+	private File mirrorsFolder = Files.createTempDir();
+	private File repositoriesFolder = Files.createTempDir();
+
+	@Spy private KeyStore keyStore = new KeyStoreImpl(keyDir);
 	@Spy private GitManager gitManager = new MockedGitManager();
 	@Spy private Config gitoliteConfig = new ConfigImpl();
 	@InjectMocks private ManagedConfig managedConfig;
 	@Mock private nl.tudelft.ewi.git.Config configuration;
 
-	private File adminFolder;
-	private File mirrorsFolder;
-	private File repositoriesFolder;
 	private RepositoriesManager repositoriesManager;
 
 	@Override
@@ -49,21 +58,24 @@ public class CucumberModule extends AbstractModule {
 		repositoriesManager = new PathRepositoriesManager(repositoriesFolder);
 
 		install(new GitServerModule(managedConfig, repositoriesManager, configuration));
+
+		// Bind GitManager and Config spies so tests can verify on them
 		bind(GitManager.class).annotatedWith(MockedSingleton.class).toInstance(gitManager);
 		bind(Config.class).annotatedWith(MockedSingleton.class).toInstance(gitoliteConfig);
+		bind(KeyStore.class).annotatedWith(MockedSingleton.class).toInstance(keyStore);
+		// Bind folders so tests can prepare them
 		bind(File.class).annotatedWith(Names.named("repositories.folder")).toInstance(repositoriesFolder);
+		// Clean up folders on shutdown
 		Runtime.getRuntime().addShutdownHook(new Thread(this::removeFolders));
 	}
 
 	protected void createMockedMirrorsFolder() {
-		mirrorsFolder = Files.createTempDir();
 		String mirrorsPath = mirrorsFolder.toPath().toString() + "/";
 		when(configuration.getMirrorsDirectory()).thenReturn(mirrorsFolder);
 		log.info("Initialized mirrors folder in {}", mirrorsPath);
 	}
 
 	protected void createMockedRepositoriesFolder() {
-		repositoriesFolder = Files.createTempDir();
 		String repositoriesPath = repositoriesFolder.toPath().toString() + "/";
 		when(configuration.getGitoliteBaseUrl()).thenReturn(repositoriesPath);
 		when(configuration.getRepositoriesDirectory()).thenReturn(repositoriesFolder);
@@ -72,9 +84,7 @@ public class CucumberModule extends AbstractModule {
 
 	@SneakyThrows
 	protected void createMockedGitoliteManagerRepo() {
-		adminFolder = Files.createTempDir();
-		File conf = new File(adminFolder, "conf");
-		File config = new File(conf, "gitolite.conf");
+		File config = new File(configFolder, "gitolite.conf");
 		Files.createParentDirs(config);
 	}
 
@@ -105,6 +115,12 @@ public class CucumberModule extends AbstractModule {
 		@Override public void commitChanges() throws IOException, InterruptedException, IOException, GitException {}
 		@Override public void push() throws IOException, InterruptedException, GitException {}
 
+	}
+
+	@SneakyThrows
+	static File ensureExists(File file) {
+		FileUtils.forceMkdir(file);
+		return file;
 	}
 
 }
