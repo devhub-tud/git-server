@@ -66,10 +66,14 @@ public class GitServer {
 	private final AtomicReference<Injector> injectorAtomicReference = new AtomicReference<>();
 
 	/**
-	 * Creates a new instance of the {@link GitServer} class but does not start it. 
-	 * 
+	 * Creates a new instance of the {@link GitServer} class but does not start it.
+	 *
 	 * @param config
 	 *        The {@link Config} object which has user-specified settings.
+	 * @param overrides
+	 *        The module overrides.
+	 * @throws IOException If an I/O error occurs.
+	 * @throws InterruptedException If the current thread is interrupted.
 	 */
 	public GitServer(final Config config, final Module... overrides) throws IOException, InterruptedException {
 		ContextHandlerCollection handlers = new ContextHandlerCollection();
