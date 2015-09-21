@@ -17,8 +17,13 @@ import nl.tudelft.ewi.gitolite.keystore.KeyStore;
 import nl.tudelft.ewi.gitolite.keystore.PersistedKey;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.junit.BeforeClass;
 
 import javax.inject.Inject;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import java.util.Collection;
 import java.util.function.Consumer;
@@ -34,15 +39,19 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unused")
 public class UserApiDefinitions {
 
+	private Validator validator;
 	@Inject @MockedSingleton private GitManager gitManager;
 	@Inject @MockedSingleton private KeyStore keyStore;
 	@Inject private UsersApi usersApi;
+
 
 	private UserModel userModel;
 	private SshKeyModel sshKeyModel;
 
 	@Before
 	public void removeOldKeys() {
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		validator = factory.getValidator();
 		keyStore.getUsers().stream()
 			.map(keyStore::getKeys).flatMap(Collection::stream)
 			.forEach(unsafe(PersistedKey::delete));
@@ -100,6 +109,13 @@ public class UserApiDefinitions {
 		KeyHolder keyHolder = new KeyHolder(userModel.getName(), contents);
 		keyStore.put(keyHolder);
 		assertThat(getKeysApi().listSshKeys(), Matchers.not(Matchers.empty()));
+
+		SshKeyModel sshKeyModel = new SshKeyModel();
+		sshKeyModel.setContents(contents);
+		sshKeyModel.setName(keyHolder.getName());
+		Collection<ConstraintViolation<SshKeyModel>> violations = validator.validate(sshKeyModel);
+		assertThat(violations, Matchers.empty());
+
 		resetMockCounters();
 	}
 
