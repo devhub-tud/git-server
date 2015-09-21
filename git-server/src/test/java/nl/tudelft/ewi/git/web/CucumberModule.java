@@ -57,13 +57,16 @@ public class CucumberModule extends AbstractModule {
 		createMockedGitoliteManagerRepo();
 		repositoriesManager = new PathRepositoriesManager(repositoriesFolder);
 
-		install(new GitServerModule(managedConfig, repositoriesManager, configuration));
+		bind(RepositoriesManager.class).toInstance(repositoriesManager);
+		bind(ManagedConfig.class).toInstance(managedConfig);
+		bind(nl.tudelft.ewi.git.Config.class).toInstance(configuration);
 
 		// Bind GitManager and Config spies so tests can verify on them
 		bind(GitManager.class).annotatedWith(MockedSingleton.class).toInstance(gitManager);
 		bind(Config.class).annotatedWith(MockedSingleton.class).toInstance(gitoliteConfig);
 		bind(KeyStore.class).annotatedWith(MockedSingleton.class).toInstance(keyStore);
 		// Bind folders so tests can prepare them
+		bind(File.class).annotatedWith(Names.named("mirrors.folder")).toInstance(mirrorsFolder);
 		bind(File.class).annotatedWith(Names.named("repositories.folder")).toInstance(repositoriesFolder);
 		// Clean up folders on shutdown
 		Runtime.getRuntime().addShutdownHook(new Thread(this::removeFolders));

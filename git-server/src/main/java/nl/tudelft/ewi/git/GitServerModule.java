@@ -1,9 +1,12 @@
 package nl.tudelft.ewi.git;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
 
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +32,9 @@ import nl.tudelft.ewi.git.web.api.RepositoryApiImpl;
 import nl.tudelft.ewi.git.web.api.UsersApi;
 import nl.tudelft.ewi.git.web.api.UsersApiImpl;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
+import nl.tudelft.ewi.gitolite.ManagedConfigFactory;
+import nl.tudelft.ewi.gitolite.git.JGitManagerFactory;
+import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.jboss.resteasy.plugins.guice.ext.JaxrsModule;
 import org.jboss.resteasy.plugins.guice.ext.RequestScopeModule;
@@ -40,20 +46,14 @@ import com.google.inject.AbstractModule;
 @Slf4j
 public class GitServerModule extends AbstractModule {
 
-	private final ManagedConfig managedConfig;
-	private final RepositoriesManager repositoriesManager;
 	private final Config config;
 
 	/**
 	 * Constructs a new {@link GitServerModule} object which specifies how to configure the {@link GitServer}.
-	 * 
-	 * @param managedConfig
-	 *        The {@link ManagedConfig} to use when interacting with the Gitolite-admin repository.
+	 *
 	 * @param config the config
 	 */
-	public GitServerModule(ManagedConfig managedConfig, RepositoriesManager repositoriesManager, Config config) {
-		this.managedConfig = managedConfig;
-		this.repositoriesManager = repositoriesManager;
+	public GitServerModule(Config config) {
 		this.config = config;
 	}
 
@@ -77,8 +77,20 @@ public class GitServerModule extends AbstractModule {
 		bindSubResourceFactory(RepositoryApi.class, RepositoryApiImpl.class, RepositoryApiFactory.class);
 
 		bind(Config.class).toInstance(config);
-		bind(ManagedConfig.class).toInstance(managedConfig);
-		bind(RepositoriesManager.class).toInstance(repositoriesManager);
+	}
+
+	@Provides
+	@Singleton
+	public ManagedConfig getManagedConfig() throws IOException, InterruptedException {
+		return new ManagedConfigFactory()
+			.gitManagerFactory(new JGitManagerFactory())
+			.init(config.getGitoliteRepoUrl());
+	}
+
+	@Provides
+	@Singleton
+	public RepositoriesManager getRepositoriesManager(Config config) {
+		return new PathRepositoriesManager(config.getRepositoriesDirectory());
 	}
 
 	protected <T> void bindSubResourceFactory(Class<T> iface, Class<? extends T> implementation, Class<? extends Factory<T>> factory) {

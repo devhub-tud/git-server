@@ -58,6 +58,8 @@ public interface BranchApi extends DiffableApi {
 	 * @return a {@link CommitSubList}.
 	 * @see #retrieveCommitsInBranch(int, int)
 	 */
+	@GET
+	@Path("commits")
 	default CommitSubList retrieveCommitsInBranch() {
 		return retrieveCommitsInBranch(0, DEFAULT_PAGE_SIZE);
 	}

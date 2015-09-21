@@ -1,4 +1,8 @@
 [submodule "Java-Gitolite-Manager"]
 	path = Java-Gitolite-Manager
-	url = https://github.com/devhub-tud/git-server.git
+	url = https://github.com/devhub-tud/Java-Gitolite-Manager.git
 	branch = experimental
+[submodule "Resteasy"]
+	path = Resteasy
+	url = https://github.com/JWGmeligMeyling/Resteasy.git
+	branch = devhub

@@ -7,6 +7,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.inspector.DiffContextFormatter;
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffContext;
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffFile;
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffLine;
 import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.BlameModel.BlameBlock;
 import nl.tudelft.ewi.git.models.BranchModel;
@@ -15,8 +18,8 @@ import nl.tudelft.ewi.git.models.CommitSubList;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
 import nl.tudelft.ewi.git.models.DiffBlameModel;
+import nl.tudelft.ewi.git.models.DiffBlameModel.DiffBlameLine;
 import nl.tudelft.ewi.git.models.DiffModel;
-import nl.tudelft.ewi.git.models.DiffModel.DiffFile;
 import nl.tudelft.ewi.git.models.EntryType;
 import nl.tudelft.ewi.git.models.TagModel;
 import nl.tudelft.ewi.git.web.api.Transformers;
@@ -365,7 +368,6 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 	@Override
 	public DiffModel calculateDiff(String leftCommitId, String rightCommitId, int contextLines) {
-		Preconditions.checkNotNull(leftCommitId);
 		Preconditions.checkNotNull(rightCommitId);
 
 		StoredConfig config = repo.getConfig();
@@ -393,7 +395,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			rd.addAll(diffs);
 			diffs = rd.compute();
 
-			List<DiffFile> diffFiles = diffs.stream()
+			List<DiffFile<DiffContext<DiffLine>>> diffFiles = diffs.stream()
 				.map(this::transformToDiffFile)
 				.collect(Collectors.toList());
 
@@ -410,8 +412,8 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		}
 	}
 
-	protected DiffFile transformToDiffFile(DiffEntry input) {
-		DiffFile diff = new DiffFile();
+	protected DiffFile<DiffContext<DiffLine>> transformToDiffFile(DiffEntry input) {
+		DiffFile<DiffContext<DiffLine>>  diff = new DiffFile<>();
 		diff.setType(convertChangeType(input.getChangeType()));
 		diff.setOldPath(input.getOldPath());
 		diff.setNewPath(input.getNewPath());
@@ -468,7 +470,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	protected List<RevCommit> commitDifference(String startRef, String endRef) throws IOException {
-		assert Strings.isNullOrEmpty(startRef) : "Ref should not be empty or null";
+		assert !Strings.isNullOrEmpty(startRef) : "Ref should not be empty or null";
 
 		try(RevWalk walk = new RevWalk(repo)) {
 			RevCommit start = walk.parseCommit(repo.resolve(startRef));
@@ -562,14 +564,14 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				throw new RuntimeException("Failed to fetch BlameModel in DiffBlame transformer: " + e.getMessage(), e);
 			}
 
-			DiffBlameModel.DiffBlameFile diffBlameFile = new DiffBlameModel.DiffBlameFile();
+			DiffFile<DiffContext<DiffBlameLine>> diffBlameFile = new DiffFile<>();
 			diffBlameFile.setNewPath(diffFile.getNewPath());
 			diffBlameFile.setOldPath(diffFile.getOldPath());
 			diffBlameFile.setType(diffFile.getType());
 
 			diffBlameFile.setContexts(diffFile.getContexts().stream().map(context -> {
 
-				DiffBlameModel.DiffBlameContext diffBlameContext = new DiffBlameModel.DiffBlameContext();
+				DiffContext<DiffBlameLine> diffBlameContext = new DiffContext<>();
 
 				diffBlameContext.setLines(context.getLines().stream().map(line -> {
 					DiffBlameModel.DiffBlameLine diffBlameLine = new DiffBlameModel.DiffBlameLine();

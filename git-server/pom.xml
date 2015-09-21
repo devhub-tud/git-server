@@ -19,7 +19,7 @@
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>4.0.1.201506240215-r</version>
+			<version>4.0.2.201509141540-r</version>
 		</dependency>
 		<!-- Web -->
 		<dependency>
@@ -152,6 +152,13 @@
 			<version>${cucumber.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
+			<scope>test</scope>
+		</dependency>
+
 
 		<!-- Utilities -->
 		<dependency>
