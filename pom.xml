@@ -159,7 +159,6 @@
 		<module>git-server</module>
 		<module>git-models</module>
 		<module>Java-Gitolite-Manager</module>
-		<module>Resteasy/jaxrs/resteasy-client</module>
 	</modules>
 
 </project>

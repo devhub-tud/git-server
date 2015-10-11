@@ -57,9 +57,11 @@ public interface BranchApi extends DiffableApi {
 	 *
 	 * @return a {@link CommitSubList}.
 	 * @see #retrieveCommitsInBranch(int, int)
+	 * @deprecated Any client will have to use pagination, and thus have these values precomputed anyway.
 	 */
 	@GET
-	@Path("commits")
+	@Deprecated
+	@Path("default/commits-skip0-limit25")
 	default CommitSubList retrieveCommitsInBranch() {
 		return retrieveCommitsInBranch(0, DEFAULT_PAGE_SIZE);
 	}

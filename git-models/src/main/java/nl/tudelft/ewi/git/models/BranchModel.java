@@ -24,6 +24,16 @@ public class BranchModel implements Comparable<BranchModel> {
 	private CommitModel commit;
 	private Integer behind, ahead;
 
+	@JsonIgnore
+	public boolean isAhead() {
+		return ahead > 0;
+	}
+
+	@JsonIgnore
+	public boolean isBehind() {
+		return behind > 0;
+	}
+
 	/**
 	 * @return the simple name for this branch
 	 */

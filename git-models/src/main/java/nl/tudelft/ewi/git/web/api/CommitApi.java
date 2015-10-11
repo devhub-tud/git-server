@@ -72,6 +72,7 @@ public interface CommitApi extends DiffableApi {
 	 */
 	@GET
 	@Path("file/{path:.*}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	InputStream showFile(@PathParam("path") String path);
 
 	/**
@@ -80,6 +81,9 @@ public interface CommitApi extends DiffableApi {
 	 * @return File contents.
 	 * @throws IOException if an I/O error occurs.
 	 */
+	@GET
+	@Path("text/{path:.*}")
+	@Produces(MediaType.TEXT_PLAIN)
 	default String showTextFile(String path) throws IOException {
 		return showTextFile(path, Charsets.UTF_8);
 	}
@@ -91,6 +95,9 @@ public interface CommitApi extends DiffableApi {
 	 * @return File contents.
 	 * @throws IOException if an I/O error occurs.
 	 */
+	@GET
+	@Path("text-with-charset/{path:.*}")
+	@Produces(MediaType.TEXT_PLAIN)
 	default String showTextFile(String path, Charset charset) throws IOException {
 		return CharStreams.toString(new InputStreamReader(showFile(path), charset));
 	}

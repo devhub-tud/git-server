@@ -39,7 +39,9 @@ public interface DiffableApi {
 	 * @return {@link DiffModel}.
 	 * @see CommitApi#diff(String, int)
 	 */
-	default DiffModel diff(String oldCommitId) {
+	@GET
+	@Path("default/diff-default-context/{oldCommitId}")
+	default DiffModel diff(@PathParam("oldCommitId") @NotNull String oldCommitId) {
 		return diff(oldCommitId, DEFAULT_CONTEXT_AMOUNT);
 	}
 
@@ -62,7 +64,9 @@ public interface DiffableApi {
 	 * @return {@link DiffBlameModel}.
 	 * @see #diffBlame(String, int)
 	 */
-	default DiffBlameModel diffBlame(String oldCommitId) {
+	@GET
+	@Path("default/diff-blame-default-context/{oldCommitId}")
+	default DiffBlameModel diffBlame(@PathParam("oldCommitId") @NotNull String oldCommitId) {
 		return diffBlame(oldCommitId, DEFAULT_CONTEXT_AMOUNT);
 	}
 
@@ -84,6 +88,8 @@ public interface DiffableApi {
 	 * @return a {@link DiffModel} for this diff with the default context size.
 	 * @see #diff(int)
 	 */
+	@GET
+	@Path("default/diff-default-context")
 	default DiffModel diff() {
 		return diff(DEFAULT_CONTEXT_AMOUNT);
 	}
@@ -104,8 +110,10 @@ public interface DiffableApi {
 	 * @return a {@link DiffBlameModel} for this diff with the default context size.
 	 * @see #diffBlame(int)
 	 */
+	@GET
+	@Path("default/diff-blame-default-context")
 	default DiffBlameModel diffBlame() {
-		return diffBlame(3);
+		return diffBlame(DEFAULT_CONTEXT_AMOUNT);
 	}
 
 	/**
