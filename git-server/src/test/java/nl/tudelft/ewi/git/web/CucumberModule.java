@@ -5,23 +5,31 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import nl.tudelft.ewi.git.GitServerModule;
+import nl.tudelft.ewi.git.models.CreateRepositoryModel;
+import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
+import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
+import nl.tudelft.ewi.git.web.api.Transformers;
+import nl.tudelft.ewi.git.web.api.di.RepositoryApiFactory;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.config.Config;
 import nl.tudelft.ewi.gitolite.config.ConfigImpl;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.GitManager;
-import nl.tudelft.ewi.gitolite.keystore.Key;
 import nl.tudelft.ewi.gitolite.keystore.KeyStore;
 import nl.tudelft.ewi.gitolite.keystore.KeyStoreImpl;
-import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.validation.Valid;
+import javax.ws.rs.InternalServerErrorException;
 import java.io.File;
 import java.io.IOException;
 
@@ -47,17 +55,16 @@ public class CucumberModule extends AbstractModule {
 	@InjectMocks private ManagedConfig managedConfig;
 	@Mock private nl.tudelft.ewi.git.Config configuration;
 
-	private RepositoriesManager repositoriesManager;
-
 	@Override
 	protected void configure() {
 		MockitoAnnotations.initMocks(this);
 		createMockedMirrorsFolder();
 		createMockedRepositoriesFolder();
 		createMockedGitoliteManagerRepo();
-		repositoriesManager = new PathRepositoriesManager(repositoriesFolder);
 
-		bind(RepositoriesManager.class).toInstance(repositoriesManager);
+		bind(nl.tudelft.ewi.git.Config.class).toInstance(configuration);
+		bind(RepositoriesApiImpl.class).to(FakeRepoositoriesApi.class);
+
 		bind(ManagedConfig.class).toInstance(managedConfig);
 		bind(nl.tudelft.ewi.git.Config.class).toInstance(configuration);
 
@@ -68,6 +75,7 @@ public class CucumberModule extends AbstractModule {
 		// Bind folders so tests can prepare them
 		bind(File.class).annotatedWith(Names.named("mirrors.folder")).toInstance(mirrorsFolder);
 		bind(File.class).annotatedWith(Names.named("repositories.folder")).toInstance(repositoriesFolder);
+
 		// Clean up folders on shutdown
 		Runtime.getRuntime().addShutdownHook(new Thread(this::removeFolders));
 	}
@@ -98,7 +106,7 @@ public class CucumberModule extends AbstractModule {
 		FileUtils.deleteDirectory(mirrorsFolder);
 	}
 
-	/*
+	/**
 	 * Instead of stubbing the admin folder, we spy a custom implementation, so
 	 * users can still reset the mock.
 	 */
@@ -115,8 +123,38 @@ public class CucumberModule extends AbstractModule {
 		@Override public void clone(String uri) throws IOException, InterruptedException, GitException { }
 		@Override public void init() throws IOException, InterruptedException, GitException { }
 		@Override public boolean pull() throws IOException, InterruptedException, GitException {return false; }
-		@Override public void commitChanges() throws IOException, InterruptedException, IOException, GitException {}
+		@Override public void commitChanges() throws InterruptedException, IOException, GitException {}
 		@Override public void push() throws IOException, InterruptedException, GitException {}
+
+	}
+
+	/**
+	 * Gitolite initializes bare repositories on first use, we need to hook on the repository creation to
+	 * initialize a bare repository.
+ 	 */
+	public static class FakeRepoositoriesApi extends RepositoriesApiImpl {
+
+		private final File repositoriesFolder;
+
+		@Inject
+		public FakeRepoositoriesApi(@Named("repositories.folder") File repositoriesFolder, Transformers transformers, RepositoriesManager repositoriesManager, RepositoryApiFactory repositoryApiFactory, ManagedConfig managedConfig, nl.tudelft.ewi.git.Config config) {
+			super(transformers, repositoriesManager, repositoryApiFactory, managedConfig, config);
+			this.repositoriesFolder = repositoriesFolder;
+		}
+
+		@Override
+		public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel createRepositoryModel) throws InternalServerErrorException {
+			try {
+				Git.init()
+					.setBare(true)
+					.setDirectory(new File(repositoriesFolder, createRepositoryModel.getName() + ".git"))
+					.call();
+				return super.createRepository(createRepositoryModel);
+			}
+			catch (GitAPIException e) {
+				throw new InternalServerErrorException(e.getMessage(), e);
+			}
+		}
 
 	}
 

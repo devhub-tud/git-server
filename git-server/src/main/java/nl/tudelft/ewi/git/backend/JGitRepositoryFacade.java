@@ -29,6 +29,7 @@ import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.blame.BlameResult;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffEntry.ChangeType;
@@ -109,7 +110,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				.collect(Collectors.toList());
 		}
 		catch (GitAPIException e) {
-			throw new GitException();
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 
@@ -122,7 +123,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				.collect(Collectors.toList());
 		}
 		catch (GitAPIException e) {
-			throw new GitException();
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 
@@ -138,11 +139,11 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				.findFirst()
 				.get();
 		}
-		catch (NoSuchElementException e) {
+		catch (NoSuchElementException | RefNotFoundException e) {
 			throw new NotFoundException(e);
 		}
 		catch (GitAPIException e) {
-			throw new GitException();
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 
@@ -229,7 +230,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			throw new NotFoundException(e.getMessage(), e);
 		}
 		catch (IOException e) {
-			throw new GitException(e);
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 
@@ -349,7 +350,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			throw new NotFoundException(e.getMessage(), e);
 		}
 		catch (IOException e) {
-			throw new GitException(e);
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 
@@ -362,7 +363,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				.call();
 		}
 		catch (GitAPIException e) {
-			throw new GitException(e);
+			throw new GitException(e.getMessage(), e);
 		}
 	}
 

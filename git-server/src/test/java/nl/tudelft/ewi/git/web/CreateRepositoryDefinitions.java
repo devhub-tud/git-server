@@ -69,16 +69,7 @@ public class CreateRepositoryDefinitions {
 	@When("^I create repository \"(.*?)\"$")
 	public void iCreateRepository(String name) throws Throwable {
 		createRepositoryModel.setName(name);
-		prepareBareRepository(name);
 		detailedRepositoryModel = repositoriesApi.createRepository(createRepositoryModel);
-	}
-
-	// Simulate the gitolite server that creates a bare repository if not exists....
-	private void prepareBareRepository(String name) throws GitAPIException {
-		Git.init()
-			.setBare(true)
-			.setDirectory(new File(repositoriesFolder, name + ".git"))
-			.call();
 	}
 
 	@Then("^the template repository is cloned$")

@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -31,6 +32,11 @@ public class CommitModel implements Comparable<CommitModel> {
 			setAuthor(name);
 		}
 		setAuthor(name + " <" + emailAddress + ">");
+	}
+
+	@JsonIgnore
+	public boolean isMerge() {
+		return parents.length > 1;
 	}
 
 	@Override

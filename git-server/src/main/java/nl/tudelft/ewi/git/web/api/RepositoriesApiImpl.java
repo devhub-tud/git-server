@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.Config;
@@ -16,6 +17,7 @@ import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.objects.Identifier;
 import nl.tudelft.ewi.gitolite.parser.rules.AccessRule;
+import nl.tudelft.ewi.gitolite.parser.rules.GroupRule;
 import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
 import nl.tudelft.ewi.gitolite.permission.Permission;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
@@ -92,14 +94,27 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 			RepositoryRule.RepositoryRuleBuilder repositoryRuleBuilder = RepositoryRule.builder()
 				.identifiable(Identifier.valueOf(createRepositoryModel.getName()));
 
-			for(Level level : permissions.keySet()) {
-				Permission permission = Permission.valueOf(level.getLevel());
-				Collection<Identifier> identifiers = Collections2.transform(permissions.get(level), Identifier::valueOf);
-				repositoryRuleBuilder.rule(new AccessRule(permission, Collections.emptyList(), identifiers));
-			}
+			managedConfig.readConfig(readConfig -> {
+				for(Level level : permissions.keySet()) {
+					Permission permission = Permission.valueOf(level.getLevel());
+					Collection<Identifier> members = Lists.newArrayList();
+					Collection<GroupRule> groups = Lists.newArrayList();
 
-			managedConfig.writeConfig(config ->
-				config.addRepositoryRule(repositoryRuleBuilder.build()));
+					for (String name : permissions.get(level)) {
+						if (name.startsWith("@")) {
+							groups.add(readConfig.getGroup(name));
+						}
+						else {
+							members.add(Identifier.valueOf(name));
+						}
+					}
+
+					repositoryRuleBuilder.rule(new AccessRule(permission, groups, members));
+				}
+
+				managedConfig.writeConfig(config ->
+					config.addRepositoryRule(repositoryRuleBuilder.build()));
+			});
 		}
 	}
 

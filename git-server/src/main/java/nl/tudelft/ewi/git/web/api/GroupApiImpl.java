@@ -9,7 +9,9 @@ import nl.tudelft.ewi.gitolite.objects.Identifier;
 import nl.tudelft.ewi.gitolite.parser.rules.GroupRule;
 
 import javax.validation.Valid;
+import javax.ws.rs.NotFoundException;
 import java.util.Collection;
+import java.util.NoSuchElementException;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -26,8 +28,13 @@ public class GroupApiImpl implements GroupApi {
 	}
 
 	protected GroupRule getGroupRule() {
-		return managedConfig.readConfigWithReturn(config ->
-			config.getGroup(groupName));
+		try {
+			return managedConfig.readConfigWithReturn(config ->
+				config.getGroup(groupName));
+		}
+		catch (NoSuchElementException e) {
+			throw new NotFoundException("Group rule for " + groupName + " could not be found: " + e.getMessage(), e);
+		}
 	}
 
 	@Override
