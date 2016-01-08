@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>nl.tudelft.ewi.git</groupId>
 		<artifactId>git-server-parent</artifactId>
-		<version>v1.0.4-SNAPSHOT</version>
+		<version>v1.0.4</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -183,6 +183,11 @@
 			<artifactId>gitolite</artifactId>
 			<version>0.0.5</version>
 		</dependency>
+		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>annotations</artifactId>
+			<version>3.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -237,6 +242,20 @@
 						<exclude>config.properties</exclude>
 					</excludes>
 				</configuration>
+				<executions>
+					<execution>
+						<id>test-files</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>src-files</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
