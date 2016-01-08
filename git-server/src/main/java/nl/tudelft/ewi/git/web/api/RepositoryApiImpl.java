@@ -26,6 +26,8 @@ import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import javax.inject.Provider;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -36,6 +38,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	private final Provider<CommitApiFactory> commitApiFactoryProvider;
 	private final Provider<BranchApiFactory> branchApiFactoryProvider;
+	@Context private ResourceContext resourceContext;
 
 	@Inject
 	public RepositoryApiImpl(ManagedConfig managedConfig, Transformers transformers,
@@ -115,7 +118,11 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public BranchApi getBranch(@NotNull String branchName) {
-		return branchApiFactoryProvider.get().create(repository, branchName);
+		BranchApi branchApi = branchApiFactoryProvider.get().create(repository, branchName);
+		if (resourceContext != null) {
+			return resourceContext.initResource(branchApi);
+		}
+		return branchApi;
 	}
 
 	@Override
@@ -140,7 +147,11 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public CommitApi getCommit(@NotNull String commitId) {
-		return commitApiFactoryProvider.get().create(repository, commitId);
+		CommitApi commitApi = commitApiFactoryProvider.get().create(repository, commitId);
+		if (resourceContext != null) {
+			return resourceContext.initResource(commitApi);
+		}
+		return commitApi;
 	}
 
 }

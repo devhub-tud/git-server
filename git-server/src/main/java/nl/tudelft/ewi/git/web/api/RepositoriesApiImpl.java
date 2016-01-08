@@ -28,6 +28,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -46,6 +48,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 	private final RepositoryApiFactory repositoryApiFactory;
 	private final ManagedConfig managedConfig;
 	private final Config config;
+	@Context private ResourceContext resourceContext;
 
 
 	@Inject
@@ -66,7 +69,11 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 
 	@Override
 	public RepositoryApi getRepository(@NotNull String repositoryId) {
-		return repositoryApiFactory.create(repositoryId);
+		RepositoryApi repositoryApi = repositoryApiFactory.create(repositoryId);
+		if (resourceContext != null) {
+			return resourceContext.initResource(repositoryApi);
+		}
+		return repositoryApi;
 	}
 
 	@Override

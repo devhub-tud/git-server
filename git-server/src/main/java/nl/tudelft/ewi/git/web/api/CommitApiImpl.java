@@ -3,6 +3,7 @@ package nl.tudelft.ewi.git.web.api;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import lombok.Getter;
+import lombok.Setter;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
 import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
 import nl.tudelft.ewi.git.models.BlameModel;
@@ -15,6 +16,7 @@ import org.eclipse.jgit.lib.ObjectLoader;
 import org.jboss.resteasy.annotations.cache.Cache;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Context;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -25,14 +27,13 @@ import java.util.Map;
 @Cache(maxAge = 86400)
 public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 
-	private final HttpServletResponse response;
 	@Getter private final String ownCommitId;
+	@Context @Setter @Getter private HttpServletResponse response;
 
 	@Inject
-	public CommitApiImpl(ManagedConfig managedConfig, Transformers transformers, HttpServletResponse response, @Assisted Repository repository, @Assisted String ownCommitId) {
+	public CommitApiImpl(ManagedConfig managedConfig, Transformers transformers, @Assisted Repository repository, @Assisted String ownCommitId) {
 		super(managedConfig, transformers, repository);
 		this.ownCommitId = ownCommitId;
-		this.response = response;
 	}
 
 	@Override
@@ -76,8 +77,10 @@ public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
 			String fileName = path.substring(path.lastIndexOf('/') + 1);
 			ObjectLoader objectLoader = repositoryFacade.showFile(ownCommitId, path);
-			response.setHeader("Content-Length", Long.toString(objectLoader.getSize()));
-			response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+			if (response != null) {
+				response.setHeader("Content-Length", Long.toString(objectLoader.getSize()));
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+			}
 			return objectLoader.openStream();
 		}
 		catch (IOException e) {

@@ -13,6 +13,8 @@ import nl.tudelft.ewi.gitolite.objects.Identifier;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class UsersApiImpl implements UsersApi {
 
 	private final ManagedConfig managedConfig;
+	@Context private ResourceContext resourceContext;
 
 	@Inject
 	public UsersApiImpl(ManagedConfig managedConfig) {
@@ -40,7 +43,11 @@ public class UsersApiImpl implements UsersApi {
 
 	@Override
 	public UserApi getUser(@NotNull String username) {
-		return new UserApiImpl(username);
+		UserApi userApi = new UserApiImpl(username);
+		if (resourceContext != null) {
+			return resourceContext.initResource(userApi);
+		}
+		return userApi;
 	}
 
 	@Override
@@ -83,7 +90,11 @@ public class UsersApiImpl implements UsersApi {
 
 		@Override
 		public KeysApi keys() {
-			return new KeyApiImpl();
+			KeyApiImpl keyApi = new KeyApiImpl();
+			if (resourceContext != null) {
+				return resourceContext.initResource(keyApi);
+			}
+			return keyApi;
 		}
 
 		public class KeyApiImpl implements KeysApi {

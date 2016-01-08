@@ -14,6 +14,8 @@ import javax.inject.Provider;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,6 +26,7 @@ public class GroupsApiImpl implements GroupsApi {
 
 	private final ManagedConfig managedConfig;
 	private final Provider<GroupApiFactory> groupApiFactoryProvider;
+	@Context private ResourceContext resourceContext;
 
 	@Inject
 	public GroupsApiImpl(ManagedConfig managedConfig, Provider<GroupApiFactory> groupApiFactoryProvider) {
@@ -68,7 +71,11 @@ public class GroupsApiImpl implements GroupsApi {
 
 	@Override
 	public GroupApi getGroup(@NotNull @PathParam("groupName") String groupName) {
-		return groupApiFactoryProvider.get().create(groupName);
+		GroupApi groupApi =  groupApiFactoryProvider.get().create(groupName);
+		if (resourceContext != null) {
+			return resourceContext.initResource(groupApi);
+		}
+		return groupApi;
 	}
 
 }

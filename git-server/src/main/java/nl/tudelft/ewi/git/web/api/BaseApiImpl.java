@@ -1,23 +1,38 @@
 package nl.tudelft.ewi.git.web.api;
 
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import nl.tudelft.ewi.git.models.Version;
 import nl.tudelft.ewi.gitolite.config.Config;
 
 import javax.inject.Inject;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 
 /**
  * Implementation for {@link BaseApi}.
  *
  * @author Jan-Willem Gmelig Meyling
  */
-@Accessors(fluent = true)
 public class BaseApiImpl implements BaseApi {
 
-	@Inject @Getter private GroupsApi groups;
-	@Inject @Getter private UsersApi users;
-	@Inject @Getter private RepositoriesApi repositories;
+	@Context private ResourceContext resourceContext;
+	@Inject private GroupsApi groups;
+	@Inject private UsersApi users;
+	@Inject private RepositoriesApi repositories;
+
+	@Override
+	public GroupsApi groups() {
+		return resourceContext.initResource(groups);
+	}
+
+	@Override
+	public UsersApi users() {
+		return resourceContext.initResource(users);
+	}
+
+	@Override
+	public RepositoriesApi repositories() {
+		return resourceContext.initResource(repositories);
+	}
 
 	@Override
 	public Version version() {

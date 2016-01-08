@@ -28,11 +28,12 @@ import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.merge.MergeStrategy;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.Context;
 import java.io.File;
 import java.io.IOException;
 
@@ -43,18 +44,17 @@ import java.io.IOException;
 public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	private final Config config;
-	private final HttpServletResponse response;
 	private final CommitApiFactory commitApiFactory;
 	private final String branchName;
+	@Context private ResourceContext resourceContext;
 
 	@Inject
-	public BranchApiImpl(Config config, ManagedConfig managedConfig, HttpServletResponse response, Transformers transformers,
+	public BranchApiImpl(Config config, ManagedConfig managedConfig, Transformers transformers,
 	                     CommitApiFactory commitApiFactory, @Assisted Repository repository, @Assisted String branchName) {
 		super(managedConfig, transformers, repository);
 		this.config = config;
 		this.commitApiFactory = commitApiFactory;
 		this.branchName = branchName;
-		this.response = response;
 	}
 
 	@Override
@@ -163,7 +163,11 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Override
 	public CommitApi mergeBase() {
-		return commitApiFactory.create(repository, getCompareCommitId());
+		CommitApi commitApi = commitApiFactory.create(repository, getCompareCommitId());
+		if (resourceContext != null) {
+			return resourceContext.initResource(commitApi);
+		}
+		return commitApi;
 	}
 
 	private CommitModel mergeBaseCommit() {
@@ -197,6 +201,11 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Override
 	public CommitApi getCommit() {
-		return commitApiFactory.create(repository, getOwnCommitId());
+		CommitApi commitApi = commitApiFactory.create(repository, getOwnCommitId());
+		if (resourceContext != null) {
+			return resourceContext.initResource(commitApi);
+		}
+		return commitApi;
 	}
+
 }
