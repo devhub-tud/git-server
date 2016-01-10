@@ -6,30 +6,20 @@
 	<parent>
 		<groupId>nl.tudelft.ewi.git</groupId>
 		<artifactId>git-server-parent</artifactId>
-		<version>v1.0.4-SNAPSHOT</version>
+		<version>v1.0.4</version>
 		<relativePath>../</relativePath>
 	</parent>
+
+	<properties>
+		<cucumber.version>1.2.4</cucumber.version>
+	</properties>
 
 	<dependencies>
 		<!-- JGit -->
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>3.7.0.201502260915-r</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.httpcomponents</groupId>
-					<artifactId>httpclient</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-simple</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>slf4j-api</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
+			<version>4.0.2.201509141540-r</version>
 		</dependency>
 		<!-- Web -->
 		<dependency>
@@ -125,31 +115,50 @@
 			</exclusions>
 		</dependency>
 
-		<!-- SSH Key validation -->
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-			<version>1.10</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.sshd</groupId>
-			<artifactId>sshd-core</artifactId>
-			<version>0.14.0</version>
-		</dependency>
-
 		<!-- Testing -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-library</artifactId>
+			<version>1.3</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
-			<version>1.10.8</version>
+			<version>1.10.19</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-java</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-junit</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>info.cukes</groupId>
+			<artifactId>cucumber-guice</artifactId>
+			<version>${cucumber.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-client</artifactId>
+			<version>${resteasy.version}</version>
+			<scope>test</scope>
+		</dependency>
+
 
 		<!-- Utilities -->
 		<dependency>
@@ -170,28 +179,14 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>nl.minicom</groupId>
-			<artifactId>java-gitolite-manager</artifactId>
+			<groupId>nl.tudelft.ewi</groupId>
+			<artifactId>gitolite</artifactId>
 			<version>0.0.5</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>org.eclipse.jgit</artifactId>
-					<groupId>org.eclipse.jgit</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>org.slf4j</artifactId>
-					<groupId>slf4j-api</groupId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.google.guava</groupId>
-					<artifactId>guava</artifactId>
-				</exclusion>
-				<exclusion>
-
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>annotations</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 	</dependencies>
 
@@ -247,6 +242,20 @@
 						<exclude>config.properties</exclude>
 					</excludes>
 				</configuration>
+				<executions>
+					<execution>
+						<id>test-files</id>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>src-files</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

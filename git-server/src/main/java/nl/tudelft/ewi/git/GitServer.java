@@ -2,19 +2,16 @@ package nl.tudelft.ewi.git;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.ServletContext;
 
+import com.google.inject.util.Modules;
 import lombok.extern.slf4j.Slf4j;
-import nl.minicom.gitolite.manager.exceptions.GitException;
-import nl.minicom.gitolite.manager.exceptions.ServiceUnavailable;
-import nl.minicom.gitolite.manager.git.PassphraseCredentialsProvider;
-import nl.minicom.gitolite.manager.models.ConfigManager;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.SshSessionFactory;
@@ -49,24 +46,38 @@ public class GitServer {
 		SLF4JBridgeHandler.removeHandlersForRootLogger();
 		SLF4JBridgeHandler.install();
 
+		// TODO: Fix this...
+		SshSessionFactory.setInstance(new JschConfigSessionFactory() {
+			@Override
+			protected void configure(Host hc, Session session) {
+				session.setConfig("StrictHostKeyChecking", "no");
+			}
+		});
+
 		Config config = new Config();
 		config.reload();
 		
 		GitServer server = new GitServer(config);
 		server.start();
+		server.join();
 	}
 
 	private final Server server;
+	private final AtomicReference<Injector> injectorAtomicReference = new AtomicReference<>();
 
 	/**
-	 * Creates a new instance of the {@link GitServer} class but does not start it. 
-	 * 
+	 * Creates a new instance of the {@link GitServer} class but does not start it.
+	 *
 	 * @param config
 	 *        The {@link Config} object which has user-specified settings.
+	 * @param overrides
+	 *        The module overrides.
+	 * @throws IOException If an I/O error occurs.
+	 * @throws InterruptedException If the current thread is interrupted.
 	 */
-	public GitServer(Config config) {
+	public GitServer(final Config config, final Module... overrides) throws IOException, InterruptedException {
 		ContextHandlerCollection handlers = new ContextHandlerCollection();
-		handlers.addContext("/", "/").setHandler(new GitServerHandler(config));
+		handlers.addContext("/", "/").setHandler(new GitServerHandler(config, overrides));
 
 		server = new Server(config.getHttpPort());
 		server.setHandler(handlers);
@@ -87,13 +98,15 @@ public class GitServer {
 			public void run() {
 				try {
 					self.stop();
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					log.error(e.getMessage(), e);
 				}
 			}
 		});
 
+	}
+
+	public void join() throws InterruptedException {
 		server.join();
 	}
 
@@ -107,47 +120,28 @@ public class GitServer {
 		server.stop();
 	}
 
-	private static class GitServerHandler extends ServletContextHandler {
+	private class GitServerHandler extends ServletContextHandler {
 
-		private GitServerHandler(final Config config) {
+		private GitServerHandler(final Config config, final Module... overrides) {
 			addEventListener(new GuiceResteasyBootstrapServletContextListener() {
 				@Override
 				protected List<Module> getModules(ServletContext context) {
-					// TODO: Fix this...
-					SshSessionFactory.setInstance(new JschConfigSessionFactory() {
-						@Override
-						protected void configure(Host hc, Session session) {
-							session.setConfig("StrictHostKeyChecking", "no");
-						}
-					});
-					
-					ConfigManager configManager;
-					if (config.getPassphrase() == null) {
-						configManager = ConfigManager.create(config.getGitoliteRepoUrl());
-					}
-					else {
-						CredentialsProvider credentials = new PassphraseCredentialsProvider(config.getPassphrase());
-						configManager = ConfigManager.create(config.getGitoliteRepoUrl(), credentials);
-					}
-					
-					try {
-						configManager.get();
-					}
-					catch (IOException | ServiceUnavailable | GitException e) {
-						log.warn("Could not connect to the gitolite instance: " + e.getMessage(), e);
-					}
-
-					return ImmutableList.<Module> of(new GitServerModule(configManager, config));
+					return ImmutableList.<Module> of(Modules.override(new GitServerModule(config)).with(overrides));
 				}
 
 				@Override
 				protected void withInjector(Injector injector) {
+					injectorAtomicReference.set(injector);
 					// No interaction with injector required. Skipping...
 				}
 			});
 
 			addServlet(HttpServletDispatcher.class, "/");
 		}
+	}
+
+	public Injector getInjector() {
+		return injectorAtomicReference.get();
 	}
 
 }

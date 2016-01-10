@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -16,9 +17,8 @@ import javax.validation.constraints.NotNull;
  */
 @Data
 @ToString(callSuper = true)
-@EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CommitModel extends BaseModel implements Comparable<CommitModel> {
+public class CommitModel implements Comparable<CommitModel> {
 
 	@NotNull
 	private String commit;
@@ -32,6 +32,11 @@ public class CommitModel extends BaseModel implements Comparable<CommitModel> {
 			setAuthor(name);
 		}
 		setAuthor(name + " <" + emailAddress + ">");
+	}
+
+	@JsonIgnore
+	public boolean isMerge() {
+		return parents.length > 1;
 	}
 
 	@Override

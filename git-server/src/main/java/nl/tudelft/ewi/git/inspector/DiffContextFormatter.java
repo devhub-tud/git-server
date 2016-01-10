@@ -7,6 +7,9 @@ import static org.eclipse.jgit.lib.FileMode.GITLINK;
 import java.io.IOException;
 import java.util.List;
 
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffContext;
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffFile;
+import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffLine;
 import org.eclipse.jgit.diff.ContentSource;
 import org.eclipse.jgit.diff.DiffAlgorithm;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -24,8 +27,6 @@ import org.eclipse.jgit.storage.pack.PackConfig;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-
-import nl.tudelft.ewi.git.models.DiffModel.*;
 
 public class DiffContextFormatter {
 
