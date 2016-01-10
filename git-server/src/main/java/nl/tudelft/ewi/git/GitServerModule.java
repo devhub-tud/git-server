@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 
 import com.google.inject.Provides;
@@ -36,8 +38,10 @@ import nl.tudelft.ewi.gitolite.ManagedConfigFactory;
 import nl.tudelft.ewi.gitolite.git.JGitManagerFactory;
 import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
+import org.jboss.resteasy.plugins.guice.RequestScoped;
 import org.jboss.resteasy.plugins.guice.ext.JaxrsModule;
 import org.jboss.resteasy.plugins.guice.ext.RequestScopeModule;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.reflections.Reflections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,6 +81,12 @@ public class GitServerModule extends AbstractModule {
 		bindSubResourceFactory(RepositoryApi.class, RepositoryApiImpl.class, RepositoryApiFactory.class);
 
 		bind(Config.class).toInstance(config);
+	}
+
+	@Provides
+	@RequestScoped
+	public ResourceContext getResourceContext() {
+		return ResteasyProviderFactory.getContextData(ResourceContext.class);
 	}
 
 	@Provides

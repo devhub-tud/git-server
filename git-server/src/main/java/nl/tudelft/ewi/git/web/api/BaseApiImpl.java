@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.web.api;
 
 import nl.tudelft.ewi.git.models.Version;
 import nl.tudelft.ewi.gitolite.config.Config;
+import org.jboss.resteasy.plugins.guice.RequestScoped;
 
 import javax.inject.Inject;
 import javax.ws.rs.container.ResourceContext;
@@ -12,9 +13,10 @@ import javax.ws.rs.core.Context;
  *
  * @author Jan-Willem Gmelig Meyling
  */
+@RequestScoped
 public class BaseApiImpl implements BaseApi {
 
-	@Context private ResourceContext resourceContext;
+	@Inject @Context private ResourceContext resourceContext;
 	@Inject private GroupsApi groups;
 	@Inject private UsersApi users;
 	@Inject private RepositoriesApi repositories;
