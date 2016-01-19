@@ -20,6 +20,7 @@
 		<slf4j.version>1.7.13</slf4j.version>
 		<lombok.version>1.16.6</lombok.version>
 		<guava.version>19.0</guava.version>
+		<jacoco.version>0.7.5.201505241946</jacoco.version>
 	</properties>
 
 	<description>The Devhub Git-server is a REST API over the Git API and can be used for Gitolite server administration</description>
@@ -117,6 +118,27 @@
 					<apiKey>3d8f08d518ddab52c31a</apiKey>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.eluder.coveralls</groupId>
+				<artifactId>coveralls-maven-plugin</artifactId>
+				<version>4.1.0</version>
+				<configuration>
+					<repoToken>6KyeeQlj65x6lW3ZgOYq93I1dKpbxM4qI</repoToken>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -165,6 +187,13 @@
 				<artifactId>maven-surefire-report-plugin</artifactId>
 				<version>2.19.1</version>
 			</plugin>
+
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+			</plugin>
+
 		</plugins>
 	</reporting>
 
