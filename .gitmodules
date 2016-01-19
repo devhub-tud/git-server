@@ -1,4 +1,0 @@
-[submodule "Java-Gitolite-Manager"]
-	path = Java-Gitolite-Manager
-	url = https://github.com/devhub-tud/Java-Gitolite-Manager.git
-	branch = experimental
