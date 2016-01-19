@@ -1,3 +1,8 @@
+[![Stories in Ready](https://badge.waffle.io/devhub-tud/devhub.png?label=ready&title=Ready)](https://waffle.io/devhub-tud/devhub)
+[![Build Status](https://travis-ci.org/devhub-tud/git-server.svg?branch=master)](https://travis-ci.org/devhub-tud/git-server)
+[![Coverage Status](https://coveralls.io/repos/github/devhub-tud/git-server/badge.svg?branch=master)](https://coveralls.io/github/devhub-tud/git-server?branch=master)
+[![Dependency Status](https://www.versioneye.com/user/projects/569e5ab6ec6e6a000a1a98ea/badge.svg?style=flat)](https://www.versioneye.com/user/projects/569e5ab6ec6e6a000a1a98ea)
+
 # Git-Server
 
 **Git-Server** is a git server with a REST API and is backed by a local Gitolite installation. The **Git-Server** REST API can be used to manage the local installation of Gitolite. The REST API allows external systems to list, inspect, create or delete users, ssh-keys, groups, and repositories.
