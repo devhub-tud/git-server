@@ -6,12 +6,13 @@
 	<parent>
 		<groupId>nl.tudelft.ewi.git</groupId>
 		<artifactId>git-server-parent</artifactId>
-		<version>v1.0.4</version>
+		<version>1.0.5</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<properties>
 		<cucumber.version>1.2.4</cucumber.version>
+		<jgit.version>4.2.0.201601211800-r</jgit.version>
 	</properties>
 
 	<dependencies>
@@ -19,7 +20,7 @@
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
-			<version>4.1.1.201511131810-r</version>
+			<version>${jgit.version}</version>
 		</dependency>
 		<!-- Web -->
 		<dependency>
@@ -41,6 +42,11 @@
 					<artifactId>commons-codec</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.resteasy</groupId>
+			<artifactId>resteasy-jackson2-provider</artifactId>
+			<version>${resteasy.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.ejb</groupId>
