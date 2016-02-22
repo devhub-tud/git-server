@@ -13,7 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<guice.version>3.0</guice.version>
+		<guice.version>4.0</guice.version>
 		<jackson.version>2.6.3</jackson.version>
 		<jetty.version>9.3.7.v20160115</jetty.version>
 		<resteasy.version>3.0.14.Final</resteasy.version>
