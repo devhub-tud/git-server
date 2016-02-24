@@ -7,6 +7,7 @@ import com.google.inject.assistedinject.Assisted;
 import lombok.SneakyThrows;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
 import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
@@ -41,17 +42,18 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 	@Context private ResourceContext resourceContext;
 
 	@Inject
-	public RepositoryApiImpl(ManagedConfig managedConfig, Transformers transformers,
+	public RepositoryApiImpl(ManagedConfig managedConfig, Transformers transformers, RepositoryFacadeFactory repositoryFacadeFactory,
 	                         RepositoriesManager repositoriesManager, Provider<CommitApiFactory> commitApiFactoryProvider,
+
 	                         Provider<BranchApiFactory> branchApiFactoryProvider, @Assisted String repositoryName) {
-		super(managedConfig, transformers, repositoriesManager, repositoryName);
+		super(managedConfig, transformers, repositoriesManager, repositoryFacadeFactory, repositoryName);
 		this.commitApiFactoryProvider = commitApiFactoryProvider;
 		this.branchApiFactoryProvider = branchApiFactoryProvider;
 	}
 
 	@Override
 	public Collection<BranchModel> getBranches() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.getBranches();
 		}
 		catch (IOException e) {
@@ -61,7 +63,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public Collection<TagModel> getTags() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.getTags();
 		}
 		catch (IOException e) {
@@ -71,7 +73,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public DetailedRepositoryModel getRepositoryModel() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.getRepositoryModel();
 		}
 		catch (IOException e) {
@@ -127,7 +129,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public TagModel addTag(@Valid TagModel tagModel) {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.addTag(tagModel);
 		}
 		catch (IOException e) {
@@ -137,7 +139,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 
 	@Override
 	public Collection<CommitModel> listCommits() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.listCommits();
 		}
 		catch (IOException e) {

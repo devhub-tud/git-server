@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
 import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
 import nl.tudelft.ewi.git.models.CommitSubList;
@@ -50,8 +51,9 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Inject
 	public BranchApiImpl(Config config, ManagedConfig managedConfig, Transformers transformers,
-	                     CommitApiFactory commitApiFactory, @Assisted Repository repository, @Assisted String branchName) {
-		super(managedConfig, transformers, repository);
+	                     CommitApiFactory commitApiFactory, RepositoryFacadeFactory repositoryFacadeFactory,
+	                     @Assisted Repository repository, @Assisted String branchName) {
+		super(managedConfig, transformers, repositoryFacadeFactory, repository);
 		this.config = config;
 		this.commitApiFactory = commitApiFactory;
 		this.branchName = branchName;
@@ -59,7 +61,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Override
 	public BranchModel get() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.getBranch(branchName);
 		}
 		catch (IOException e) {
@@ -153,7 +155,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Override
 	public CommitSubList retrieveCommitsInBranch(@DefaultValue("0") int skip, @DefaultValue("25") int limit) {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.getCommitsFor(branchName, skip, limit);
 		}
 		catch (IOException e) {
@@ -171,7 +173,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 	}
 
 	private CommitModel mergeBaseCommit() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.mergeBase(branchName);
 		}
 		catch (IOException e) {
@@ -181,7 +183,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 	@Override
 	public void deleteBranch() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			repositoryFacade.deleteBranch(branchName);
 		}
 		catch (IOException e) {

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
 import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.BlameModel;
 import nl.tudelft.ewi.git.models.DetailedCommitModel;
 import nl.tudelft.ewi.git.models.EntryType;
@@ -31,14 +32,14 @@ public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 	@Context @Setter @Getter private HttpServletResponse response;
 
 	@Inject
-	public CommitApiImpl(ManagedConfig managedConfig, Transformers transformers, @Assisted Repository repository, @Assisted String ownCommitId) {
-		super(managedConfig, transformers, repository);
+	public CommitApiImpl(ManagedConfig managedConfig, Transformers transformers, RepositoryFacadeFactory repositoryFacadeFactory, @Assisted Repository repository, @Assisted String ownCommitId) {
+		super(managedConfig, transformers, repositoryFacadeFactory, repository);
 		this.ownCommitId = ownCommitId;
 	}
 
 	@Override
 	public DetailedCommitModel get() {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.retrieveCommit(ownCommitId);
 		}
 		catch (IOException e) {
@@ -54,7 +55,7 @@ public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 
 	@Override
 	public BlameModel blame(String filePath) {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.blame(ownCommitId, filePath);
 		}
 		catch (IOException e) {
@@ -64,7 +65,7 @@ public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 
 	@Override
 	public Map<String, EntryType> showTree(final String path) {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.showTree(ownCommitId, path);
 		}
 		catch (IOException e) {
@@ -74,7 +75,7 @@ public class CommitApiImpl extends AbstractDiffableApi implements CommitApi {
 
 	@Override
 	public InputStream showFile(final String path) {
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			String fileName = path.substring(path.lastIndexOf('/') + 1);
 			ObjectLoader objectLoader = repositoryFacade.showFile(ownCommitId, path);
 			if (response != null) {
