@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nl.tudelft.ewi.git</groupId>
 	<artifactId>git-server-parent</artifactId>
-	<version>1.0.5</version>
+	<version>1.0.6</version>
 	<packaging>pom</packaging>
 
 	<properties>
