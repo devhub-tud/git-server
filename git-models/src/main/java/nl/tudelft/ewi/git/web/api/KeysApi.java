@@ -45,6 +45,7 @@ public interface KeysApi {
 	 * @return the {@link SshKeyModel}.
 	 */
 	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
 	SshKeyModel addNewKey(@Valid SshKeyModel sshKeyModel);
 
 	/**
