@@ -79,6 +79,11 @@ public class CreateRepositoryDefinitions {
 
 	@Then("^the template is pushed to the provisioned repository$")
 	public void theTemplateIsPushedToTheProvisionedRepository() throws Throwable {
+		aBareRepositoryIsInitializedAtTheRemoteRepository();
+	}
+
+	@Then("^A bare repository is initialized at the remote repository$")
+	public void aBareRepositoryIsInitializedAtTheRemoteRepository() throws Throwable {
 		File folder = new File(repositoriesFolder, createRepositoryModel.getName() + ".git");
 		assertTrue("Git folder does not exist at " + folder, folder.exists());
 	}
