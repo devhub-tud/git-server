@@ -143,19 +143,23 @@ public class CucumberModule extends AbstractModule {
 		}
 
 		@Override
-		public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel createRepositoryModel) throws InternalServerErrorException {
+		protected void cloneTemplateRepository(String repositoryName, String repositoryUrl, String templateUrl) {
+			initializeBareRepository(repositoryName, repositoryUrl);
+			super.cloneTemplateRepository(repositoryName, repositoryUrl, templateUrl);
+		}
+
+		@Override
+		protected void initializeBareRepository(String repositoryName, String repositoryUrl) {
 			try {
 				Git.init()
 					.setBare(true)
-					.setDirectory(new File(repositoriesFolder, createRepositoryModel.getName() + ".git"))
+					.setDirectory(new File(repositoriesFolder, repositoryName + ".git"))
 					.call();
-				return super.createRepository(createRepositoryModel);
 			}
 			catch (GitAPIException e) {
 				throw new InternalServerErrorException(e.getMessage(), e);
 			}
 		}
-
 	}
 
 	@SneakyThrows
