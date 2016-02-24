@@ -2,6 +2,7 @@ package nl.tudelft.ewi.git.web.api;
 
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
 import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.DiffBlameModel;
 import nl.tudelft.ewi.git.models.DiffModel;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
@@ -20,8 +21,8 @@ import java.io.IOException;
  */
 public abstract class AbstractDiffableApi extends AbstractRepositoryApi implements DiffableApi {
 
-	protected AbstractDiffableApi(ManagedConfig managedConfig, Transformers transformers, Repository repository) {
-		super(managedConfig, transformers, repository);
+	protected AbstractDiffableApi(ManagedConfig managedConfig, Transformers transformers, RepositoryFacadeFactory repositoryFacadeFactory, Repository repository) {
+		super(managedConfig, transformers, repository, repositoryFacadeFactory);
 	}
 
 	protected abstract String getOwnCommitId();
@@ -41,7 +42,7 @@ public abstract class AbstractDiffableApi extends AbstractRepositoryApi implemen
 	@Override
 	public DiffModel diff(@NotNull String leftCommitId, @DefaultValue("3") int context) {
 		String rightCommitId = getOwnCommitId();
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			return repositoryFacade.calculateDiff(leftCommitId, rightCommitId, context);
 		}
 		catch (IOException e) {
@@ -52,7 +53,7 @@ public abstract class AbstractDiffableApi extends AbstractRepositoryApi implemen
 	@Override
 	public DiffBlameModel diffBlame(@NotNull String oldCommitId, @DefaultValue("3") int context) {
 		String rightCommitId = getOwnCommitId();
-		try(RepositoryFacade repositoryFacade = new JGitRepositoryFacade(transformers, repository)) {
+		try(RepositoryFacade repositoryFacade = repositoryFacadeFactory.create(repository)) {
 			DiffModel diffModel = repositoryFacade.calculateDiff(oldCommitId, rightCommitId, context);
 			return repositoryFacade.addBlameData(diffModel);
 		}

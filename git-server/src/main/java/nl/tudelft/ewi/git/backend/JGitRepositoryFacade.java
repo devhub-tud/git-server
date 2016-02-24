@@ -58,7 +58,6 @@ import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
-import javax.validation.constraints.Null;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.Collection;
@@ -67,6 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -90,6 +91,10 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 	private final nl.tudelft.ewi.gitolite.repositories.Repository repository;
 
+	private final AtomicInteger uses = new AtomicInteger(1);
+
+	private final AtomicBoolean closed = new AtomicBoolean(false);
+
 	public JGitRepositoryFacade(Transformers transformers, nl.tudelft.ewi.gitolite.repositories.Repository repository) throws IOException {
 		Preconditions.checkNotNull(repository);
 		this.transformers = transformers;
@@ -98,8 +103,16 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		this.repository = repository;
 	}
 
+	void incrementUses() {
+		uses.incrementAndGet();
+	}
+
+	public boolean isClosed() {
+		return closed.get();
+	}
+
 	@Override
-	public DetailedRepositoryModel getRepositoryModel() {
+	public synchronized DetailedRepositoryModel getRepositoryModel() {
 		DetailedRepositoryModel model = new DetailedRepositoryModel();
 		transformers.setBaseAttributes(repository, model);
 		model.setBranches(getBranches());
@@ -108,7 +121,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public Collection<BranchModel> getBranches() {
+	public synchronized Collection<BranchModel> getBranches() {
 		try {
 			return git.branchList()
 				.setListMode(ListMode.ALL)
@@ -122,7 +135,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public Collection<TagModel> getTags() {
+	public synchronized Collection<TagModel> getTags() {
 		try {
 			return git.tagList()
 				.call().stream()
@@ -135,7 +148,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public BranchModel getBranch(String name) {
+	public synchronized BranchModel getBranch(String name) {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(name));
 		try {
 			return git.branchList()
@@ -155,7 +168,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public TagModel addTag(TagModel tagModel) {
+	public synchronized TagModel addTag(TagModel tagModel) {
 		try(RevWalk walk = new RevWalk(repo)) {
 
 			String commitId = tagModel.getCommit().getCommit();
@@ -180,7 +193,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public Collection<CommitModel> listCommits() {
+	public synchronized Collection<CommitModel> listCommits() {
 		try {
 			Iterable<RevCommit> revCommits = git.log()
 				.all()
@@ -226,7 +239,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public DetailedCommitModel retrieveCommit(String commitId) {
+	public synchronized DetailedCommitModel retrieveCommit(String commitId) {
 		Preconditions.checkNotNull(commitId);
 
 		try(RevWalk walk = new RevWalk(repo)) {
@@ -311,13 +324,16 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public void close() {
-		repo.close();
-		git.close();
+	public synchronized void close() {
+		if (uses.decrementAndGet() == 0) {
+			repo.close();
+			git.close();
+			closed.set(true);
+		}
 	}
 
 	@Override
-	public CommitSubList getCommitsFor(String branchName, int skip, int limit) {
+	public synchronized CommitSubList getCommitsFor(String branchName, int skip, int limit) {
 		try {
 			Iterable<RevCommit> allCommits = git.log()
 				.add(repo.resolve(branchName))
@@ -345,7 +361,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public CommitModel mergeBase(String branchName) {
+	public synchronized CommitModel mergeBase(String branchName) {
 		try(RevWalk walk = new RevWalk(git.getRepository())) {
 			walk.setRevFilter(RevFilter.MERGE_BASE);
 			walk.markStart(walk.lookupCommit(repo.resolve(REF_MASTER)));
@@ -362,7 +378,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public void deleteBranch(String branchName) {
+	public synchronized void deleteBranch(String branchName) {
 		try {
 			git.branchDelete()
 				.setBranchNames(branchName)
@@ -375,7 +391,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public DiffModel calculateDiff(String leftCommitId, String rightCommitId, int contextLines) {
+	public synchronized DiffModel calculateDiff(String leftCommitId, String rightCommitId, int contextLines) {
 		Preconditions.checkNotNull(rightCommitId);
 
 		StoredConfig config = repo.getConfig();
@@ -495,7 +511,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public BlameModel blame(String commitId,
+	public synchronized BlameModel blame(String commitId,
 	                        String filePath) throws IOException, GitException {
 
 		Preconditions.checkNotNull(commitId);
@@ -561,7 +577,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public DiffBlameModel addBlameData(DiffModel input) {
+	public synchronized DiffBlameModel addBlameData(DiffModel input) {
 		DiffBlameModel result = new DiffBlameModel();
 		result.setOldCommit(input.getOldCommit());
 		result.setNewCommit(input.getNewCommit());
@@ -670,7 +686,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public Map<String, EntryType> showTree(String commitId, String path)  throws GitException, IOException {
+	public synchronized Map<String, EntryType> showTree(String commitId, String path)  throws GitException, IOException {
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(commitId));
 		Preconditions.checkNotNull(path);
 
@@ -719,7 +735,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 	}
 
 	@Override
-	public ObjectLoader showFile(final String commitId, final String path) throws IOException, GitException {
+	public synchronized ObjectLoader showFile(final String commitId, final String path) throws IOException, GitException {
 		Preconditions.checkNotNull(commitId);
 		Preconditions.checkNotNull(path);
 

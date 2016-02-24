@@ -12,6 +12,8 @@ import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import lombok.extern.slf4j.Slf4j;
 
+import nl.tudelft.ewi.git.backend.JGitRepositoryFacadeFactory;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.web.api.BaseApi;
 import nl.tudelft.ewi.git.web.api.BaseApiImpl;
 import nl.tudelft.ewi.git.web.api.BranchApi;
@@ -74,6 +76,7 @@ public class GitServerModule extends AbstractModule {
 		bind(UsersApi.class).to(UsersApiImpl.class);
 		bind(GroupsApi.class).to(GroupsApiImpl.class);
 		bind(RepositoriesApi.class).to(RepositoriesApiImpl.class);
+		bind(RepositoryFacadeFactory.class).to(JGitRepositoryFacadeFactory.class);
 
 		bindSubResourceFactory(GroupApi.class, GroupApiImpl.class, GroupApiFactory.class);
 		bindSubResourceFactory(CommitApi.class, CommitApiImpl.class, CommitApiFactory.class);
