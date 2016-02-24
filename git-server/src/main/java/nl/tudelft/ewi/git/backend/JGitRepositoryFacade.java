@@ -5,6 +5,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.inspector.DiffContextFormatter;
 import nl.tudelft.ewi.git.models.AbstractDiffModel.DiffContext;
@@ -56,12 +58,15 @@ import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.TreeFilter;
 
+import javax.validation.constraints.Null;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -77,8 +82,10 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 	private final Transformers transformers;
 
+	@Getter
 	private final Git git;
 
+	@Getter
 	private final Repository repo;
 
 	private final nl.tudelft.ewi.gitolite.repositories.Repository repository;
@@ -374,7 +381,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		StoredConfig config = repo.getConfig();
 		config.setString("diff", null, "algorithm", "histogram");
 
-		try {
+		try(ObjectReader objectReader = repo.newObjectReader()) {
 			DiffModel diffModel = new DiffModel();
 
 			AbstractTreeIterator oldTreeIter = new EmptyTreeIterator();
@@ -397,6 +404,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			diffs = rd.compute();
 
 			List<DiffFile<DiffContext<DiffLine>>> diffFiles = diffs.stream()
+				.filter(diffEntry -> isBlob(objectReader, diffEntry))
 				.map(this::transformToDiffFile)
 				.collect(Collectors.toList());
 
@@ -411,6 +419,12 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		catch (IOException | GitAPIException e) {
 			throw new GitException(e);
 		}
+	}
+
+	@SneakyThrows
+	private boolean isBlob(ObjectReader objectReader, DiffEntry diffEntry) {
+		ObjectId objectId = Optional.ofNullable(diffEntry.getNewId()).orElse(diffEntry.getOldId()).toObjectId();
+		return objectReader.has(objectId);
 	}
 
 	protected DiffFile<DiffContext<DiffLine>> transformToDiffFile(DiffEntry input) {
@@ -496,7 +510,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 			if(blameResult == null) {
 				throw new NotFoundException(String.format("%s not found in %S at %s", filePath,
-					repository.getURI(), commitId));
+					repository.toString(), commitId));
 			}
 
 			return transformBlameModel(blameResult, commitId, filePath);
@@ -554,16 +568,8 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		result.setCommits(input.getCommits());
 
 		result.setDiffs(input.getDiffs().parallelStream().map((diffFile) -> {
-			BlameModel oldBlame;
-			BlameModel newBlame;
-
-			try {
-				oldBlame = (!diffFile.isAdded()) ? blame(input.getOldCommit().getCommit(), diffFile.getOldPath()) : null;
-				newBlame = (!diffFile.isDeleted()) ? blame(input.getNewCommit().getCommit(), diffFile.getNewPath()) : null;
-			}
-			catch (GitException | IOException e) {
-				throw new RuntimeException("Failed to fetch BlameModel in DiffBlame transformer: " + e.getMessage(), e);
-			}
+			BlameModel oldBlame = (!diffFile.isAdded()) ? getBlameModel(input.getOldCommit().getCommit(), diffFile.getOldPath(), diffFile) : null;
+			BlameModel newBlame = (!diffFile.isDeleted()) ? getBlameModel(input.getNewCommit().getCommit(), diffFile.getNewPath(), diffFile) : null;
 
 			DiffFile<DiffContext<DiffBlameLine>> diffBlameFile = new DiffFile<>();
 			diffBlameFile.setNewPath(diffFile.getNewPath());
@@ -575,7 +581,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				DiffContext<DiffBlameLine> diffBlameContext = new DiffContext<>();
 
 				diffBlameContext.setLines(context.getLines().stream().map(line -> {
-					DiffBlameModel.DiffBlameLine diffBlameLine = new DiffBlameModel.DiffBlameLine();
+					DiffBlameLine diffBlameLine = new DiffBlameLine();
 					diffBlameLine.setNewLineNumber(line.getNewLineNumber());
 					diffBlameLine.setOldLineNumber(line.getOldLineNumber());
 					diffBlameLine.setContent(line.getContent());
@@ -586,8 +592,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 					if (diffBlameLine.isRemoved()) {
 						lineNumber = line.getOldLineNumber();
 						block = oldBlame.getBlameBlock(lineNumber);
-					}
-					else {
+					} else {
 						lineNumber = line.getNewLineNumber();
 						block = newBlame.getBlameBlock(lineNumber);
 					}
@@ -607,6 +612,46 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		}).collect(Collectors.toList()));
 
 		return result;
+	}
+
+	/*
+	 * TODO:
+	 *    Helper method that provides a fallback mechanism for creating blame data.
+	 *    We should investigate how to generate a blame for symbolic links nicer,
+	 *    and why blame and diff are implemented inconsistently in JGit anyway.
+	 *
+	 *    (Diff returns a file containing the symlink target, but while debugging
+	 *    blame, the object points to another blob object - the reference).
+	 */
+	private BlameModel getBlameModel(String commit, String path, DiffFile file) {
+		try {
+			return blame(commit, path);
+		}
+		catch (NotFoundException e) {
+			return fallbackBlameModel(commit, path, file.isAdded() ? file.getLinesAdded() : file.getLinesRemoved());
+		}
+		catch (GitException | IOException e) {
+			throw new RuntimeException(String.format("Failed to get blame model for %s at %s: %s",
+				path, commit, e.getMessage()), e);
+		}
+	}
+
+	/*
+	 * The fallback BlameModel is a blame model that acts as if all lines for the
+	 * specified path were introduced at the specified commit.
+	 */
+	private static BlameModel fallbackBlameModel(String commit, String path, int length) {
+		BlameModel blameModel = new BlameModel();
+		blameModel.setPath(path);
+		blameModel.setCommitId(commit);
+		BlameBlock blameBlock = new BlameBlock();
+		blameBlock.setSourceFrom(1);
+		blameBlock.setDestinationFrom(1);
+		blameBlock.setLength(length);
+		blameBlock.setFromFilePath(path);
+		blameBlock.setFromCommitId(commit);
+		blameModel.setBlames(Collections.singletonList(blameBlock));
+		return blameModel;
 	}
 
 	private static EntryType of(org.eclipse.jgit.lib.Repository repo, TreeWalk walker, String entry) throws IOException {
@@ -644,7 +689,13 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			Map<String, EntryType> handles = Maps.newLinkedHashMap();
 			while (walker.next()) {
 				String entryPath = walker.getPathString();
+				// Skip entries not in path
 				if (!entryPath.startsWith(path)) {
+					continue;
+				}
+
+				// Skip commit objects...
+				if (!walker.getObjectReader().has(walker.getObjectId(0))) {
 					continue;
 				}
 
