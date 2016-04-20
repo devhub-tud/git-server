@@ -140,10 +140,13 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 		File repositoryDirectory = new File(config.getMirrorsDirectory(), repository.getURI().toString());
 		Git git;
 
+		String uri = repository.getURI().toString();
+		uri = uri.substring(0, uri.lastIndexOf(".git/"));
+
 		if(!repositoryDirectory.exists()) {
 			repositoryDirectory.mkdirs();
 			git = Git.cloneRepository()
-				.setURI(config.getGitoliteBaseUrl() + repository.getURI().toString())
+				.setURI(config.getGitoliteBaseUrl() + uri)
 				.setDirectory(repositoryDirectory)
 				.setCloneAllBranches(true)
 				.call();
