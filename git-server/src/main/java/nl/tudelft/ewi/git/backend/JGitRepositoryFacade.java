@@ -153,8 +153,9 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 		try {
 			return git.branchList()
 				.setListMode(ListMode.ALL)
-				.setContains(name)
+//				.setContains(name)
 				.call().stream()
+				.filter(branch -> branch.getName().endsWith(name))
 				.map(this::transformToBranchModel)
 				.findFirst()
 				.get();
