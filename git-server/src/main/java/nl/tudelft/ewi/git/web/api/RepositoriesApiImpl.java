@@ -146,6 +146,12 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 				.setBare(false)
 				.call();
 
+			//if we can add a file do so
+			if( new File(repositoryDirectory,"README.md").createNewFile()) {
+				repo.add().addFilepattern("README.md").call();
+				repo.commit().setMessage("intial commit containing empty readme").call();
+			}
+
 			log.info("Pushing {} to {}", repositoryDirectory, repositoryUrl);
 			repo.push()
 				.setRemote(repositoryUrl)
