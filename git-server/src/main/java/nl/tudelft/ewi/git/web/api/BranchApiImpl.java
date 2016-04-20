@@ -119,16 +119,20 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 			return res;
 		}
 		catch (InvalidRefNameException | NoMessageException e) {
-			throw new BadRequestException(e);
+			log.warn(e.getMessage(), e);
+			throw new BadRequestException(e.getMessage(), e);
 		}
 		catch (TransportException e) {
+			log.warn(e.getMessage(), e);
 			throw new ServiceUnavailable(e);
 		}
 		catch (RefNotFoundException e) {
-			throw new NotFoundException(e);
+			log.warn(e.getMessage(), e);
+			throw new NotFoundException(e.getMessage(), e);
 		}
 		catch (GitAPIException | IOException e) {
-			throw new InternalServerErrorException(e);
+			log.warn(e.getMessage(), e);
+			throw new InternalServerErrorException(e.getMessage(), e);
 		}
 	}
 
