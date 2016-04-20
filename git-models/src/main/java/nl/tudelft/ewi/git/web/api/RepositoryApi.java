@@ -83,6 +83,7 @@ public interface RepositoryApi extends CommitsApi {
 	 */
 	@POST
 	@Path("tag")
+	@Consumes(MediaType.APPLICATION_JSON)
 	TagModel addTag(@Valid TagModel tagModel);
 
 }
