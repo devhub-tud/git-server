@@ -33,6 +33,7 @@ import javax.ws.rs.core.Context;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Implementation for {@link RepositoriesApi}.
@@ -84,12 +85,8 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 		String name = createRepositoryModel.getName();
 		String templateUrl = createRepositoryModel.getTemplateRepository();
 		String repositoryUrl = config.getGitoliteBaseUrl().concat(name);
-
 		if(!Strings.isNullOrEmpty(templateUrl)) {
 			cloneTemplateRepository(name, repositoryUrl, templateUrl);
-		}
-		else {
-			initializeBareRepository(name, repositoryUrl);
 		}
 
 		return getRepository(name).getRepositoryModel();
@@ -125,40 +122,6 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 				managedConfig.writeConfig(config ->
 					config.addRepositoryRule(repositoryRuleBuilder.build()));
 			});
-		}
-	}
-
-	protected void initializeBareRepository(String repositoryName, String repositoryUrl) {
-
-		File repositoryDirectory = new File(config.getMirrorsDirectory(), repositoryName);
-
-		try {
-
-			if(repositoryDirectory.exists()) {
-				FileUtils.deleteDirectory(repositoryDirectory);
-			}
-
-			FileUtils.forceMkdir(repositoryDirectory);
-
-			log.info("Preparing bare repository in {}", repositoryDirectory);
-			Git repo = Git.init()
-				.setDirectory(repositoryDirectory)
-				.setBare(false)
-				.call();
-
-			log.info("Pushing {} to {}", repositoryDirectory, repositoryUrl);
-			repo.push()
-				.setRemote(repositoryUrl)
-				.setPushAll()
-				.setPushTags()
-				.call();
-
-			log.info("Finished provisioning {}", repositoryName);
-		}
-		catch (GitAPIException | IOException e) {
-			log.warn(e.getMessage(), e);
-			FileUtils.deleteQuietly(repositoryDirectory);
-			throw new GitException(e);
 		}
 	}
 
