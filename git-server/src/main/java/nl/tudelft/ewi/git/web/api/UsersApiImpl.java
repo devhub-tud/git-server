@@ -6,6 +6,7 @@ import lombok.SneakyThrows;
 import nl.tudelft.ewi.git.models.IdentifiableModel;
 import nl.tudelft.ewi.git.models.SshKeyModel;
 import nl.tudelft.ewi.git.models.UserModel;
+import nl.tudelft.ewi.git.web.exceptions.IllegalArgumentExceptionMapper;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.keystore.KeyHolder;
 import nl.tudelft.ewi.gitolite.keystore.PersistedKey;
@@ -13,9 +14,13 @@ import nl.tudelft.ewi.gitolite.objects.Identifier;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -108,23 +113,69 @@ public class UsersApiImpl implements UsersApi {
 
 			@Override
 			public SshKeyModel retrieveSshKey(@NotNull String keyId) {
-				return managedConfig.readKeyStore(keyStore ->
-					Transformers.transformSshKey(keyStore.getKey(username, keyId)));
+				return managedConfig.readKeyStore(keyStore -> {
+					try {
+
+						return Transformers.transformSshKey(keyStore.getKey(username, keyId));
+					}
+					catch (NoSuchElementException e) {
+						throw new NotFoundException(
+							String.format("Failed to delete key %s for user %s: %s", keyId, username, e.getMessage()),
+							e
+						);
+					}
+					catch (RuntimeException e) {
+						throw new InternalServerErrorException(
+							String.format("Failed to delete key %s for user %s: %s", keyId, username, e.getMessage()),
+							e
+						);
+					}
+				});
 			}
 
 			@Override
 			@SneakyThrows
 			public SshKeyModel addNewKey(@Valid SshKeyModel sshKeyModel) {
 				KeyHolder key = new KeyHolder(username, sshKeyModel.getName(), sshKeyModel.getContents());
-				return managedConfig.writeKeyStoreWithReturn(keyStore ->
-					Transformers.transformSshKey(keyStore.put(key)));
+				return managedConfig.writeKeyStoreWithReturn(keyStore -> {
+					try {
+						return Transformers.transformSshKey(keyStore.put(key));
+					}
+					catch (IllegalArgumentException e) {
+						throw new BadRequestException(
+							String.format("Failed to delete key %s for user %s: %s", sshKeyModel.getName(), username, e.getMessage()),
+							e
+						);
+					}
+					catch (RuntimeException e) {
+						throw new InternalServerErrorException(
+							String.format("Failed to delete key %s for user %s: %s", sshKeyModel.getName(), username, e.getMessage()),
+							e
+						);
+					}
+				});
 			}
 
 			@Override
 			@SneakyThrows
 			public void deleteSshKey(@NotNull String keyId) {
-				managedConfig.writeKeyStore(keyStore ->
-					keyStore.getKey(username, keyId).delete());
+				managedConfig.writeKeyStore(keyStore -> {
+					try {
+						keyStore.getKey(username, keyId).delete();
+					}
+					catch (NoSuchElementException e) {
+						throw new NotFoundException(
+							String.format("Failed to delete key %s for user %s: %s", keyId, username, e.getMessage()),
+							e
+						);
+					}
+					catch (RuntimeException e) {
+						throw new InternalServerErrorException(
+							String.format("Failed to delete key %s for user %s: %s", keyId, username, e.getMessage()),
+							e
+						);
+					}
+				});
 			}
 
 		}
