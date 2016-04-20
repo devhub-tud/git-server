@@ -150,10 +150,9 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 		}
 		else {
 			git = Git.open(repositoryDirectory);
+			git.fetch().call();
 		}
 
-		git.checkout().setName("master").call();
-		git.pull().call();
 		return git;
 	}
 
