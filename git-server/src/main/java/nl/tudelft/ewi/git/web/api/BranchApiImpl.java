@@ -89,7 +89,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 				.setForce(true).call();
 
 			MergeResult ret = git.merge()
-				.include(repo.getRef("origin/" + branchName.substring(branchName.lastIndexOf('/') + 1)))
+				.include(repo.getRef(this.branchName.replace("refs/heads", "origin")))
 				.setStrategy(MergeStrategy.RECURSIVE)
 				.setSquash(false)
 				.setCommit(true)
