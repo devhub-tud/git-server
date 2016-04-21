@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.web;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
@@ -19,6 +20,7 @@ import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
 import nl.tudelft.ewi.gitolite.permission.Permission;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.hamcrest.Matchers;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -112,6 +114,30 @@ public class CreateRepositoryDefinitions {
 			}
 		});
 		return accessRuleMap;
+	}
+
+
+	@Given("^the template is cloned into \"([^\"]*)\"$")
+	public void theTemplateIsClonedInto(String name) throws Throwable {
+		theFollowingPermissions(ImmutableMap.of(
+			"admin", Level.ADMIN
+		));
+
+		iCreateRepository(name);
+	}
+
+	@When("^I remove repository \"([^\"]*)\"$")
+	public void iRemoveRepository(String name) throws Throwable {
+		repositoriesApi.getRepository(name).deleteRepository();
+	}
+
+	@Then("^the template repository is removed$")
+	public void theTemplateRepositoryIsRemoved() throws Throwable {
+
+		assertThat(
+			repositoriesApi.listAllRepositories(),
+			Matchers.not(Matchers.hasItem(detailedRepositoryModel))
+		);
 	}
 
 }
