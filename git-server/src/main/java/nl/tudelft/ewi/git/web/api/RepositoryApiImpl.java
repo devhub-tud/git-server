@@ -27,6 +27,8 @@ import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import javax.inject.Provider;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
@@ -99,23 +101,27 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 					// Add all new members
 					accessRule.getMembers().addAll(permissions.get(accessRule.getPermission()));
 				});
-
-			// If a group has been deleted, remove it and its uses
-			config.cleanUpModifiedRepositories();
 		});
 
 		return getRepositoryModel();
 	}
 
 	@Override
-	@SneakyThrows
 	@RequireAuthentication
 	public void deleteRepository() {
 		String repoName = repository.getURI().toString();
 		repoName = repoName.substring(0, repoName.lastIndexOf('/'));
 		Identifier identifier = Identifier.valueOf(repoName);
-		managedConfig.writeConfig(config -> config.deleteIdentifierUses(identifier));
-		repository.delete();
+		try {
+			managedConfig.writeConfig(config -> config.deleteIdentifierUses(identifier));
+			repository.delete();
+		}
+		catch (IllegalArgumentException e) {
+			throw new BadRequestException(e.getMessage(), e);
+		}
+		catch (IOException e) {
+			throw new InternalServerErrorException(e.getMessage(), e);
+		}
 	}
 
 	@Override
