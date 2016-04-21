@@ -1,10 +1,9 @@
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>nl.tudelft.ewi.git</groupId>
 	<artifactId>git-server-parent</artifactId>
-	<version>1.0.8-SNAPSHOT</version>
+	<version>1.0.8</version>
 	<packaging>pom</packaging>
 
 	<properties>
@@ -34,7 +33,7 @@
 		<connection>scm:git:git@github.com:devhub-tud/git-server.git</connection>
 		<developerConnection>scm:git:git@github.com:devhub-tud/git-server</developerConnection>
 		<url>https://github.com/devhub-tud/git-server</url>
-		<tag>HEAD</tag>
+		<tag>v1.0.8</tag>
 	</scm>
 
 	<licenses>
