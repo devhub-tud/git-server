@@ -21,7 +21,10 @@ public class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalAr
 	@Override
 	public Response toResponse(IllegalArgumentException exception) {
 		log.warn(exception.getMessage(), exception);
-		return Response.status(Status.CONFLICT).type(MediaType.APPLICATION_JSON).entity(exception.getMessage()).build();
+		return Response.status(Status.CONFLICT)
+			.type(MediaType.TEXT_PLAIN)
+			.entity(exception.getMessage())
+			.build();
 	}
 
 }
