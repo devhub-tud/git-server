@@ -26,7 +26,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
 
 	@Override
 	public Response toResponse(NotFoundException exception) {
-		log.warn(
+		log.info(
 			String.format(
 				"Resource was not found for method %s at %s, failed with: %s",
 				request.getMethod(),
@@ -38,6 +38,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
 
 		return Response.status(Status.NOT_FOUND)
 			.type(MediaType.TEXT_PLAIN)
+			.header("Requested-URL", request.getRequestURL())
 			.entity(exception.getMessage())
 			.build();
 	}
