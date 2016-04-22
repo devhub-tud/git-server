@@ -161,7 +161,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 				.get();
 		}
 		catch (NoSuchElementException | RefNotFoundException e) {
-			throw new NotFoundException(e);
+			throw new NotFoundException(e.getMessage(), e);
 		}
 		catch (GitAPIException e) {
 			throw new GitException(e.getMessage(), e);
@@ -186,7 +186,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			return transformTagModel(command.call());
 		}
 		catch (MissingObjectException e) {
-			throw new NotFoundException(e);
+			throw new NotFoundException(e.getMessage(), e);
 		}
 		catch (IOException | GitAPIException e) {
 			throw new GitException(e);
@@ -725,7 +725,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			}
 
 			if (handles.isEmpty()) {
-				throw new NotFoundException();
+				throw new NotFoundException("The map of handles was empty");
 			}
 
 			return handles;
