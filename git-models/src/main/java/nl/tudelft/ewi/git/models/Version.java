@@ -10,6 +10,6 @@ public class Version {
 
     private String gitServerVersion;
 
-    private String gitoliteAdminVersion;
+    private String gitServerCommit;
 
 }
