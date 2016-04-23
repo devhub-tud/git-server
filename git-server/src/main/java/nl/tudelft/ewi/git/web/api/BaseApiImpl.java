@@ -1,12 +1,14 @@
 package nl.tudelft.ewi.git.web.api;
 
+import lombok.SneakyThrows;
 import nl.tudelft.ewi.git.models.Version;
-import nl.tudelft.ewi.gitolite.config.Config;
 import org.jboss.resteasy.plugins.guice.RequestScoped;
 
 import javax.inject.Inject;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Implementation for {@link BaseApi}.
@@ -37,13 +39,16 @@ public class BaseApiImpl implements BaseApi {
 	}
 
 	@Override
+	@SneakyThrows
 	public Version version() {
-		Package gitoliteManagerPackage = Config.class.getPackage();
-		Package gitServerPackage = BaseApiImpl.class.getPackage();
+		Properties properties = new Properties();
+		try (InputStream inputStream = BaseApiImpl.class.getResourceAsStream("/git-server.git.properties")) {
+			properties.load(inputStream);
+		}
 
 		Version version = new Version();
-		version.setGitoliteAdminVersion(gitoliteManagerPackage.getImplementationVersion());
-		version.setGitServerVersion(gitServerPackage.getImplementationVersion());
+		version.setGitServerCommit(properties.getProperty("git.commit.id"));
+		version.setGitServerVersion(properties.getProperty("git.build.version"));
 		return version;
 	}
 
