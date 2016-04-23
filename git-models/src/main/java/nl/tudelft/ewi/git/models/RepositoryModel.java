@@ -10,6 +10,8 @@ import lombok.Setter;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.validation.constraints.Pattern;
+
 /**
  * This model represents a view of a repository in the Gitolite config.
  *
@@ -44,6 +46,7 @@ public class RepositoryModel {
 	}
 
 	@NotEmpty
+	@Pattern(regexp = "^\\w[\\w._\\@\\/+-]*[\\w._\\@+-]$")
 	private String name;
 
 	private String url;
