@@ -33,7 +33,6 @@ import javax.ws.rs.core.Context;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Implementation for {@link RepositoriesApi}.
@@ -44,7 +43,7 @@ import java.util.Collections;
 public class RepositoriesApiImpl implements RepositoriesApi {
 
 	private final Transformers transformers;
-	private final RepositoriesManager repositoriesManager;
+	protected final RepositoriesManager repositoriesManager;
 	private final RepositoryApiFactory repositoryApiFactory;
 	private final ManagedConfig managedConfig;
 	private final Config config;
