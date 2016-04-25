@@ -2,6 +2,8 @@ package nl.tudelft.ewi.git.web;
 
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import lombok.SneakyThrows;
@@ -39,6 +41,7 @@ import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.GitManager;
 import nl.tudelft.ewi.gitolite.keystore.KeyStore;
 import nl.tudelft.ewi.gitolite.keystore.KeyStoreImpl;
+import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -133,6 +136,11 @@ public class CucumberModule extends AbstractModule {
 		log.info("Initialized bare repository folder in {}", repositoriesPath);
 	}
 
+	@Provides
+	@Singleton
+	public RepositoriesManager getRepositoriesManager(nl.tudelft.ewi.git.Config config) {
+		return new PathRepositoriesManager(config.getRepositoriesDirectory());
+	}
 	@SneakyThrows
 	protected void createMockedGitoliteManagerRepo() {
 		File config = new File(configFolder, "gitolite.conf");
