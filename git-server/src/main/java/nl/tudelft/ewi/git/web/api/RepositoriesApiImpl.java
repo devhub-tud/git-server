@@ -6,6 +6,7 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
@@ -76,6 +77,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 	}
 
 	@Override
+	@SneakyThrows
 	public DetailedRepositoryModel createRepository(@Valid CreateRepositoryModel createRepositoryModel) {
 		Preconditions.checkNotNull(createRepositoryModel);
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(createRepositoryModel.getName()));
@@ -88,6 +90,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 			cloneTemplateRepository(name, repositoryUrl, templateUrl);
 		}
 
+		repositoriesManager.reload();
 		return getRepository(name).getRepositoryModel();
 	}
 

@@ -42,6 +42,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 	private final Provider<CommitApiFactory> commitApiFactoryProvider;
 	private final Provider<BranchApiFactory> branchApiFactoryProvider;
 	@Context private ResourceContext resourceContext;
+	private final RepositoriesManager repositoriesManager;
 
 	@Inject
 	public RepositoryApiImpl(ManagedConfig managedConfig, Transformers transformers, RepositoryFacadeFactory repositoryFacadeFactory,
@@ -51,6 +52,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 		super(managedConfig, transformers, repositoriesManager, repositoryFacadeFactory, repositoryName);
 		this.commitApiFactoryProvider = commitApiFactoryProvider;
 		this.branchApiFactoryProvider = branchApiFactoryProvider;
+		this.repositoriesManager = repositoriesManager;
 	}
 
 	@Override
@@ -115,6 +117,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 		try {
 			managedConfig.writeConfig(config -> config.deleteIdentifierUses(identifier));
 			repository.delete();
+			repositoriesManager.reload();
 		}
 		catch (IllegalArgumentException e) {
 			throw new BadRequestException(e.getMessage(), e);

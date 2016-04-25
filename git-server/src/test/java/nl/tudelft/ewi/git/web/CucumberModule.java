@@ -149,10 +149,9 @@ public class CucumberModule extends AbstractModule {
 					.setBare(true)
 					.setDirectory(new File(repositoriesFolder, createRepositoryModel.getName() + ".git"))
 					.call();
-				repositoriesManager.reload();
 				return super.createRepository(createRepositoryModel);
 			}
-			catch (GitAPIException | IOException e) {
+			catch (GitAPIException e) {
 				throw new InternalServerErrorException(e.getMessage(), e);
 			}
 		}
