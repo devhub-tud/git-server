@@ -32,8 +32,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
 				request.getMethod(),
 				request.getRequestURL(),
 				exception.getMessage()
-			),
-			exception
+			)
 		);
 
 		return Response.status(Status.NOT_FOUND)
