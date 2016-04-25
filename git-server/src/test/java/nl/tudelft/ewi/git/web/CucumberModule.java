@@ -2,13 +2,37 @@ package nl.tudelft.ewi.git.web;
 
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import nl.tudelft.ewi.git.backend.JGitRepositoryFacadeFactory;
+import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.CreateRepositoryModel;
 import nl.tudelft.ewi.git.models.DetailedRepositoryModel;
+import nl.tudelft.ewi.git.web.api.BaseApi;
+import nl.tudelft.ewi.git.web.api.BaseApiImpl;
+import nl.tudelft.ewi.git.web.api.BranchApi;
+import nl.tudelft.ewi.git.web.api.BranchApiImpl;
+import nl.tudelft.ewi.git.web.api.CommitApi;
+import nl.tudelft.ewi.git.web.api.CommitApiImpl;
+import nl.tudelft.ewi.git.web.api.GroupApi;
+import nl.tudelft.ewi.git.web.api.GroupApiImpl;
+import nl.tudelft.ewi.git.web.api.GroupsApi;
+import nl.tudelft.ewi.git.web.api.GroupsApiImpl;
+import nl.tudelft.ewi.git.web.api.RepositoriesApi;
 import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
+import nl.tudelft.ewi.git.web.api.RepositoryApi;
+import nl.tudelft.ewi.git.web.api.RepositoryApiImpl;
 import nl.tudelft.ewi.git.web.api.Transformers;
+import nl.tudelft.ewi.git.web.api.UsersApi;
+import nl.tudelft.ewi.git.web.api.UsersApiImpl;
+import nl.tudelft.ewi.git.web.api.di.BranchApiFactory;
+import nl.tudelft.ewi.git.web.api.di.CommitApiFactory;
+import nl.tudelft.ewi.git.web.api.di.Factory;
+import nl.tudelft.ewi.git.web.api.di.GroupApiFactory;
 import nl.tudelft.ewi.git.web.api.di.RepositoryApiFactory;
 import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.config.Config;
@@ -17,6 +41,7 @@ import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.GitManager;
 import nl.tudelft.ewi.gitolite.keystore.KeyStore;
 import nl.tudelft.ewi.gitolite.keystore.KeyStoreImpl;
+import nl.tudelft.ewi.gitolite.repositories.PathRepositoriesManager;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -63,7 +88,18 @@ public class CucumberModule extends AbstractModule {
 		createMockedGitoliteManagerRepo();
 
 		bind(nl.tudelft.ewi.git.Config.class).toInstance(configuration);
+
+		bind(UsersApi.class).to(UsersApiImpl.class);
+		bind(GroupsApi.class).to(GroupsApiImpl.class);
+		bind(RepositoriesApi.class).to(RepositoriesApiImpl.class);
+		bind(RepositoryFacadeFactory.class).to(JGitRepositoryFacadeFactory.class);
 		bind(RepositoriesApiImpl.class).to(FakeRepoositoriesApi.class);
+
+		bindSubResourceFactory(GroupApi.class, GroupApiImpl.class, GroupApiFactory.class);
+		bindSubResourceFactory(CommitApi.class, CommitApiImpl.class, CommitApiFactory.class);
+		bindSubResourceFactory(BranchApi.class, BranchApiImpl.class, BranchApiFactory.class);
+		bindSubResourceFactory(RepositoryApi.class, RepositoryApiImpl.class, RepositoryApiFactory.class);
+
 
 		bind(ManagedConfig.class).toInstance(managedConfig);
 		bind(nl.tudelft.ewi.git.Config.class).toInstance(configuration);
@@ -80,6 +116,13 @@ public class CucumberModule extends AbstractModule {
 		Runtime.getRuntime().addShutdownHook(new Thread(this::removeFolders));
 	}
 
+	protected <T> void bindSubResourceFactory(Class<T> iface, Class<? extends T> implementation, Class<? extends Factory<T>> factory) {
+		log.info("Registering sub-resource {}", implementation);
+		install(new FactoryModuleBuilder()
+			.implement(iface, implementation)
+			.build(factory));
+	}
+
 	protected void createMockedMirrorsFolder() {
 		String mirrorsPath = mirrorsFolder.toPath().toString() + "/";
 		when(configuration.getMirrorsDirectory()).thenReturn(mirrorsFolder);
@@ -93,6 +136,11 @@ public class CucumberModule extends AbstractModule {
 		log.info("Initialized bare repository folder in {}", repositoriesPath);
 	}
 
+	@Provides
+	@Singleton
+	public RepositoriesManager getRepositoriesManager(nl.tudelft.ewi.git.Config config) {
+		return new PathRepositoriesManager(config.getRepositoriesDirectory());
+	}
 	@SneakyThrows
 	protected void createMockedGitoliteManagerRepo() {
 		File config = new File(configFolder, "gitolite.conf");
