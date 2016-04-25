@@ -239,7 +239,6 @@ public class WebTest {
 		};
 	}
 
-
 	// Simulate the gitolite server that creates a bare repository if not exists....
 	private void prepareBareRepository(String name) throws GitAPIException, IOException {
 		File repositoryFolder = new File(repositoriesFolder, name + ".git");
@@ -268,6 +267,7 @@ public class WebTest {
 			.call();
 
 		mirror.push().setRemote(repositoryFolder.getPath()).call();
+		repositoriesManager.reload();
 	}
 
 }
