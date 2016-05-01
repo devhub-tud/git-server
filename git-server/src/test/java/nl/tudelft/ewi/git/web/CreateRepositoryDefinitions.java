@@ -138,6 +138,11 @@ public class CreateRepositoryDefinitions {
 			repositoriesApi.listAllRepositories(),
 			Matchers.not(Matchers.hasItem(detailedRepositoryModel))
 		);
+
+		assertThat(
+			gitoliteConfig.getRules(),
+			Matchers.empty()
+		);
 	}
 
 }

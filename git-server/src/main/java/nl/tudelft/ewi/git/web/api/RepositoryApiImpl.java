@@ -112,7 +112,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 	@RequireAuthentication
 	public void deleteRepository() {
 		String repoName = repository.getURI().toString();
-		repoName = repoName.substring(0, repoName.lastIndexOf('/'));
+		repoName = repoName.substring(0, repoName.lastIndexOf(".git/"));
 		Identifier identifier = Identifier.valueOf(repoName);
 		try {
 			managedConfig.writeConfig(config -> config.deleteIdentifierUses(identifier));
