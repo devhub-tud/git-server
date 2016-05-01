@@ -101,7 +101,7 @@ public class CreateRepositoryDefinitions {
 	}
 
 	protected Map<Permission, AccessRule> permissionsToAccessRules(Map<String, Level> permissions) {
-		Map<Permission, AccessRule> accessRuleMap = Maps.newHashMap();
+		Map<Permission, AccessRule> accessRuleMap = Maps.newLinkedHashMap();
 		permissions.forEach((username, level) -> {
 			Permission permission = Permission.valueOf(level.getLevel());
 			AccessRule accessRule = accessRuleMap.get(permission);

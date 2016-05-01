@@ -18,6 +18,7 @@ import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.objects.Identifier;
 import nl.tudelft.ewi.gitolite.parser.rules.AccessRule;
+import nl.tudelft.ewi.gitolite.parser.rules.GroupRule;
 import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
 import nl.tudelft.ewi.gitolite.permission.Permission;
 import nl.tudelft.ewi.gitolite.repositories.RepositoriesManager;
@@ -31,6 +32,8 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -91,16 +94,30 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 		Identifier identifier = Identifier.valueOf(repositoryModel.getName());
 
 		managedConfig.writeConfig(config -> {
-			config.getRepositoryRule(identifier).stream()
-				.map(RepositoryRule::getRules).flatMap(Collection::stream)
+			RepositoryRule repositoryRule = config.getFirstRepositoryRule(identifier);
+			repositoryRule.getRules().stream()
 				// Filter only default access rules, keep custom ones
 				.filter(accessRule -> accessRule.getAdjustedRefex().equals(AccessRule.DEFAULT_REFEX))
 				.forEach(accessRule -> {
 					// Clear all members...
 					accessRule.getMembers().clear();
 					// Add all new members
-					accessRule.getMembers().addAll(permissions.get(accessRule.getPermission()));
+					accessRule.getMembers().addAll(permissions.removeAll(accessRule.getPermission()));
 				});
+
+			permissions.asMap().forEach((permission, ids) -> {
+				Collection<GroupRule> groups = ids.stream()
+					.filter(id -> id.getPattern().startsWith("@"))
+					.map(Identifier::getPattern)
+					.map(config::getGroup)
+					.collect(Collectors.toList());
+
+				Collection<Identifier> users = ids.stream()
+					.filter(id -> !id.getPattern().startsWith("@"))
+					.collect(Collectors.toList());
+
+				repositoryRule.addRule(new AccessRule(permission, groups, users));
+			});
 		});
 
 		return getRepositoryModel();
