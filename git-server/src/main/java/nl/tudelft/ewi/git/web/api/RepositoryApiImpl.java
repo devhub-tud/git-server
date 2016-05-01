@@ -4,9 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import lombok.SneakyThrows;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
-import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
 import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
@@ -90,7 +88,7 @@ public class RepositoryApiImpl extends AbstractRepositoryApi implements Reposito
 		Multimap<Permission, Identifier> permissions = HashMultimap.create();
 		// Store the permissions in a multimap, switch generics
 		repositoryModel.getPermissions().forEach((k, v) -> permissions.put(Permission.valueOf(v.getLevel()), new Identifier(k)));
-		Identifier identifier = Identifier.valueOf(getRepositoryName());
+		Identifier identifier = Identifier.valueOf(repositoryModel.getName());
 
 		managedConfig.writeConfig(config -> {
 			config.getRepositoryRule(identifier).stream()
