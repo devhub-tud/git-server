@@ -7,7 +7,6 @@ import com.google.inject.assistedinject.Assisted;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.Config;
 import nl.tudelft.ewi.git.backend.RepositoryFacade;
-import nl.tudelft.ewi.git.backend.JGitRepositoryFacade;
 import nl.tudelft.ewi.git.backend.RepositoryFacadeFactory;
 import nl.tudelft.ewi.git.models.BranchModel;
 import nl.tudelft.ewi.git.models.CommitModel;
@@ -18,9 +17,12 @@ import nl.tudelft.ewi.gitolite.ManagedConfig;
 import nl.tudelft.ewi.gitolite.git.GitException;
 import nl.tudelft.ewi.gitolite.git.ServiceUnavailable;
 import nl.tudelft.ewi.gitolite.repositories.Repository;
+import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
+import org.eclipse.jgit.api.MergeResult.MergeStatus;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
@@ -28,6 +30,8 @@ import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.merge.MergeStrategy;
+import org.eclipse.jgit.transport.RemoteConfig;
+import org.eclipse.jgit.transport.URIish;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DefaultValue;
@@ -37,6 +41,10 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -81,15 +89,31 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 			Git git = createOrOpenRepositoryMirror();
 			org.eclipse.jgit.lib.Repository repo = git.getRepository();
 
+			log.info(
+				"Fetching remote {}",
+				git.remoteList().call().stream()
+					.map(RemoteConfig::getURIs)
+					.flatMap(Collection::stream)
+					.map(URIish::toASCIIString)
+					.collect(Collectors.toList())
+			);
+
 			git.fetch().call();
+
+			String baseBranch = "origin/master", toMergeBranch = this.branchName.replace("refs/heads", "origin");
+
+			log.info("Checking out {}", baseBranch);
 
 			git.checkout()
 				.setName("master")
-				.setStartPoint("origin/master")
+				.setStartPoint(baseBranch)
+				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
 				.setForce(true).call();
 
+			log.info("Merging {} into {}", toMergeBranch, baseBranch);
+
 			MergeResult ret = git.merge()
-				.include(repo.getRef(this.branchName.replace("refs/heads", "origin")))
+				.include(repo.findRef(toMergeBranch))
 				.setStrategy(MergeStrategy.RECURSIVE)
 				.setSquash(false)
 				.setCommit(true)
@@ -97,7 +121,14 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 				.setFastForward(MergeCommand.FastForwardMode.NO_FF)
 				.call();
 
-			if (ret.getMergeStatus().isSuccessful()) {
+			log.info("Merge returned with status {}", ret.getMergeStatus());
+
+			if (Arrays.asList(
+				MergeStatus.FAST_FORWARD_SQUASHED,
+				MergeStatus.MERGED_SQUASHED,
+				MergeStatus.MERGED
+			).contains(ret.getMergeStatus())) {
+				log.info("Adding author info to commit: {} <{}>", name, email);
 				git.commit()
 					.setAmend(true)
 					.setAuthor(name, email)
@@ -105,13 +136,14 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 					.setMessage(message)
 					.call();
 			} else {
+				log.info("Merge failed, resetting work directory");
 				git.reset()
 					.setMode(ResetCommand.ResetType.HARD)
 					.call();
 			}
 
+			log.info("Pushing changes to remote");
 			git.push().call();
-			log.info("Merged {} into {} with status {}", branchName, repository, ret.getMergeStatus());
 
 			MergeResponse res = new MergeResponse();
 			res.setStatus(ret.getMergeStatus().name());
@@ -144,9 +176,12 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 		uri = uri.substring(0, uri.lastIndexOf(".git/"));
 
 		if(!repositoryDirectory.exists()) {
-			repositoryDirectory.mkdirs();
+			FileUtils.forceMkdir(repositoryDirectory);
+			String repositoryURL = config.getGitoliteBaseUrl() + uri;
+			log.info("Cloning repository {} into work directory {}", repositoryURL, repositoryDirectory);
+
 			git = Git.cloneRepository()
-				.setURI(config.getGitoliteBaseUrl() + uri)
+				.setURI(repositoryURL)
 				.setDirectory(repositoryDirectory)
 				.setCloneAllBranches(true)
 				.call();
@@ -155,6 +190,8 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 			git = Git.open(repositoryDirectory);
 			git.fetch().call();
 		}
+
+		log.info("Using repository mirror {}", repositoryDirectory);
 
 		return git;
 	}
