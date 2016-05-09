@@ -1,6 +1,5 @@
 package nl.tudelft.ewi.git.web;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import cucumber.api.java.Before;
 import cucumber.api.java.en.Given;
@@ -18,8 +17,6 @@ import nl.tudelft.ewi.gitolite.objects.Identifier;
 import nl.tudelft.ewi.gitolite.parser.rules.AccessRule;
 import nl.tudelft.ewi.gitolite.parser.rules.RepositoryRule;
 import nl.tudelft.ewi.gitolite.permission.Permission;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.hamcrest.Matchers;
 
 import javax.inject.Inject;
@@ -94,13 +91,17 @@ public class CreateRepositoryDefinitions {
 			.rules(accessRuleMap.values())
 			.build();
 
-		verify(gitoliteConfig).addRepositoryRule(repositoryRule);
-		verify(gitManager).commitChanges();
-		verify(gitManager).push();
+		assertThat(
+			gitoliteConfig.getRules(),
+			Matchers.contains(repositoryRule)
+		);
+
+		verify(gitManager, atLeast(1)).commitChanges();
+		verify(gitManager, atLeast(1)).push();
 	}
 
 	protected Map<Permission, AccessRule> permissionsToAccessRules(Map<String, Level> permissions) {
-		Map<Permission, AccessRule> accessRuleMap = Maps.newHashMap();
+		Map<Permission, AccessRule> accessRuleMap = Maps.newLinkedHashMap();
 		permissions.forEach((username, level) -> {
 			Permission permission = Permission.valueOf(level.getLevel());
 			AccessRule accessRule = accessRuleMap.get(permission);
@@ -119,16 +120,19 @@ public class CreateRepositoryDefinitions {
 
 	@Given("^the template is cloned into \"([^\"]*)\"$")
 	public void theTemplateIsClonedInto(String name) throws Throwable {
-		theFollowingPermissions(ImmutableMap.of(
-			"admin", Level.ADMIN
-		));
-
 		iCreateRepository(name);
 	}
 
 	@When("^I remove repository \"([^\"]*)\"$")
 	public void iRemoveRepository(String name) throws Throwable {
 		repositoriesApi.getRepository(name).deleteRepository();
+	}
+
+	@When("^I update the permissions to:$")
+	public void iUpdateThePermissionsTo(final Map<String, Level> permissions) throws Throwable {
+		createRepositoryModel.setPermissions(permissions);
+		repositoriesApi.getRepository(createRepositoryModel.getName())
+			.updateRepository(createRepositoryModel);
 	}
 
 	@Then("^the template repository is removed$")

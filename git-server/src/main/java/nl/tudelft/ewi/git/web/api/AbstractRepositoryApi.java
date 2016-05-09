@@ -43,9 +43,4 @@ public abstract class AbstractRepositoryApi {
 		return URI.create(repositoryName + ".git/");
 	}
 
-	protected String getRepositoryName() {
-		String repoName = repository.getURI().toString();
-		return repoName.substring(0, repoName.lastIndexOf('/'));
-	}
-
 }
