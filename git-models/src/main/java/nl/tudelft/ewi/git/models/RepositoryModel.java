@@ -2,11 +2,8 @@ package nl.tudelft.ewi.git.models;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Setter;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -18,6 +15,7 @@ import javax.validation.constraints.Pattern;
  * @author michael
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RepositoryModel {
 	
 	public enum Level {
