@@ -4,7 +4,6 @@ import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 import cucumber.runtime.java.guice.ScenarioScoped;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import nl.tudelft.ewi.git.models.MergeResponse;
 import nl.tudelft.ewi.git.web.api.BranchApi;
 import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
@@ -66,6 +65,7 @@ public class MergeStepDefinitions {
     public void theMergeFailsWithAnException() throws Throwable {
         assertFalse("The merge should be successful", mergeResponse.isSuccess());
     }
+
 
     private BranchApi getBranchApi(String branchName) {
         return repositoriesApi.getRepository(cloneStepDefinitions.getRepositoryName())

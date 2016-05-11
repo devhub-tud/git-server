@@ -29,6 +29,7 @@ public class CloneStepDefinitions {
     public static final String DEFAULT_COMMIT_AUTHOR_EMAIL = "JW@Test";
     public static final String REMOTE_ORIGIN = "origin";
     public static final String MASTER_BRANCH_NAME = "master";
+    public static final String README_MD = "README.md";
     @Inject
     private RepositoriesApiImpl repositoriesApi;
 
@@ -99,4 +100,16 @@ public class CloneStepDefinitions {
     public void iCheckoutANewBranch(String name) throws Throwable {
         git.branchRename().setNewName(name).call();
     }
+
+    @And("^\"([^\"]*)\" is ahead of \"([^\"]*)\"$")
+    public void isAheadOf(String branchName, String master) throws Throwable {
+        iCloneRepository(repositoryName);
+        iCreateTheFileWithTheContents(README_MD, "Hello Sir.\n" +
+            "How is your day?");
+        iHaveAddedToTheIndex(README_MD);
+        iCommittedTheResult();
+        iCheckoutANewBranch(branchName);
+        iPushTheCommitTo(branchName);
+    }
+
 }

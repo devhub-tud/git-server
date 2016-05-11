@@ -36,15 +36,7 @@ Feature: Merge Branches
 
   Scenario: Merge fails on merge conflict
     Given I clone repository "merge-test"
-    And   I create the file "README.md" with the contents
-      """
-      Hello Sir.
-      How is your day?
-      """
-    And   I have added "README.md" to the index
-    And   I committed the result
-    And   I checkout a new branch "develop"
-    And   I push the commit to "develop"
+    And   "develop" is ahead of "master"
     And   I clone repository "merge-test"
     And   I create the file "README.md" with the contents
       """
