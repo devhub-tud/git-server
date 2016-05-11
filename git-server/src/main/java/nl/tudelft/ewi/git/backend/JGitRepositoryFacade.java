@@ -440,7 +440,10 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 	@SneakyThrows
 	private boolean isBlob(ObjectReader objectReader, DiffEntry diffEntry) {
-		ObjectId objectId = Optional.ofNullable(diffEntry.getNewId()).orElse(diffEntry.getOldId()).toObjectId();
+
+		ObjectId objectId = diffEntry.getNewId().toObjectId().name().equals("0000000000000000000000000000000000000000") ?
+				diffEntry.getOldId().toObjectId(): 
+				diffEntry.getNewId().toObjectId();	
 		return objectReader.has(objectId);
 	}
 
