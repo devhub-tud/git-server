@@ -1,21 +1,27 @@
 package nl.tudelft.ewi.git.web;
 
 import com.google.common.io.Files;
+import cucumber.api.java.After;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.runtime.java.guice.ScenarioScoped;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.models.RepositoryModel;
+import nl.tudelft.ewi.git.web.api.BranchApi;
+import nl.tudelft.ewi.git.web.api.BranchApiImpl;
 import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RemoteAddCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.URIish;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -30,6 +36,7 @@ public class CloneStepDefinitions {
     public static final String REMOTE_ORIGIN = "origin";
     public static final String MASTER_BRANCH_NAME = "master";
     public static final String README_MD = "README.md";
+
     @Inject
     private RepositoriesApiImpl repositoriesApi;
 
@@ -110,6 +117,25 @@ public class CloneStepDefinitions {
         iCommittedTheResult();
         iCheckoutANewBranch(branchName);
         iPushTheCommitTo(branchName);
+    }
+
+    public File getWorkFolder() throws IOException, GitAPIException {
+        return getWorkGit()
+            .getRepository()
+            .getWorkTree();
+    }
+
+    public Git getWorkGit() throws IOException, GitAPIException {
+        return ((BranchApiImpl) repositoriesApi.getRepository(repositoryName)
+            .getBranch("refs/heads/master"))
+            .createOrOpenRepositoryMirror();
+    }
+
+    @After
+    public void cleanUp() throws IOException, GitAPIException {
+        File workDir = getWorkFolder();
+        repositoriesApi.getRepository(repositoryName).deleteRepository();
+        FileUtils.deleteDirectory(workDir);
     }
 
 }

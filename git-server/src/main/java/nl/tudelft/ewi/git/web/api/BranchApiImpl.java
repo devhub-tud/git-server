@@ -1,5 +1,6 @@
 package nl.tudelft.ewi.git.web.api;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
@@ -109,6 +110,14 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
 				.setForce(true).call();
 
+
+			log.info(
+				"Using repository mirror {} at {} with status {}",
+				git.getRepository().getWorkTree(),
+				git.describe().call(),
+				git.status().call().isClean() ? "clean" : "dirty"
+			);
+
 			log.info("Merging {} into {}", toMergeBranch, baseBranch);
 
 			MergeResult ret = git.merge()
@@ -167,7 +176,8 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 		}
 	}
 
-	private Git createOrOpenRepositoryMirror() throws GitException, IOException, GitAPIException {
+	@VisibleForTesting
+	public Git createOrOpenRepositoryMirror() throws GitException, IOException, GitAPIException {
 		File repositoryDirectory = new File(config.getMirrorsDirectory(), repository.getURI().toString());
 		Git git;
 
@@ -189,8 +199,6 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 			git = Git.open(repositoryDirectory);
 			git.fetch().call();
 		}
-
-		log.info("Using repository mirror {}", repositoryDirectory);
 
 		return git;
 	}
