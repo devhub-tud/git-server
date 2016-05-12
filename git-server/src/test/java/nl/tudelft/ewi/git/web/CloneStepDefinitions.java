@@ -8,10 +8,10 @@ import cucumber.runtime.java.guice.ScenarioScoped;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.models.RepositoryModel;
-import nl.tudelft.ewi.git.web.api.BranchApi;
 import nl.tudelft.ewi.git.web.api.BranchApiImpl;
 import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RemoteAddCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -22,6 +22,7 @@ import org.eclipse.jgit.transport.URIish;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -99,8 +100,12 @@ public class CloneStepDefinitions {
 
     @And("^I checkout branch \"([^\"]*)\"$")
     public void iCheckoutBranch(String name) throws Throwable {
-        git.checkout().setForce(true)
-            .setName(name).call();
+        git.checkout()
+            .setCreateBranch(!name.equals("master"))
+            .setName(name)
+            .setUpstreamMode(SetupUpstreamMode.TRACK)
+            .setStartPoint("origin/" + name)
+            .call();
     }
 
     @And("^I checkout a new branch \"([^\"]*)\"$")
@@ -108,11 +113,14 @@ public class CloneStepDefinitions {
         git.branchRename().setNewName(name).call();
     }
 
+    private final AtomicInteger atomicInteger = new AtomicInteger(0);
+
     @And("^\"([^\"]*)\" is ahead of \"([^\"]*)\"$")
     public void isAheadOf(String branchName, String master) throws Throwable {
         iCloneRepository(repositoryName);
+        iCheckoutBranch(master);
         iCreateTheFileWithTheContents(README_MD, "Hello Sir.\n" +
-            "How is your day?");
+            "How is your day? The number is: " + atomicInteger.getAndIncrement());
         iHaveAddedToTheIndex(README_MD);
         iCommittedTheResult();
         iCheckoutANewBranch(branchName);

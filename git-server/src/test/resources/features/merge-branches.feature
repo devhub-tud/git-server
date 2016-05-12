@@ -58,3 +58,13 @@ Feature: Merge Branches
     And   the work directory is dirty
     When  I merge the branch "develop" into "master"
     Then  the merge fails with an exception
+
+  Scenario: Merge succeeds if master diverged
+    Given I clone repository "merge-test"
+    And   "develop" is ahead of "master"
+    And   "release" is ahead of "develop"
+    When  I merge the branch "develop" into "master"
+    And   I merge the branch "release" into "master"
+    Then  the branch "release" is merged into "master"
+    And   the branch "develop" is merged into "master"
+    And   the work folder is clean

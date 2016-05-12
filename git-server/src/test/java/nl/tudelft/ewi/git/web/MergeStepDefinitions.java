@@ -1,8 +1,6 @@
 package nl.tudelft.ewi.git.web;
 
 import com.google.common.io.Files;
-import cucumber.api.PendingException;
-import cucumber.api.java.After;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
@@ -10,15 +8,11 @@ import cucumber.runtime.java.guice.ScenarioScoped;
 import lombok.extern.slf4j.Slf4j;
 import nl.tudelft.ewi.git.models.MergeResponse;
 import nl.tudelft.ewi.git.web.api.BranchApi;
-import nl.tudelft.ewi.git.web.api.BranchApiImpl;
 import nl.tudelft.ewi.git.web.api.RepositoriesApiImpl;
-import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -45,7 +39,7 @@ public class MergeStepDefinitions {
                 .get().isAhead());
         mergeResponse = getBranchApi(branchName)
             .merge(
-                DEFAULT_COMMIT_MESSAGE,
+                String.format("Merged %s into %s", branchName, otherBranchName),
                 DEFAULT_COMMIT_AUTHOR_NAME,
                 DEFAULT_COMMIT_AUTHOR_EMAIL
             );
