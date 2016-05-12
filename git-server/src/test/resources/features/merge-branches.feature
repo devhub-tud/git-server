@@ -65,6 +65,15 @@ Feature: Merge Branches
     And   "release" is ahead of "develop"
     When  I merge the branch "develop" into "master"
     And   I merge the branch "release" into "master"
-    Then  the branch "release" is merged into "master"
-    And   the branch "develop" is merged into "master"
+    Then  the branch "develop" is merged into "master"
+    And   the branch "release" is merged into "master"
+    And   the work folder is clean
+
+  Scenario: Merge succeeds if branch has been merged before
+    Given I clone repository "merge-test"
+    And   "develop" is ahead of "master"
+    And   I merge the branch "develop" into "master"
+    And   "develop" is ahead of "master"
+    When  I merge the branch "develop" into "master"
+    Then  the branch "develop" is merged into "master"
     And   the work folder is clean
