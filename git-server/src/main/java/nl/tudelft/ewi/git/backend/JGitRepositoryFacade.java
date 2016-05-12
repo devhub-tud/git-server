@@ -65,7 +65,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -440,8 +439,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 
 	@SneakyThrows
 	private boolean isBlob(ObjectReader objectReader, DiffEntry diffEntry) {
-
-		ObjectId objectId = diffEntry.getNewId().toObjectId().name().equals("0000000000000000000000000000000000000000") ?
+		ObjectId objectId = diffEntry.getNewId().toObjectId().equals(ObjectId.zeroId()) ?
 				diffEntry.getOldId().toObjectId(): 
 				diffEntry.getNewId().toObjectId();	
 		return objectReader.has(objectId);
