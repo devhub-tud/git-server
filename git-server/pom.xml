@@ -11,7 +11,7 @@
 
 	<properties>
 		<cucumber.version>1.2.4</cucumber.version>
-		<jgit.version>4.3.0.201604071810-r</jgit.version>
+		<jgit.version>4.3.1.201605051710-r</jgit.version>
 	</properties>
 
 	<dependencies>
