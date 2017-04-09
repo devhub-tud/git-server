@@ -25,6 +25,7 @@ import org.eclipse.jgit.api.MergeCommand;
 import org.eclipse.jgit.api.MergeResult;
 import org.eclipse.jgit.api.MergeResult.MergeStatus;
 import org.eclipse.jgit.api.ResetCommand;
+import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.NoMessageException;
@@ -98,7 +99,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 					.collect(Collectors.toList())
 			);
 
-			git.fetch().call();
+			git.fetch().setRemote("origin").call();
 
 			String baseBranch = "origin/master", toMergeBranch = this.branchName.replace("refs/heads", "origin");
 
@@ -108,15 +109,21 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 				.setName("master")
 				.setStartPoint(baseBranch)
 				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
-				.setForce(true).call();
+				.call();
 
+			log.info("Pulling latest changes for {}", baseBranch);
 
-			log.info(
-				"Using repository mirror {} at {} with status {}",
-				git.getRepository().getWorkTree(),
-				git.describe().call(),
-				git.status().call().isClean() ? "clean" : "dirty"
-			);
+			git.reset()
+				.setRef(baseBranch)
+				.setMode(ResetType.HARD)
+				.call();
+
+			if (! git.status().call().isClean()) {
+				throw new InternalServerErrorException(
+					new IllegalStateException("The repository " + git.getRepository().getWorkTree() +
+						" is not in a clean state: " + git.describe().call())
+				);
+			}
 
 			log.info("Merging {} into {}", toMergeBranch, baseBranch);
 
