@@ -52,13 +52,6 @@ Feature: Merge Branches
     Then  the merge fails with an exception
     But   the work folder is clean
 
-  Scenario: Merge fails if work directory is dirty
-    Given I clone repository "merge-test"
-    And   "develop" is ahead of "master"
-    And   the work directory is dirty
-    When  I merge the branch "develop" into "master"
-    Then  the merge fails with an exception
-
   Scenario: Merge succeeds if master diverged
     Given I clone repository "merge-test"
     And   "develop" is ahead of "master"
