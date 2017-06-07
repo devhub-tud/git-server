@@ -63,7 +63,7 @@ public abstract class AbstractDiffModel<DF extends DiffFile> {
 		private String newPath;
 		private List<DC> contexts;
 
-		private int amountOfLinesWithType(final LineType type) {
+		protected int amountOfLinesWithType(final LineType type) {
 			return getContexts().stream()
 				.mapToInt(context -> context.amountOfLinesWithType(type))
 				.sum();
@@ -192,5 +192,33 @@ public abstract class AbstractDiffModel<DF extends DiffFile> {
 		}
 
 	}
+
+	/**
+	 * @return the amount of lines w/ a type
+	 * @param type
+	 * @return int
+	 */
+	private int amountOfLinesWithType(final LineType type) {
+		return getDiffs().stream()
+				.mapToInt(context -> context.amountOfLinesWithType(type))
+				.sum();
+	}
+
+	/**
+	 * @return the amount of added lines in this {@code DiffMContext}
+	 */
+	@JsonIgnore
+	public int getLinesAdded() {
+		return amountOfLinesWithType(LineType.ADDED);
+	}
+
+	/**
+	 * @return the amount of removed lines in this {@code DiffContext}
+	 */
+	@JsonIgnore
+	public int getLinesRemoved() {
+		return amountOfLinesWithType(LineType.REMOVED);
+	}
+
 
 }
