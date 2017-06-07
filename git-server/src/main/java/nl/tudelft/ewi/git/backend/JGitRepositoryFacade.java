@@ -594,6 +594,8 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 			diffBlameFile.setOldPath(diffFile.getOldPath());
 			diffBlameFile.setType(diffFile.getType());
 
+
+
 			diffBlameFile.setContexts(diffFile.getContexts().stream().map(context -> {
 
 				DiffContext<DiffBlameLine> diffBlameContext = new DiffContext<>();
@@ -610,7 +612,7 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 					if (diffBlameLine.isRemoved()) {
 						lineNumber = line.getOldLineNumber();
 						block = oldBlame.getBlameBlock(lineNumber);
-					} else {
+					} else{
 						lineNumber = line.getNewLineNumber();
 						block = newBlame.getBlameBlock(lineNumber);
 					}
@@ -620,7 +622,6 @@ public class JGitRepositoryFacade implements RepositoryFacade {
 					diffBlameLine.setSourceLineNumber(block.getFromLineNumber(lineNumber));
 					return diffBlameLine;
 				}).collect(Collectors.toList()));
-
 				return diffBlameContext;
 
 			}).collect(Collectors.toList()));
