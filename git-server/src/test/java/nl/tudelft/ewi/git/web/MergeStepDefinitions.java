@@ -60,6 +60,8 @@ public class MergeStepDefinitions {
             "Working directory should be clean",
             git.status().call().isClean()
         );
+
+        git.close();
     }
 
     @Then("^the merge fails with an exception$")

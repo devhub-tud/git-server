@@ -134,7 +134,7 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 		try {
 
 			if(repositoryDirectory.exists()) {
-				FileUtils.deleteDirectory(repositoryDirectory);
+				FileUtils.cleanDirectory(repositoryDirectory);
 			}
 
 			FileUtils.forceMkdir(repositoryDirectory);
@@ -153,6 +153,8 @@ public class RepositoriesApiImpl implements RepositoriesApi {
 				.setPushAll()
 				.setPushTags()
 				.call();
+
+			repo.close();
 
 			log.info("Finished provisioning {}", repositoryName);
 		}

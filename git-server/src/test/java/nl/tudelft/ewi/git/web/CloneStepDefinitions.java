@@ -141,10 +141,13 @@ public class CloneStepDefinitions {
 
     @After
     public void cleanUp() throws IOException, GitAPIException {
+        if (git != null) {
+            git.close();
+        }
         if (repositoryName != null) {
             File workDir = getWorkFolder();
             repositoriesApi.getRepository(repositoryName).deleteRepository();
-            FileUtils.deleteDirectory(workDir);
+            FileUtils.deleteQuietly(workDir);
         }
     }
 
