@@ -15,11 +15,13 @@ import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.RemoteAddCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.URIish;
 
 import javax.inject.Inject;
+import javax.ws.rs.GET;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +39,9 @@ public class CloneStepDefinitions {
     public static final String REMOTE_ORIGIN = "origin";
     public static final String MASTER_BRANCH_NAME = "master";
     public static final String README_MD = "README.md";
+
+    @Getter
+    private String createdCommitId;
 
     @Inject
     private RepositoriesApiImpl repositoriesApi;
@@ -84,10 +89,13 @@ public class CloneStepDefinitions {
 
     @Given("^I committed the result$")
     public void iCommittedTheResult() throws Throwable {
-        git.commit().setMessage(DEFAULT_COMMIT_MESSAGE)
-            .setAuthor(DEFAULT_COMMIT_AUTHOR_NAME, DEFAULT_COMMIT_AUTHOR_EMAIL)
-            .setCommitter(DEFAULT_COMMIT_AUTHOR_NAME, DEFAULT_COMMIT_AUTHOR_EMAIL)
-            .call();
+        createdCommitId = git.commit()
+                .setMessage(DEFAULT_COMMIT_MESSAGE)
+                .setAuthor(DEFAULT_COMMIT_AUTHOR_NAME, DEFAULT_COMMIT_AUTHOR_EMAIL)
+                .setCommitter(DEFAULT_COMMIT_AUTHOR_NAME, DEFAULT_COMMIT_AUTHOR_EMAIL)
+                .call()
+                .getId()
+                .getName();
     }
 
     @Given("^I push the commit to \"([^\"]*)\"$")
