@@ -31,6 +31,7 @@ import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.NoMessageException;
 import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.transport.RemoteConfig;
 import org.eclipse.jgit.transport.URIish;
@@ -191,8 +192,13 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 		String uri = repository.getURI().toString();
 		uri = uri.substring(0, uri.lastIndexOf(".git/"));
 
-		if(!repositoryDirectory.exists()) {
+		try {
+			git = Git.open(repositoryDirectory);
+			git.fetch().call();
+		}
+		catch (RepositoryNotFoundException e) {
 			FileUtils.forceMkdir(repositoryDirectory);
+			FileUtils.cleanDirectory(repositoryDirectory);
 			String repositoryURL = config.getGitoliteBaseUrl() + uri;
 			log.info("Cloning repository {} into work directory {}", repositoryURL, repositoryDirectory);
 
@@ -201,10 +207,6 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 				.setDirectory(repositoryDirectory)
 				.setCloneAllBranches(true)
 				.call();
-		}
-		else {
-			git = Git.open(repositoryDirectory);
-			git.fetch().call();
 		}
 
 		return git;
