@@ -117,7 +117,8 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 						.setStartPoint(baseBranch)
 						.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
 						.call();
-			} catch(InternalServerErrorException e){
+			} catch(Exception e){
+				System.out.println(e.getClass());
 				System.out.println("Branch already exists.");
 				git.checkout()
 						.setName(intoBranch)
@@ -125,6 +126,7 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 						.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
 						.call();
 			}
+
 			log.info("Pulling latest changes for {}", baseBranch);
 
 			git.reset()
