@@ -109,14 +109,22 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 			log.info("Checking out {}", baseBranch);
 
-			git.checkout()
-				.setCreateBranch(true)
-				.setForce(true)
-				.setName(intoBranch)
-				.setStartPoint(baseBranch)
-				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
-				.call();
-
+			try {
+				git.checkout()
+						.setCreateBranch(true)
+						.setForce(true)
+						.setName(intoBranch)
+						.setStartPoint(baseBranch)
+						.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
+						.call();
+			} catch(InternalServerErrorException e){
+				System.out.println("Branch already exists.");
+				git.checkout()
+						.setName(intoBranch)
+						.setStartPoint(baseBranch)
+						.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
+						.call();
+			}
 			log.info("Pulling latest changes for {}", baseBranch);
 
 			git.reset()
