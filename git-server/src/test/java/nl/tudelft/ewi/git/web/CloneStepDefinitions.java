@@ -19,12 +19,17 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.URIish;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author Jan-Willem Gmelig Meyling
@@ -104,6 +109,12 @@ public class CloneStepDefinitions {
             .setForce(true)
             .setRefSpecs(new RefSpec(name+":"+name))
             .call();
+
+        assertThat(repositoriesApi.getRepository(repositoryName)
+                .getBranch(name)
+                .getCommit()
+                .get()
+                .getCommit(), equalTo(createdCommitId));
     }
 
     @And("^I checkout branch \"([^\"]*)\"$")
@@ -111,8 +122,8 @@ public class CloneStepDefinitions {
         git.checkout()
             .setCreateBranch(!name.equals("master"))
             .setName(name)
-            .setUpstreamMode(SetupUpstreamMode.TRACK)
-            .setStartPoint("origin/" + name)
+//            .setUpstreamMode(SetupUpstreamMode.TRACK)
+//            .setStartPoint("origin/" + name)
             .call();
     }
 
@@ -120,6 +131,12 @@ public class CloneStepDefinitions {
     public void iCheckoutANewBranch(String name) throws Throwable {
         git.branchRename().setNewName(name).call();
     }
+
+    @Given("^I create a new branch \"([^\"]*)\"$")
+    public void i_create_a_new_branch(String name) throws Throwable {
+        git.branchCreate().setName(name).call();
+    }
+
 
     private final AtomicInteger atomicInteger = new AtomicInteger(0);
 

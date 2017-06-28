@@ -48,7 +48,8 @@ public class MergeStepDefinitions {
         assertFalse(
             "The branch should not be ahead",
             getBranchApi(branchName)
-                .get().isAhead()
+                .diff(otherBranchName)
+                .isAhead()
         );
     }
 

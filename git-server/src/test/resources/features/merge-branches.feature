@@ -36,6 +36,16 @@ Feature: Merge Branches
 
   Scenario: Merge a branch to release
     Given I clone repository "merge-test"
+    And   I checkout branch "release"
+    And   I create the file "push.txt" with the contents
+      """
+      I wish to be seen.
+      """
+    And   I have added "push.txt" to the index
+    And   I committed the result
+    And   I push the commit to "release"
+
+    And   I checkout a new branch "develop"
     And   I create the file "README.md" with the contents
       """
       It is an excellent day.
@@ -44,11 +54,10 @@ Feature: Merge Branches
       """
     And   I have added "README.md" to the index
     And   I committed the result
-    And   I checkout a new branch "develop"
-    And   I checkout a new branch "release"
-    And   I push the commit to "release"
-    When  I merge the branch "release" into "develop"
-    Then  the branch "release" is merged into "develop"
+    And   I push the commit to "develop"
+
+    When  I merge the branch "develop" into "release"
+    Then  the branch "develop" is merged into "release"
     And   the work folder is clean
 
 
