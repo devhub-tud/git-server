@@ -19,7 +19,7 @@ Feature: Merge Branches
     And   I checkout branch "master"
     And   I push the commit to "master"
 
-  Scenario: Merge a branch
+  Scenario: Merge a branch to master
     Given I clone repository "merge-test"
     And   I create the file "README.md" with the contents
       """
@@ -33,6 +33,24 @@ Feature: Merge Branches
     When  I merge the branch "develop" into "master"
     Then  the branch "develop" is merged into "master"
     And   the work folder is clean
+
+  Scenario: Merge a branch to release
+    Given I clone repository "merge-test"
+    And   I create the file "README.md" with the contents
+      """
+      It is an excellent day.
+      For merging branches.
+      Into other branches.
+      """
+    And   I have added "README.md" to the index
+    And   I committed the result
+    And   I checkout a new branch "develop"
+    And   I checkout a new branch "release"
+    And   I push the commit to "release"
+    When  I merge the branch "release" into "develop"
+    Then  the branch "release" is merged into "develop"
+    And   the work folder is clean
+
 
   Scenario: Merge fails on merge conflict
     Given I clone repository "merge-test"
