@@ -48,9 +48,12 @@ public interface BranchApi extends DiffableApi {
 	 */
 	@POST
 	@Path("merge")
-	MergeResponse merge(@QueryParam("message") String message,
-	                    @QueryParam("name") @NotEmpty String name,
-	                    @QueryParam("email") @NotEmpty String email);
+	MergeResponse mergeInto(@QueryParam("message") String message,
+							@QueryParam("name") @NotEmpty String name,
+							@QueryParam("email") @NotEmpty String email,
+							@QueryParam("branch") @NotEmpty String branch);
+
+
 
 	/**
 	 * Retrieve the commits in this branch.

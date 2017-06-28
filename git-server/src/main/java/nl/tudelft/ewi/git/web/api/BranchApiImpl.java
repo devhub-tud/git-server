@@ -80,12 +80,14 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 	}
 
 	@Override
-	public MergeResponse merge(String message, String name, String email) {
+	public MergeResponse mergeInto(String message, String name, String email, String intoBranch) {
 		if(Strings.isNullOrEmpty(message)) {
-			message = String.format("Merged origin/%s into origin/master", branchName);
+			message = String.format("Merged origin/%s into origin/%s", branchName, intoBranch);
 		}
+
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(name));
 		Preconditions.checkArgument(!Strings.isNullOrEmpty(email));
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(intoBranch));
 
 		try {
 			Git git = createOrOpenRepositoryMirror();
@@ -102,12 +104,13 @@ public class BranchApiImpl extends AbstractDiffableApi implements BranchApi {
 
 			git.fetch().setRemote("origin").call();
 
-			String baseBranch = "origin/master", toMergeBranch = this.branchName.replace("refs/heads", "origin");
+			String baseBranch = "origin/" + intoBranch;
+			String toMergeBranch = this.branchName.replace("refs/heads", "origin");
 
 			log.info("Checking out {}", baseBranch);
 
 			git.checkout()
-				.setName("master")
+				.setName(intoBranch)
 				.setStartPoint(baseBranch)
 				.setUpstreamMode(SetupUpstreamMode.SET_UPSTREAM)
 				.call();

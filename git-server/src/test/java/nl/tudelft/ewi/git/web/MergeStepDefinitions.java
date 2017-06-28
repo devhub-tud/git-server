@@ -32,14 +32,14 @@ public class MergeStepDefinitions {
     @When("^I merge the branch \"([^\"]*)\" into \"([^\"]*)\"$")
     public void iMergeTheBranchInto(String branchName, String otherBranchName) throws Throwable {
         assertTrue("The branch should be ahead",
-            getBranchApi(branchName)
-                .get().isAhead());
+                getBranchApi(branchName)
+                        .get()
+                        .isAhead());
         mergeResponse = getBranchApi(branchName)
-            .merge(
-                String.format("Merged %s into %s", branchName, otherBranchName),
-                DEFAULT_COMMIT_AUTHOR_NAME,
-                DEFAULT_COMMIT_AUTHOR_EMAIL
-            );
+                .mergeInto(String.format("Merged %s into %s", branchName, otherBranchName),
+                        DEFAULT_COMMIT_AUTHOR_NAME,
+                        DEFAULT_COMMIT_AUTHOR_EMAIL,
+                        otherBranchName);
     }
 
     @Then("^the branch \"([^\"]*)\" is merged into \"([^\"]*)\"$")
